@@ -279,6 +279,7 @@ contract CharacterDesign is AccessControlUpgradeable, UUPSUpgradeable, ICharacte
         );
 
         CharacterDetails.Details memory details;
+        uint256 memory seed;
 
         // For random rarity
         uint256[] memory dropRate = dropRateNormal;
