@@ -26,8 +26,8 @@ contract CharacterToken is
     struct CreateTokenRequest {
         uint256 targetBlock; // Use future block.
         uint16 count; // Amount of tokens to mint.
-        uint8 rarity; // 0: random rarity, 1 - 6: specified rarity.
-        uint8 eggType;
+        uint8 rarity; // 0: random rarity, 1 - 4: specified rarity.
+        uint8 boxType;
         uint8 faction;
     }
 
@@ -177,7 +177,7 @@ contract CharacterToken is
     }
 
     /** Mints tokens. */
-    function mint(uint256 eggType, uint256 count, uint256 faction) external notContract {
+    function mint(uint256 boxType, uint256 count, uint256 faction) external notContract {
         require(count > 0, "No token to mint");
         require(count <= 20, "Maximum 20 token each time");
 
@@ -189,8 +189,8 @@ contract CharacterToken is
         );
 
         require(
-            eggType > 0 && eggType < 3,
-            "Invalid egg type. 1: Normal egg; 2: Golden egg"
+            boxType > 0 && boxType < 3,
+            "Invalid box type. 1: Normal box; 2: Golden box"
         );
 
         require(
@@ -200,14 +200,14 @@ contract CharacterToken is
 
 
         // Transfer coin token.
-        coinToken.transferFrom(to, address(this), design.getMintCost(eggType) * count);
+        coinToken.transferFrom(to, address(this), design.getMintCost(boxType) * count);
 
         // Create requests
         requestCreateToken(
             to,
             count,
             CharacterDetails.ALL_RARITY,
-            eggType,
+            boxType,
             faction
         );
     }
@@ -216,11 +216,11 @@ contract CharacterToken is
     function safeMint(
         address to,
         uint256 count,
-        uint256 eggType,
+        uint256 boxType,
         uint256 faction
     ) public onlyRole(DESIGNER_ROLE) {
         require(count > 0, "No token to mint");
-        require(eggType > 0 && eggType < 4, "Egg type invalid");
+        require(boxType > 0 && boxType < 4, "Box type invalid");
 
         // Check limit.
         require(
@@ -229,18 +229,18 @@ contract CharacterToken is
         );
 
         // Create requests.
-        requestCreateToken(to, count, CharacterDetails.ALL_RARITY, eggType, faction);
+        requestCreateToken(to, count, CharacterDetails.ALL_RARITY, boxType, faction);
     }
 
-    /** Call from CharacterEggBasket token to open character. */
+    /** Call from CharacterBoxBasket token to open character. */
     function openBox(
         address to,
         uint256 count,
-        uint256 eggType,
+        uint256 boxType,
         uint256 faction
     )   external override onlyRole(OPEN_BOX_ROLE){
         require(count > 0, "No token to mint");
-        require(eggType > 0 && eggType < 4, "Egg type invalid");
+        require(boxType > 0 && boxType < 4, "Box type invalid");
 
         // Check limit.
         require(
@@ -249,7 +249,7 @@ contract CharacterToken is
         );
 
         // Create requests.
-        requestCreateToken(to, count, CharacterDetails.ALL_RARITY, eggType, faction);
+        requestCreateToken(to, count, CharacterDetails.ALL_RARITY, boxType, faction);
     }
 
     /** Requests a create token request. */
@@ -257,7 +257,7 @@ contract CharacterToken is
         address to,
         uint256 count,
         uint256 rarity,
-        uint256 eggType,
+        uint256 boxType,
         uint256 faction
     ) internal {
         // Create request.
@@ -267,7 +267,7 @@ contract CharacterToken is
                 targetBlock,
                 uint16(count),
                 uint8(rarity),
-                uint8(eggType),
+                uint8(boxType),
                 uint8(faction)
             )
         );
@@ -315,7 +315,7 @@ contract CharacterToken is
         CreateTokenRequest[] storage requests = tokenRequests[to];
         for (uint256 i = requests.length; i > 0; --i) {
             CreateTokenRequest storage request = requests[i - 1];
-            uint256 eggType = request.eggType;
+            uint256 boxType = request.boxType;
             uint256 rarity = request.rarity;
             uint256 faction = request.faction;
             uint256 targetBlock = request.targetBlock;
@@ -324,8 +324,8 @@ contract CharacterToken is
 
             // Force rarity common if process over 256 blocks.
             if (block.number - 256 > targetBlock) {
-                // Egg basket force to golden
-                if (eggType == CharacterDetails.BOX_TYPE_BASKET) {
+                // Box basket force to golden
+                if (boxType == CharacterDetails.BOX_TYPE_BASKET) {
                     rarity = 2;
                 } else {
                     // Force to common
@@ -348,7 +348,7 @@ contract CharacterToken is
                     available,
                     rarity,
                     seed,
-                    eggType,
+                    boxType,
                     faction
                 );
                 break;
@@ -359,7 +359,7 @@ contract CharacterToken is
                 request.count,
                 rarity,
                 seed,
-                eggType,
+                boxType,
                 faction
             );
             requests.pop();
@@ -376,13 +376,13 @@ contract CharacterToken is
         uint256 count,
         uint256 rarity,
         uint256 seed,
-        uint256 eggType,
+        uint256 boxType,
         uint256 faction
     ) internal {
         uint256 nextSeed = seed;
         for (uint256 i = 0; i < count; ++i) {
             uint256 id = tokenIdCounter.current();
-            nextSeed = design.createRandomToken(id, rarity, eggType, faction);
+            nextSeed = design.createRandomToken(id, rarity, boxType, faction);
             tokenIdCounter.increment();
             TokenDetail memory tokenDetail;
             tokenDetail.id = id;

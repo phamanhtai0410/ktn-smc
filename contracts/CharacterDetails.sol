@@ -22,12 +22,9 @@ library CharacterDetails {
         uint256 box_type;
         uint256 rarity;
         uint256 level;
-        
-        
         uint256 health;
         uint256 speed;
         uint256 armor;
-        uint256 magic_resistance;
         uint256 crit_chance;
         uint256 crit_damage;
         uint256 dodge;
@@ -78,8 +75,6 @@ damage	10
         bitIndex += 8;
         value |= details.armor << bitIndex;
         bitIndex += 9;
-        value |= details.magic_resistance << bitIndex;
-        bitIndex += 9;
         value |= details.crit_chance << bitIndex;
         bitIndex += 7;
         value |= details.crit_damage << bitIndex;
@@ -117,8 +112,6 @@ damage	10
         result.speed = (details >> bitIndex) & 255;
         bitIndex += 8;
         result.armor = (details >> bitIndex) & 511;
-        bitIndex += 9;
-        result.magic_resistance = (details >> bitIndex) & 511;
         bitIndex += 9;
         result.crit_chance = (details >> bitIndex) & 127;
         bitIndex += 7;
