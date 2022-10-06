@@ -11,8 +11,8 @@ import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import "./CharacterDetails.sol";
-import "./ICharacterDesign.sol";
-import "./ICharacterToken.sol";
+import "./interfaces/ICharacterDesign.sol";
+import "./interfaces/ICharacterToken.sol";
 
 
 contract CharacterToken is

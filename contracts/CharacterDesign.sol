@@ -5,9 +5,9 @@ import "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol"
 import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import "./CharacterDetails.sol";
-import "./ICharacterDesign.sol";
+import "./interfaces/ICharacterDesign.sol";
 import "./Utils.sol";
-import "./ICharacterStats.sol";
+import "./interfaces/ICharacterStats.sol";
 
 contract CharacterDesign is AccessControlUpgradeable, UUPSUpgradeable, ICharacterDesign {
     using CharacterDetails for CharacterDetails.Details;
