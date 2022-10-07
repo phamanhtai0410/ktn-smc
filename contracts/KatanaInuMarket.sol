@@ -115,6 +115,21 @@ contract KatanaInuMarket is ERC721Upgradeable, AccessControlUpgradeable, UUPSUpg
         return items;
     }
 
+    function setItemTypeBasePrice(
+        uint8[] memory itemTypes, 
+        uint8[] memory rarities, 
+        uint256[] memory prices) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        //  Check length of params
+        require(
+            itemTypes.length == rarities.length && itemTypes.length == prices.length,
+            "KatanaInuMarket::setItemTypeBasePrice: All params must have the same length!"
+        );
+
+        for (uint8 index; index < itemTypes.length; ++index) {
+            itemsTypeBasePrice[itemTypes[index]][rarities[index]] = prices[index];
+        }
+    }
+
     /** Burns a list of heroes. */
     function burn(uint256[] memory ids) external onlyRole(BURNER_ROLE) {
         for (uint256 i = 0; i < ids.length; ++i) {
