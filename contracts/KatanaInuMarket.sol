@@ -37,7 +37,7 @@ contract KatanaInuMarket is ERC721Upgradeable, AccessControlUpgradeable, UUPSUpg
     mapping(address => uint256[]) public itemOwnerIds;
 
     // Mapping from owner address to token ID.
-    mapping(uint256 => uint256) private itemsTypeBasePrice;
+    mapping(uint8 => mapping(uint8 => uint256)) private itemsTypeBasePrice;
 
     // Mapping from token ID to token details.
     mapping(uint256 => MarketItems.MarketItemDetails) public itemDetails;
@@ -122,15 +122,14 @@ contract KatanaInuMarket is ERC721Upgradeable, AccessControlUpgradeable, UUPSUpg
         }
     }
 
-    /** Mints tokens. */
-    function mint(uint256 itemType, uint256 price) external notContract {
+    /** Mint one token. */
+    function mintOneToken(uint8 itemType, uint8 rarity, uint256 price) public notContract {
         //  0: character, 1: skin, 2: items
-        require(itemType < 3, "KatanaInuMarket::mint: Token type invalid!");
+        require(itemType < 3, "KatanaInuMarket::mintOneToken: Token type invalid!");
+        // Check is exist rarity for the first mint
+        require(rarity < 5, "KatanaInuMarket::mintOneToken: Token rarity invalid!");
         // Check base price for the first mint
-        require(itemsTypeBasePrice[itemType] == price, "KatanaInuMarket::mint: Token price invalid!");
-
-        // Check buyable.
-        require(buyable == true, "KatanaInuMarket::mint: Mint token have not start yet");
+        require(itemsTypeBasePrice[itemType][rarity] == price, "KatanaInuMarket::mintOneToken: Token price invalid!");
 
         address to = msg.sender;
         address owner = address(this);
@@ -147,10 +146,28 @@ contract KatanaInuMarket is ERC721Upgradeable, AccessControlUpgradeable, UUPSUpg
         itemDetail.price = price;
         itemDetail.isOnMarket = false;
         itemDetail.itemType = itemType;
+        itemDetail.rarity = rarity;
         itemDetail.ownerBy = to;
 
         itemDetails[tokenId] = itemDetail;
         _safeMint(to, tokenId);
+        //emit TokenCreated(to, id, id);
+    }
+
+    /** Mint list token. */
+    function mintListTokens(uint8[] memory itemTypes, uint8[] memory rarities, uint256[] memory prices) external notContract {
+        //  Check length of params
+        require(
+            itemTypes.length == rarities.length && itemTypes.length == prices.length,
+            "KatanaInuMarket::mintListTokens: All params must have the same length!"
+        );
+
+        // Check buyable.
+        require(buyable == true, "KatanaInuMarket::mintListTokens: Mint token have not start yet");
+
+        for (uint8 index = 0; index < itemTypes.length; ++index) {
+            mintOneToken(itemTypes[index], rarities[index], prices[index]);
+        }
         //emit TokenCreated(to, id, id);
     }
 
