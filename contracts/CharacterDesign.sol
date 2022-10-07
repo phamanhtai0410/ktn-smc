@@ -13,7 +13,6 @@ contract CharacterDesign is AccessControlUpgradeable, UUPSUpgradeable, ICharacte
     using CharacterDetails for CharacterDetails.Details;
 
     bytes32 public constant UPGRADER_ROLE = keccak256("UPGRADER_ROLE");
-
     bytes32 public constant DESIGNER_ROLE = keccak256("DESIGNER_ROLE");
 
     event CreateRandomToken(uint256 id, uint256 details);
@@ -44,7 +43,7 @@ contract CharacterDesign is AccessControlUpgradeable, UUPSUpgradeable, ICharacte
     uint256[] private dropRateBasket;
     uint256[] private factionRate;
 
-    // Mint cost base eggType index: 1 -> EGG_TYPE_NORMAL; 2 -> EGG_TYPE_GOLDEN; 3 -> EGG_TYPE_BASKET
+    // Mint cost base boxType index: 1 -> BOX_TYPE_NORMAL; 2 -> BOX_TYPE_GOLDEN; 3 -> BOX_TYPE_BASKET
     uint256[] private mintCost;
     uint public constant KTN_DECIMALS = 10 ** 18;
 
@@ -59,7 +58,7 @@ contract CharacterDesign is AccessControlUpgradeable, UUPSUpgradeable, ICharacte
         tokenLimit = 100;
         characterType = 15;
 
-        // Egg random rarity
+        // Box random rarity
         dropRateNormal = [7058, 2705, 214, 20, 3, 0];
         dropRateGolden = [4842, 4467, 622, 60, 7, 2];
         dropRateBasket = [0, 8541, 1159, 250, 30, 20];
@@ -68,9 +67,6 @@ contract CharacterDesign is AccessControlUpgradeable, UUPSUpgradeable, ICharacte
         mintCost.push(1000 ether); // For skip
         mintCost.push(40 ether); // Normal
         mintCost.push(55 ether); // Golden
-
-        // Default faction rate
-        factionRate = [20, 20, 20, 20, 10, 10];
 
         // Mapping rarity - faction
         rarityFaction[0] = [20, 20, 20, 20, 0, 0]; // Common have no Infernal, Celestial
@@ -81,9 +77,8 @@ contract CharacterDesign is AccessControlUpgradeable, UUPSUpgradeable, ICharacte
         rarityFaction[5] = [0, 0, 0, 0, 10, 10];
 
         // Character stats, start from Character index 0
-        characterStats.push(ICharacterStats(0xf8615F47e03A13301476637433A920f8Ba534f81));
+        characterStats.push(ICharacterStats(0x987453cD03B205F1a41337f6FE8D701122Cb0824)); // address StatsTop10
      
-
         // Character stats
         rarityFactionCharacter[0].push([3, 16, 20]);
         rarityFactionCharacter[0].push([8, 12, 17]);
@@ -220,8 +215,8 @@ contract CharacterDesign is AccessControlUpgradeable, UUPSUpgradeable, ICharacte
     }
 
     /** Sets the minting fee. */
-    function setMintCost(uint256 eggType, uint256 value) external onlyRole(DESIGNER_ROLE) {
-        mintCost[eggType] = value * KTN_DECIMALS;
+    function setMintCost(uint256 boxType, uint256 value) external onlyRole(DESIGNER_ROLE) {
+        mintCost[boxType] = value * KTN_DECIMALS;
     }
 
     function getTokenLimit() external view override returns (uint256) {
@@ -244,8 +239,8 @@ contract CharacterDesign is AccessControlUpgradeable, UUPSUpgradeable, ICharacte
         return dropRateBasket;
     }
 
-    function getMintCost(uint256 eggType) external view override returns (uint256) {
-        return mintCost[eggType];
+    function getMintCost(uint256 boxType) external view override returns (uint256) {
+        return mintCost[boxType];
     }
 
     function getTokenDetail(uint256 tokenId) external view returns (uint256) {
@@ -268,10 +263,9 @@ contract CharacterDesign is AccessControlUpgradeable, UUPSUpgradeable, ICharacte
     function createRandomToken(
         uint256 id,
         uint256 rarity,
-        uint256 eggType,
+        uint256 boxType,
         uint256 faction
     ) external override returns (uint256 nextSeed) {
-
         address nftRequester = msg.sender;
         require(
             nftRequester == address(characterToken),
@@ -280,12 +274,11 @@ contract CharacterDesign is AccessControlUpgradeable, UUPSUpgradeable, ICharacte
 
         CharacterDetails.Details memory details;
         uint256 memory seed;
-
         // For random rarity
         uint256[] memory dropRate = dropRateNormal;
-        if (eggType == CharacterDetails.EGG_TYPE_GOLDEN) {
+        if (boxType == CharacterDetails.BOX_TYPE_GOLDEN) {
             dropRate = dropRateGolden;
-        } else if (eggType == CharacterDetails.EGG_TYPE_BASKET) {
+        } else if (boxType == CharacterDetails.BOX_TYPE_BASKET) {
             dropRate = dropRateBasket;
         }
 
@@ -314,46 +307,19 @@ contract CharacterDesign is AccessControlUpgradeable, UUPSUpgradeable, ICharacte
         details.id = id;
         details.is_onchain = CharacterDetails.OFF_CHAIN;
         details.character_id = characterId;
-        details.egg_type = eggType;
+        details.box_type = boxType;
         details.level = 1;
-
         // Get stats base. characterId 0->19 = characterStats[0], characterId 20->39 = characterStats[1], characterId 40->59 = characterStats[2], characterId 60->79 = characterStats[3]
         ICharacterStats.Stats memory stats = characterStats[characterId/20].getStats(characterId);
-
         details.rarity = stats.rarity;
-        details.base_rarity = details.rarity;
-        details.faction = stats.faction;
-        details.class = stats.class;
         details.health = stats.health;
         details.speed = stats.speed;
         details.armor = stats.armor;
-        details.magic_resistance = stats.magic_resistance;
         details.crit_chance = stats.crit_chance;
         details.crit_damage = stats.crit_damage;
         details.dodge = stats.dodge;
         details.type_attack = stats.type_attack;
         details.damage = stats.damage;
-        details.damage_factor_attack = stats.damage_factor_attack;
-        details.attack_method = stats.attack_method;
-        details.passive_attack = stats.passive_attack;
-        details.damage_skill_factor = stats.damage_skill_factor;
-        details.skill_method = stats.skill_method;
-        details.passive_skill = stats.passive_skill;
-        details.damage_skill_sup_factor = stats.damage_skill_sup_factor;
-        details.skill_sup_method = stats.skill_sup_method;
-        details.passive_skill_sup = stats.passive_skill_sup;
-
-        // Random stats value in range
-        (seed, details.bonus_heal) = Utils.randomRangeInclusive(seed, stats.bonus_heal.min, stats.bonus_heal.max);
-        (seed, details.bonus_damage) = Utils.randomRangeInclusive(seed, stats.bonus_damage.min, stats.bonus_damage.max);
-        (seed, details.bonus_armor) = Utils.randomRangeInclusive(seed, stats.bonus_armor.min, stats.bonus_armor.max);
-        (seed, details.bonus_resist) = Utils.randomRangeInclusive(seed, stats.bonus_resist.min, stats.bonus_resist.max);
-
-        details.passive_base = stats.passive_base;
-        details.counter = 0;
-        details.locked = 0;
-
-        nextSeed = seed;
         characterDetails[id] = details.encode();
         emit CreateRandomToken(id, characterDetails[id]);
     }

@@ -12,12 +12,9 @@ interface ICharacterStats {
         uint256 index;
         uint256 is_onchain;
         uint256 character_id;
-        uint256 base_rarity;
-        uint256 egg_type;
+        uint256 box_type;
         uint256 rarity;
         uint256 level;
-        uint256 faction;
-        uint256 class;
         uint256 health;
         uint256 speed;
         uint256 armor;
