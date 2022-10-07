@@ -12,7 +12,6 @@ interface ICharacterStats {
         uint256 index;
         uint256 is_onchain;
         uint256 character_id;
-        uint256 box_type;
         uint256 rarity;
         uint256 level;
         uint256 health;

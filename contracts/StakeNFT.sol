@@ -12,7 +12,8 @@ contract StakeNFT is ReentrancyGuard {
     // Interfaces for ERC20 and ERC721
     IERC20 public immutable rewardsToken;
     IERC721 public immutable nftCollection;
-
+    uint256 public index;
+    
     // Constructor function to set the rewards token and the NFT collection addresses
     constructor(IERC721 _nftCollection, IERC20 _rewardsToken) {
         nftCollection = _nftCollection;

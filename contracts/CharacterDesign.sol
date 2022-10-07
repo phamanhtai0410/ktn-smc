@@ -27,11 +27,9 @@ contract CharacterDesign is AccessControlUpgradeable, UUPSUpgradeable, ICharacte
     // Mapping from token ID to token details.
     mapping(uint256 => uint256) public characterDetails;
 
-    // Mapping from rarity to faction.
-    mapping(uint256 => uint256[]) public rarityFaction;
 
-    // Mapping from rate to faction to character ids.
-    mapping(uint256 => uint256[][]) public rarityFactionCharacter;
+    // Mapping from rate to rarity to character ids.
+    mapping(uint256 => uint256[]) public rarityCharacter;
 
     // Number of token per user
     uint256 public tokenLimit;
@@ -68,60 +66,9 @@ contract CharacterDesign is AccessControlUpgradeable, UUPSUpgradeable, ICharacte
         mintCost.push(40 ether); // Normal
         mintCost.push(55 ether); // Golden
 
-        // Mapping rarity - faction
-        rarityFaction[0] = [20, 20, 20, 20, 0, 0]; // Common have no Infernal, Celestial
-        rarityFaction[1] = factionRate;
-        rarityFaction[2] = factionRate;
-        rarityFaction[3] = factionRate;
-        rarityFaction[4] = factionRate;
-        rarityFaction[5] = [0, 0, 0, 0, 10, 10];
 
         // Character stats, start from Character index 0
         characterStats.push(ICharacterStats(0x987453cD03B205F1a41337f6FE8D701122Cb0824)); // address StatsTop10
-     
-        // Character stats
-        rarityFactionCharacter[0].push([3, 16, 20]);
-        rarityFactionCharacter[0].push([8, 12, 17]);
-        rarityFactionCharacter[0].push([6, 18]);
-        rarityFactionCharacter[0].push([15, 24, 27]);
-        rarityFactionCharacter[0].push([1, 1, 1, 1]);
-        rarityFactionCharacter[0].push([1, 1, 1, 1]);
-
-        rarityFactionCharacter[1].push([0, 21]);
-        rarityFactionCharacter[1].push([1, 11]);
-        rarityFactionCharacter[1].push([38, 48]);
-        rarityFactionCharacter[1].push([2, 42]);
-        rarityFactionCharacter[1].push([7, 41, 47]);
-        rarityFactionCharacter[1].push([4, 37]);
-
-        rarityFactionCharacter[2].push([25, 39]);
-        rarityFactionCharacter[2].push([28]);
-        rarityFactionCharacter[2].push([23, 40]);
-        rarityFactionCharacter[2].push([5, 14]);
-        rarityFactionCharacter[2].push([9, 26]);
-        rarityFactionCharacter[2].push([22]);
-
-        rarityFactionCharacter[3].push([10]);
-        rarityFactionCharacter[3].push([31]);
-        rarityFactionCharacter[3].push([13, 46]);
-        rarityFactionCharacter[3].push([35]);
-        rarityFactionCharacter[3].push([30]);
-        rarityFactionCharacter[3].push([29]);
-
-        rarityFactionCharacter[4].push([33]);
-        rarityFactionCharacter[4].push([19]);
-        rarityFactionCharacter[4].push([34]);
-        rarityFactionCharacter[4].push([36]);
-        rarityFactionCharacter[4].push([32]);
-        rarityFactionCharacter[4].push([43]);
-
-        rarityFactionCharacter[5].push([1, 1, 1, 1]);
-        rarityFactionCharacter[5].push([1, 1, 1, 1]);
-        rarityFactionCharacter[5].push([1, 1, 1, 1]);
-        rarityFactionCharacter[5].push([1, 1, 1, 1]);
-        rarityFactionCharacter[5].push([45]);
-        rarityFactionCharacter[5].push([44]);
-
     }
 
     function _authorizeUpgrade(address newImplementation)
@@ -166,20 +113,15 @@ contract CharacterDesign is AccessControlUpgradeable, UUPSUpgradeable, ICharacte
         return stats;
     }
 
-    /** Set rate rarity to faction */
-    function setRarityFaction(uint256 rarity, uint256[] memory faction) external onlyRole(DESIGNER_ROLE) {
-        rarityFaction[rarity] = faction;
+    /** Update mapping rarity-characters */
+    function setrarityCharacter(uint256 rarity, uint256[] calldata characterIds) external onlyRole(DESIGNER_ROLE) {
+        rarityCharacter[rarity] = characterIds;
     }
 
-    /** Update mapping rarity-faction-characters */
-    function setRarityFactionCharacter(uint256 rarity, uint256 faction, uint256[] calldata characterIds) external onlyRole(DESIGNER_ROLE) {
-        rarityFactionCharacter[rarity][faction] = characterIds;
-    }
-
-    /** Get list characters by rarity and faction */
-    function getRarityFactionCharacters(uint256 rarity, uint256 faction) external view returns( uint256[] memory)
+    /** Get list characters by rarity  */
+    function getrarityCharacters(uint256 rarity) external view returns( uint256[] memory)
     {
-        return rarityFactionCharacter[rarity][faction];
+        return rarityCharacter[rarity];
     }
 
     /** Sets the token limit. */
@@ -215,8 +157,8 @@ contract CharacterDesign is AccessControlUpgradeable, UUPSUpgradeable, ICharacte
     }
 
     /** Sets the minting fee. */
-    function setMintCost(uint256 boxType, uint256 value) external onlyRole(DESIGNER_ROLE) {
-        mintCost[boxType] = value * KTN_DECIMALS;
+    function setMintCost(uint256 rarity, uint256 value) external onlyRole(DESIGNER_ROLE) {
+        mintCost[rarity] = value * KTN_DECIMALS;
     }
 
     function getTokenLimit() external view override returns (uint256) {
@@ -262,9 +204,7 @@ contract CharacterDesign is AccessControlUpgradeable, UUPSUpgradeable, ICharacte
 
     function createRandomToken(
         uint256 id,
-        uint256 rarity,
-        uint256 boxType,
-        uint256 faction
+        uint256 rarity
     ) external override returns (uint256 nextSeed) {
         address nftRequester = msg.sender;
         require(
@@ -273,12 +213,12 @@ contract CharacterDesign is AccessControlUpgradeable, UUPSUpgradeable, ICharacte
         );
 
         CharacterDetails.Details memory details;
-        uint256 memory seed;
+        uint256 seed = 1;
         // For random rarity
         uint256[] memory dropRate = dropRateNormal;
-        if (boxType == CharacterDetails.BOX_TYPE_GOLDEN) {
+        if (rarity == CharacterDetails.BOX_TYPE_GOLDEN) {
             dropRate = dropRateGolden;
-        } else if (boxType == CharacterDetails.BOX_TYPE_BASKET) {
+        } else if (rarity == CharacterDetails.BOX_TYPE_BASKET) {
             dropRate = dropRateBasket;
         }
 
@@ -290,16 +230,8 @@ contract CharacterDesign is AccessControlUpgradeable, UUPSUpgradeable, ICharacte
             details.rarity = rarity - 1;
         }
 
-        // For random faction
-        if (faction == CharacterDetails.ALL_FACTION) {
-            (seed, details.faction) = Utils.randomByWeights(seed, rarityFaction[details.rarity]);
-        } else {
-            // Specific faction
-            details.faction = faction - 1;
-        }
-
         // Random character in rarity and faction
-        uint256[] memory listCharacterIds = rarityFactionCharacter[details.rarity][details.faction];
+        uint256[] memory listCharacterIds = rarityCharacter[details.rarity];
         uint256 characterIndex;
         (seed, characterIndex) = Utils.randomRangeInclusive(seed, 0, listCharacterIds.length-1);
         uint256 characterId = listCharacterIds[characterIndex];
@@ -307,7 +239,7 @@ contract CharacterDesign is AccessControlUpgradeable, UUPSUpgradeable, ICharacte
         details.id = id;
         details.is_onchain = CharacterDetails.OFF_CHAIN;
         details.character_id = characterId;
-        details.box_type = boxType;
+        details.rarity = rarity;
         details.level = 1;
         // Get stats base. characterId 0->19 = characterStats[0], characterId 20->39 = characterStats[1], characterId 40->59 = characterStats[2], characterId 60->79 = characterStats[3]
         ICharacterStats.Stats memory stats = characterStats[characterId/20].getStats(characterId);
@@ -331,7 +263,7 @@ contract CharacterDesign is AccessControlUpgradeable, UUPSUpgradeable, ICharacte
     ) external view override returns (bool) {
         CharacterDetails.Details memory details = CharacterDetails.decode(characterDetails[id]);
         // Can not tranfer if off chain
-        if (details.is_onchain != CharacterDetails.ON_CHAIN || details.locked == 1) {
+        if (details.is_onchain != CharacterDetails.ON_CHAIN) {
             return false;
         }
         return true;

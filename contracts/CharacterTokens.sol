@@ -235,7 +235,6 @@ contract CharacterToken is
     )   external override onlyRole(OPEN_NFT_ROLE){
         require(count > 0, "No token to mint");
         require(rarity > 0 && rarity < 4, "Rarity invalid");
-
         // Check limit.
         // require(
         //     tokenIds[to].length + count <= design.getTokenLimit(),

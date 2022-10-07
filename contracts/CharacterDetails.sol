@@ -18,7 +18,6 @@ library CharacterDetails {
         uint256 index;
         uint256 is_onchain;
         uint256 character_id;
-        uint256 box_type;
         uint256 rarity;
         uint256 level;
         uint256 health;
@@ -62,8 +61,6 @@ damage	10
         bitIndex += 1;
         value |= details.character_id << bitIndex;
         bitIndex += 7;
-        value |= details.box_type << bitIndex;
-        bitIndex += 3;
         value |= details.rarity << bitIndex;
         bitIndex += 3;
         value |= details.level << bitIndex;
@@ -100,8 +97,6 @@ damage	10
         bitIndex += 1;
         result.character_id = (details >> bitIndex) & 127;
         bitIndex += 7;
-        result.box_type = (details >> bitIndex) & 7;
-        bitIndex += 3;
         result.rarity = (details >> bitIndex) & 7;
         bitIndex += 3;
         result.level = (details >> bitIndex) & 15;
