@@ -77,7 +77,7 @@ contract CharacterDesign is AccessControlUpgradeable, UUPSUpgradeable, ICharacte
         rarityFaction[5] = [0, 0, 0, 0, 10, 10];
 
         // Character stats, start from Character index 0
-        characterStats.push(ICharacterStats(0xf8615F47e03A13301476637433A920f8Ba534f81)); // address StatsTop10
+        characterStats.push(ICharacterStats(0x987453cD03B205F1a41337f6FE8D701122Cb0824)); // address StatsTop10
      
         // Character stats
         rarityFactionCharacter[0].push([3, 16, 20]);

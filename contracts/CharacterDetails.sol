@@ -3,7 +3,6 @@ pragma solidity ^0.8.0;
 
 library CharacterDetails {
     uint256 public constant ALL_RARITY = 0;
-    uint256 public constant ALL_FACTION = 0;
     uint256 public constant BOX_TYPE_NORMAL = 1;
     uint256 public constant BOX_TYPE_GOLDEN = 2;
     uint256 public constant BOX_TYPE_BASKET = 3;
