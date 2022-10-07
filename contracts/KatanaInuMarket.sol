@@ -28,6 +28,7 @@ contract KatanaInuMarket is
     bytes32 public constant BURNER_ROLE = keccak256("BURNER_ROLE");
     bytes32 public constant UPGRADER_ROLE = keccak256("UPGRADER_ROLE");
     bytes32 public constant WHITELIST_ROLE = keccak256("WHITELIST_ROLE");
+    bytes32 public constant MINT_ROLE = keccak256("MINT_ROLE");
 
     // events
     event useNFTs(address to, uint256[] tokenIds, uint8 rarity);
@@ -45,18 +46,37 @@ contract KatanaInuMarket is
 
     // Flag check can normal user buy nft on market
     bool public buyable;
+    // Flag check can normal user mint nft
+    bool public mintable;
+    // Flag check can normal user sale nft on market
+    bool public salable;
+
+    // market fee (percent, 450/10000 = 4.5/100)
+    uint16 public marketFee;
 
     // Mapping from owner address to token ID.
     mapping(address => uint256[]) public itemOwnerIds;
 
     // Mapping from owner address to token ID.
-    mapping(uint256 => uint256) private itemsTypeBasePrice;
+    mapping(uint8 => mapping(uint8 => uint256)) private itemsTypeBasePrice;
 
     // Mapping from token ID to token details.
     mapping(uint256 => MarketItems.MarketItemDetails) public itemDetails;
 
     // Mapping whitelist addresses to buyable amount
     mapping(address => uint256) public whiteList;
+
+
+    // Token created (mint)
+    event TokenCreated(address to, uint256 tokenId, uint8 itemType, uint8 rarity);
+    // User sale token
+    event Sale(address to, uint256 tokenId, uint256 price);
+    // User buy token
+    event Buy(address to, uint256 tokenId, uint256 price, address ownerBy);
+    // User deactive sale
+    event DeactiveSale(address to, uint256 tokenId, uint256 price);
+    // User send nft
+    event SendNft(address from, address to, uint256 tokenId);
 
     /**
      * @notice Checks if the msg.sender is a contract or a proxy
@@ -70,7 +90,7 @@ contract KatanaInuMarket is
     function initialize(
         IERC20 payTokenContract
     ) public initializer {
-        __ERC721_init("KATANA INU Market", "KATAM");
+        __ERC721_init("KATANA INU M", "KATAM");
         __AccessControl_init();
         __UUPSUpgradeable_init();
         payToken = payTokenContract;
@@ -79,14 +99,15 @@ contract KatanaInuMarket is
         _setupRole(BURNER_ROLE, msg.sender);
         _setupRole(UPGRADER_ROLE, msg.sender);
         _setupRole(WHITELIST_ROLE, msg.sender);
+        _setupRole(MINT_ROLE, msg.sender);
 
         // Limit box each user can mint
     }
 
     /** Marketplace fee */
-    function marketFee(uint256 amount) internal pure returns (uint256 fee) {
+    function calculateMarketFee(uint256 amount) internal view returns (uint256 fee) {
         // TODO check rate, 450/10000 = 4.5/100
-        fee = (amount / 10000) * 45;
+        fee = (amount / 10000) * marketFee;
     }
 
     // Withdraw payToken from market
@@ -94,9 +115,24 @@ contract KatanaInuMarket is
         payToken.transfer(msg.sender, payToken.balanceOf(address(this)));
     }
 
-    /** Enable common user mint box*/
+    /** Enable common user buy nft*/
     function setBuyable(bool isBuyable) external onlyRole(DEFAULT_ADMIN_ROLE) {
         buyable = isBuyable;
+    }
+
+    /** Enable common user mint nft*/
+    function setMintable(bool isMintable) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        mintable = isMintable;
+    }
+
+    /** Enable common user sale nft*/
+    function setSalable(bool isSalable) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        salable = isSalable;
+    }
+
+    // Set market fee
+    function setMarketFee(uint16 fee) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        marketFee = fee;
     }
 
     /** Set whitelist addresses and amount.
@@ -117,7 +153,7 @@ contract KatanaInuMarket is
     function getItemByOwner(address owner)
         external
         view
-        returns (MarketItems.MarketItemDetails[] memory)
+        returns (MarketItems.MarketItemDetails[] memory) 
     {
         uint256[] memory ids = itemOwnerIds[owner];
         MarketItems.MarketItemDetails[] memory items = new MarketItems.MarketItemDetails[](ids.length);
@@ -128,6 +164,27 @@ contract KatanaInuMarket is
         return items;
     }
 
+    function getItemInfoById(uint256 tokenId) external view returns(uint8 itemType, uint8 rarity) {
+        MarketItems.MarketItemDetails memory itemDetail = itemDetails[tokenId];
+        itemType = itemDetail.itemType;
+        rarity = itemDetail.rarity;
+    }
+
+    function setItemTypeBasePrice(
+        uint8[] memory itemTypes, 
+        uint8[] memory rarities, 
+        uint256[] memory prices) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        //  Check length of params
+        require(
+            itemTypes.length == rarities.length && itemTypes.length == prices.length,
+            "KatanaInuMarket::setItemTypeBasePrice: All params must have the same length!"
+        );
+
+        for (uint8 index; index < itemTypes.length; ++index) {
+            itemsTypeBasePrice[itemTypes[index]][rarities[index]] = prices[index];
+        }
+    }
+
     /** Burns a list of heroes. */
     function burn(uint256[] memory ids) external onlyRole(BURNER_ROLE) {
         for (uint256 i = 0; i < ids.length; ++i) {
@@ -135,15 +192,12 @@ contract KatanaInuMarket is
         }
     }
 
-    /** Mints tokens. */
-    function mint(uint256 itemType, uint256 price) external notContract {
-        //  0: character, 1: skin, 2: items
-        require(itemType < 3, "KatanaInuMarket::mint: Token type invalid!");
-        // Check base price for the first mint
-        require(itemsTypeBasePrice[itemType] == price, "KatanaInuMarket::mint: Token price invalid!");
-
+    /** Mint one token. */
+    function mintOneToken(uint8 itemType, uint8 rarity, uint256 price) public notContract {
         // Check buyable.
-        require(buyable == true, "KatanaInuMarket::mint: Mint token have not start yet");
+        require(mintable, "KatanaInuMarket::mintOneToken: Mint token have not start yet");
+        // Check base price for the first mint, also check itemType and rarity exist
+        require(price != 0 && itemsTypeBasePrice[itemType][rarity] == price, "KatanaInuMarket::mintOneToken: Token price invalid!");
 
         address to = msg.sender;
         address owner = address(this);
@@ -160,17 +214,32 @@ contract KatanaInuMarket is
         itemDetail.price = price;
         itemDetail.isOnMarket = false;
         itemDetail.itemType = itemType;
+        itemDetail.rarity = rarity;
         itemDetail.ownerBy = to;
 
         itemDetails[tokenId] = itemDetail;
         _safeMint(to, tokenId);
-        //emit TokenCreated(to, id, id);
+        emit TokenCreated(to, tokenId, itemType, rarity);
+    }
+
+    /** Mint list token. */
+    function mintListTokens(uint8[] memory itemTypes, uint8[] memory rarities, uint256[] memory prices) external notContract {
+        //  Check length of params
+        require(
+            itemTypes.length == rarities.length && itemTypes.length == prices.length,
+            "KatanaInuMarket::mintListTokens: All params must have the same length!"
+        );
+
+        for (uint8 index = 0; index < itemTypes.length; ++index) {
+            mintOneToken(itemTypes[index], rarities[index], prices[index]);
+        }
     }
 
     /** Sale token */
     function sale(uint256 tokenId, uint256 price) external notContract {
         address to = msg.sender;
         require(ownerOf(tokenId) == to, "KatanaInuMarket::sale: Token not owned!");
+        require(salable, "KatanaInuMarket::sale: Sale token have not start yet!");
 
         MarketItems.MarketItemDetails storage itemDetail = itemDetails[tokenId];
 
@@ -179,7 +248,7 @@ contract KatanaInuMarket is
 
         // Market hole token for sale
         transferFrom(to, address(this), tokenId);
-        // emit Sale(to, tokenId, boxDetail.price);
+        emit Sale(to, tokenId, itemDetail.price);
     }
 
     /** Disable for sale on marketplace */
@@ -194,20 +263,22 @@ contract KatanaInuMarket is
 
         this.approve(to, tokenId);
         transferFrom(address(this), to, tokenId);
-        //emit DeactiveSale(to, tokenId, boxDetail.price);
+        emit DeactiveSale(to, tokenId, itemDetail.price);
     }
 
     function buy(uint256 tokenId, uint256 price) external notContract {
+         // Check buyable.
+        require(buyable == true, "KatanaInuMarket::buy: Buy token have not start yet");
         address to = msg.sender;
-        //require(tokenIds[to].length + 1 <= boxLimit, "User limit reached");
+        
         MarketItems.MarketItemDetails memory itemDetail = itemDetails[tokenId];
         require(itemDetail.isOnMarket, "KatanaInuMarket::buy: Token not on chain for marketplace!");
         require(price >= itemDetail.price, "KatanaInuMarket::buy: Buy price is too low!");
 
-        require(itemDetail.price <= payToken.balanceOf(to), "KatanaInuMarket::buy: User need hold enough Token to buy this box!");
+        require(itemDetail.price <= payToken.balanceOf(to), "KatanaInuMarket::buy: User need hold enough Token to buy this NFT!");
 
         // Total fee
-        uint256 fee = marketFee(itemDetail.price);
+        uint256 fee = calculateMarketFee(itemDetail.price);
 
         // Fee for market
         payToken.transferFrom(to, address(this), fee);
@@ -219,7 +290,7 @@ contract KatanaInuMarket is
         this.approve(to, tokenId);
         transferFrom(address(this), to, tokenId);
         
-        //emit Buy(to, tokenId, itemDetail.price, itemDetail.ownerBy);
+        emit Buy(to, tokenId, itemDetail.price, itemDetail.ownerBy);
     }
 
     /** User can send tokens directly via d-app. */
@@ -234,7 +305,7 @@ contract KatanaInuMarket is
 
         for (uint256 i = 0; i < tokenIds_.length; ++i) {
             safeTransferFrom(from, to, tokenIds_[i]);
-            //emit SendNft(from, to, tokenIds_[i]);
+            emit SendNft(from, to, tokenIds_[i]);
         }
     }
 
