@@ -11,8 +11,16 @@ import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
 import "./library/MarketItemDetails.sol";
+import "./interfaces/INFTToken.sol";
 
-contract KatanaInuMarket is ERC721Upgradeable, AccessControlUpgradeable, UUPSUpgradeable, OwnableUpgradeable, IERC721Receiver {
+
+contract KatanaInuMarket is 
+    ERC721Upgradeable, 
+    AccessControlUpgradeable, 
+    UUPSUpgradeable, 
+    OwnableUpgradeable, 
+    IERC721Receiver 
+{
 
     using Counters for Counters.Counter;
     using MarketItems for MarketItems.MarketItemDetails;
@@ -21,8 +29,13 @@ contract KatanaInuMarket is ERC721Upgradeable, AccessControlUpgradeable, UUPSUpg
     bytes32 public constant UPGRADER_ROLE = keccak256("UPGRADER_ROLE");
     bytes32 public constant WHITELIST_ROLE = keccak256("WHITELIST_ROLE");
 
+    // events
+    event useNFTs(address to, uint256[] tokenIds, uint8 rarity);
+
     // Token use for payment on market
     IERC20 public payToken;
+
+    INFTToken  public iNFTToken;
 
     // Index of nfts
     Counters.Counter public tokenIdCounter;
@@ -223,6 +236,27 @@ contract KatanaInuMarket is ERC721Upgradeable, AccessControlUpgradeable, UUPSUpg
             safeTransferFrom(from, to, tokenIds_[i]);
             //emit SendNft(from, to, tokenIds_[i]);
         }
+    }
+
+    /** User can send tokens directly via d-app. */
+    function usedNfts(address to, uint256[] calldata tokenIds_, uint8 rarity) external {
+        for (uint256 i = 0; i < tokenIds_.length; ++i) {
+            MarketItems.MarketItemDetails memory itemDetail = itemDetails[tokenIds_[i]];
+            require(itemDetail.ownerBy == to, "NFT not owned");
+            require(itemDetail.isUse == false, "NFT already used");
+            require(itemDetail.isOnMarket == false, "Can not use NFT on the market");
+            itemDetail.isUse = true;
+        }
+        iNFTToken.useNFTs(to, tokenIds_.length, rarity);
+        emit useNFTs(to, tokenIds_, rarity);
+    }
+
+    /** Sets the design for us meta soul to pet. */
+    function setNFTToken(address nftAddress)
+        external
+        onlyRole(UPGRADER_ROLE)
+    {
+        iNFTToken = INFTToken(nftAddress);
     }
 
     function _authorizeUpgrade(address newImplementation)

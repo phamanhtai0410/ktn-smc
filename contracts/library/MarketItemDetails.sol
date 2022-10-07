@@ -9,6 +9,7 @@ library MarketItems {
         uint256 price; // price in USDT or Token
         uint256 itemType; // 0: character, 1: skin, 2: items
         bool isOnMarket; // false: still private, true: on market
+        bool isUse; // false: not use, true: used
         address ownerBy;  // Owner token before on chain for marketplace.
     }
 }

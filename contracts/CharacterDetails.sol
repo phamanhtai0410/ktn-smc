@@ -2,12 +2,12 @@
 pragma solidity ^0.8.0;
 
 library CharacterDetails {
-    uint256 public constant ALL_RARITY = 0;
-    uint256 public constant BOX_TYPE_NORMAL = 1;
-    uint256 public constant BOX_TYPE_GOLDEN = 2;
-    uint256 public constant BOX_TYPE_BASKET = 3;
-    uint256 public constant ON_CHAIN = 1;
-    uint256 public constant OFF_CHAIN = 0;
+    uint8 public constant ALL_RARITY = 0;
+    uint8 public constant BOX_TYPE_NORMAL = 1;
+    uint8 public constant BOX_TYPE_GOLDEN = 2;
+    uint8 public constant BOX_TYPE_BASKET = 3;
+    uint8 public constant ON_CHAIN = 1;
+    uint8 public constant OFF_CHAIN = 0;
 
     // Character ID: 1->63
     uint256 public constant CHARACTER0 = 0;

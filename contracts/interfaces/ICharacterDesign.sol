@@ -8,9 +8,7 @@ interface ICharacterDesign {
 
     function createRandomToken(
         uint256 id,
-        uint256 rarity,
-        uint256 boxType,
-        uint256 faction
+        uint256 rarity
     ) external returns (uint256 nextSeed);
 
     function _transferable(

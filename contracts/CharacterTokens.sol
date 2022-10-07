@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.2;
+pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/utils/Counters.sol";
 import "@openzeppelin/contracts/utils/math/Math.sol";
@@ -12,7 +12,7 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import "./CharacterDetails.sol";
 import "./interfaces/ICharacterDesign.sol";
-import "./interfaces/ICharacterToken.sol";
+import "./interfaces/INFTToken.sol";
 
 
 contract CharacterToken is
@@ -21,14 +21,12 @@ contract CharacterToken is
     PausableUpgradeable,
     UUPSUpgradeable,
     OwnableUpgradeable,
-    ICharacterToken
+    INFTToken
 {
     struct CreateTokenRequest {
         uint256 targetBlock; // Use future block.
         uint16 count; // Amount of tokens to mint.
         uint8 rarity; // 0: random rarity, 1 - 4: specified rarity.
-        uint8 boxType;
-        uint8 faction;
     }
 
     using Counters for Counters.Counter;
@@ -43,7 +41,7 @@ contract CharacterToken is
     bytes32 public constant DESIGNER_ROLE = keccak256("DESIGNER_ROLE");
     bytes32 public constant CLAIMER_ROLE = keccak256("CLAIMER_ROLE");
     bytes32 public constant BURNER_ROLE = keccak256("BURNER_ROLE");
-    bytes32 public constant OPEN_BOX_ROLE = keccak256("OPEN_BOX_ROLE");
+    bytes32 public constant OPEN_NFT_ROLE = keccak256("OPEN_NFT_ROLE");
 
     uint256 private constant maskLast8Bits = uint256(0xff);
     uint256 private constant maskFirst248Bits = ~uint256(0xff);
@@ -94,7 +92,7 @@ contract CharacterToken is
         _setupRole(UPGRADER_ROLE, msg.sender);
         _setupRole(DESIGNER_ROLE, msg.sender);
         _setupRole(CLAIMER_ROLE, msg.sender);
-        _setupRole(OPEN_BOX_ROLE, msg.sender);
+        _setupRole(OPEN_NFT_ROLE, msg.sender);
     }
 
     function pause() public onlyRole(PAUSER_ROLE) {
@@ -190,7 +188,7 @@ contract CharacterToken is
 
         require(
             boxType > 0 && boxType < 3,
-            "Invalid box type. 1: Normal box; 2: Golden box"
+            "Invalid Rarity. 1: Normal box; 2: Golden box"
         );
 
         require(
@@ -206,9 +204,7 @@ contract CharacterToken is
         requestCreateToken(
             to,
             count,
-            CharacterDetails.ALL_RARITY,
-            boxType,
-            faction
+            CharacterDetails.ALL_RARITY
         );
     }
 
@@ -216,11 +212,10 @@ contract CharacterToken is
     function safeMint(
         address to,
         uint256 count,
-        uint256 boxType,
-        uint256 faction
+        uint8 rarity
     ) public onlyRole(DESIGNER_ROLE) {
         require(count > 0, "No token to mint");
-        require(boxType > 0 && boxType < 4, "Box type invalid");
+        require(rarity > 0 && rarity < 4, "Rarity invalid");
 
         // Check limit.
         require(
@@ -229,36 +224,34 @@ contract CharacterToken is
         );
 
         // Create requests.
-        requestCreateToken(to, count, CharacterDetails.ALL_RARITY, boxType, faction);
+        requestCreateToken(to, count, CharacterDetails.ALL_RARITY);
     }
 
     /** Call from CharacterBoxBasket token to open character. */
-    function openBox(
+    function useNFTs(
         address to,
         uint256 count,
-        uint256 boxType,
-        uint256 faction
-    )   external override onlyRole(OPEN_BOX_ROLE){
+        uint8 rarity
+    )   external override onlyRole(OPEN_NFT_ROLE){
         require(count > 0, "No token to mint");
-        require(boxType > 0 && boxType < 4, "Box type invalid");
+        require(rarity > 0 && rarity < 4, "Rarity invalid");
 
         // Check limit.
-        require(
-            tokenIds[to].length + count <= design.getTokenLimit(),
-            "User limit reached"
-        );
+        // require(
+        //     tokenIds[to].length + count <= design.getTokenLimit(),
+        //     "User limit reached"
+        // );
 
         // Create requests.
-        requestCreateToken(to, count, CharacterDetails.ALL_RARITY, boxType, faction);
+        requestCreateToken(to, count, CharacterDetails.ALL_RARITY);
     }
+
 
     /** Requests a create token request. */
     function requestCreateToken(
         address to,
         uint256 count,
-        uint256 rarity,
-        uint256 boxType,
-        uint256 faction
+        uint8 rarity
     ) internal {
         // Create request.
         uint256 targetBlock = block.number + 5;
@@ -266,9 +259,7 @@ contract CharacterToken is
             CreateTokenRequest(
                 targetBlock,
                 uint16(count),
-                uint8(rarity),
-                uint8(boxType),
-                uint8(faction)
+                uint8(rarity)
             )
         );
         emit TokenCreateRequested(to, targetBlock);
@@ -315,22 +306,21 @@ contract CharacterToken is
         CreateTokenRequest[] storage requests = tokenRequests[to];
         for (uint256 i = requests.length; i > 0; --i) {
             CreateTokenRequest storage request = requests[i - 1];
-            uint256 boxType = request.boxType;
-            uint256 rarity = request.rarity;
-            uint256 faction = request.faction;
+            uint8 rarity = request.rarity;
             uint256 targetBlock = request.targetBlock;
             require(block.number > targetBlock, "Target block not arrived");
             uint256 seed = uint256(blockhash(targetBlock));
 
             // Force rarity common if process over 256 blocks.
             if (block.number - 256 > targetBlock) {
+                rarity = 1;
                 // Box basket force to golden
-                if (boxType == CharacterDetails.BOX_TYPE_BASKET) {
-                    rarity = 2;
-                } else {
-                    // Force to common
-                    rarity = 1;
-                }
+                // if (boxType == CharacterDetails.BOX_TYPE_BASKET) {
+                //     rarity = 2;
+                // } else {
+                //     // Force to common
+                //     rarity = 1;
+                // }
             }
 
             if (seed == 0) {
@@ -347,9 +337,7 @@ contract CharacterToken is
                     to,
                     available,
                     rarity,
-                    seed,
-                    boxType,
-                    faction
+                    seed
                 );
                 break;
             }
@@ -358,9 +346,7 @@ contract CharacterToken is
                 to,
                 request.count,
                 rarity,
-                seed,
-                boxType,
-                faction
+                seed
             );
             requests.pop();
             if (available == 0) {
@@ -374,15 +360,13 @@ contract CharacterToken is
     function createToken(
         address to,
         uint256 count,
-        uint256 rarity,
-        uint256 seed,
-        uint256 boxType,
-        uint256 faction
+        uint8 rarity,
+        uint256 seed
     ) internal {
         uint256 nextSeed = seed;
         for (uint256 i = 0; i < count; ++i) {
             uint256 id = tokenIdCounter.current();
-            nextSeed = design.createRandomToken(id, rarity, boxType, faction);
+            nextSeed = design.createRandomToken(id, rarity);
             tokenIdCounter.increment();
             TokenDetail memory tokenDetail;
             tokenDetail.id = id;
