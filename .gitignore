@@ -49,3 +49,8 @@ Thumbs.db
 *.mov
 *.wmv
 
+
+# Contract build & dependencies
+build/
+
+
