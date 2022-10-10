@@ -102,8 +102,28 @@ contract StakeNFT is ReentrancyGuard, AccessControl {
     }
 
     // Function allow ADMIN to add new NFT collection and its rewards per hour
-    function 
+    function addNewCollection(address _nftCollection, uint256 _rewardsPerHour) external onlyAdmin {
+        nftCollections.push(_nftCollection);
+        rewardsPerHour[_nftCollection] = _rewardsPerHour;
+    }
 
+    // Function allow ADMIN to remove new NFT collection and its rewards per hour
+    function removeCollection(address _nftCollection) external onlyAdmin {
+        uint256 _index = 0;
+        for (uint256 i; i < nftCollections.length; i++) {
+            if (nftCollections[i] == _nftCollection) {
+                _index = i;
+                break;
+            }
+        }    
+        require(i < nftCollections.length, "Not found collection in configed list");
+        for (uint i = _index; i<array.length-1; i++){
+            nftCollections[i] = nftCollections[i+1];
+        }
+        delete nftCollections[nftCollections.length-1];
+        nftCollections.length--;
+    }
+    
     // Function: check if a nft collection is in List nft collections was configed in this contract or not
     function isInListCollection(address _nftCollection) private view returns (bool) {
         bool _isIn = false;
