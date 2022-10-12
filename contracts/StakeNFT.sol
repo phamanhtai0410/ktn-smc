@@ -49,15 +49,15 @@ contract StakeNFT is ReentrancyGuard, AccessControl {
     constructor(
         address[] memory _nftCollections,
         IERC20 _rewardsToken,
-        uint256[] memory _rewardsPerHours,
+        uint256[] memory _rewardsPerHour,
         uint256 _startStaking,
         uint256 _endStaking
     ) {
-        require(_nftCollections.length == _rewardsPerHours.length, "Invalid config: number of collections and rewards per hour not match");
+        require(_nftCollections.length == _rewardsPerHour.length, "Invalid config: number of collections and rewards per hour not match");
         nftCollections = _nftCollections;
         rewardsToken = _rewardsToken;
         for (uint256 i; i < _nftCollections.length; i++) {
-            rewardsPerHour[_nftCollections[i]] = _rewardsPerHours[i];
+            rewardsPerHour[_nftCollections[i]] = _rewardsPerHour[i];
         }
         startStaking = _startStaking;
         endStaking = _endStaking;
@@ -102,7 +102,7 @@ contract StakeNFT is ReentrancyGuard, AccessControl {
     }
 
     // Function allow ADMIN to add new NFT collection and its rewards per hour
-    function addNewCollection(address _nftCollection, uint256 _rewardsPerHour) external onlyAdmin {
+    function addNewCollection(uint256 _rewardsPerHour, address _nftCollection) external onlyAdmin {
         nftCollections.push(_nftCollection);
         rewardsPerHour[_nftCollection] = _rewardsPerHour;
     }
@@ -197,6 +197,7 @@ contract StakeNFT is ReentrancyGuard, AccessControl {
         require(stakerAddress[_nftCollection][_tokenId] == msg.sender, "You don't own this token!");
 
         // Update the rewards for this user, as the amount of rewards decreases with less tokens.
+
         uint256 rewards = calculateRewards(msg.sender, _nftCollection);
         stakers[_nftCollection][msg.sender].unclaimedRewards += rewards;
 
@@ -223,19 +224,25 @@ contract StakeNFT is ReentrancyGuard, AccessControl {
     // Calculate rewards for the msg.sender, check if there are any rewards
     // claim, set unclaimedRewards to 0 and transfer the ERC20 Reward token
     // to the user.
-    function claimRewards(address _nftCollection) external onlyWhenEndStaking {
-        uint256 rewards = calculateRewards(msg.sender, _nftCollection) +
-            stakers[_nftCollection][msg.sender].unclaimedRewards;
+    function claimRewards() external onlyWhenEndStaking {
+        uint256 rewards;
+        for (uint256 i=0; i < nftCollections.length; i++) {
+            address _nftCollection = nftCollections[i];
+            rewards += calculateRewards(msg.sender, _nftCollection) + stakers[_nftCollection][msg.sender].unclaimedRewards;
+            stakers[_nftCollection][msg.sender].timeOfLastUpdate = block.timestamp;
+            stakers[_nftCollection][msg.sender].unclaimedRewards = 0;
+        }
         require(rewards > 0, "You have no rewards to claim");
-        stakers[_nftCollection][msg.sender].timeOfLastUpdate = block.timestamp;
-        stakers[_nftCollection][msg.sender].unclaimedRewards = 0;
         rewardsToken.safeTransfer(msg.sender, rewards);
     }
 
     // View available rewards at any point of time 
-    function availableRewards(address _staker, address _nftCollection) public view returns (uint256) {
-        uint256 rewards = calculateRewards(_staker, _nftCollection) +
-            stakers[_nftCollection][_staker].unclaimedRewards;
+    function availableRewards(address _staker) public view returns (uint256) {
+        uint256 rewards;
+        for (uint256 i=0; i < nftCollections.length; i++) {
+            rewards += calculateRewards(_staker, _nftCollection) +
+                stakers[_nftCollection][_staker].unclaimedRewards;
+        }
         return rewards;
     }
 
