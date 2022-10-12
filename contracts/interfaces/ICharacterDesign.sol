@@ -2,19 +2,18 @@
 pragma solidity ^0.8.0;
 
 interface ICharacterDesign {
-    function getTokenLimit() external view returns (uint256);
+    
+    struct RarityDetail {
+        string name;
+        uint256 totalSupply;
+    }
 
-    function getMintCost(uint256 boxType) external view returns (uint256);
+    function getTotalSupply() external view returns (uint256);
 
-    function createRandomToken(
-        uint256 id,
-        uint256 rarity
-    ) external returns (uint256 nextSeed);
-
-    function _transferable(
-        address from,
-        address to,
-        uint256 id
-    ) external view returns (bool);
+    function getRarityDetails(uint8 _rarityId) external returns (RarityDetail calldata);
+    
+    function lastRarityId() external returns (uint8);
+    
+    function createNewDesign(uint256 _tokenId) external;
 
 }

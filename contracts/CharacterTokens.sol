@@ -23,50 +23,69 @@ contract CharacterToken is
     OwnableUpgradeable,
     INFTToken
 {
+    struct MintingOrder {
+        uint8 rarity;
+        string cid;
+    }
+
+    struct ReturnMintingOrder {
+        uint256 tokenId;
+        uint8 rarity;
+        string cid;
+    }
+
     struct CreateTokenRequest {
-        uint256 targetBlock; // Use future block.
-        uint16 count; // Amount of tokens to mint.
-        uint8 rarity; // 0: random rarity, 1 - 4: specified rarity.
+        string orderId;
+        address recipient;
+    }
+
+    struct TokenDetail {
+        uint256 rarity;
+        string tokenURI;
     }
 
     using Counters for Counters.Counter;
     using CharacterDetails for CharacterDetails.Details;
 
-    event TokenCreateRequested(address to, uint256 block);
-    event TokenCreated(address to, uint256 tokenId, uint256 details);
-    event ProcessTokenRequests(address to);
+    event TokenCreated(address to, uint256 tokenId, TokenDetail details);
+    event BurnToken(uint256[] ids);
+    event SetNewMinter(address newMinter);
+    event SetDesign(address designAddress);
+    event SetMarketplace(address marketplaceAddress); 
+    event MintOrder(string orderId, address to, ReturnMintingOrder[] returnMintingOrder);
+    event UseNFTs(address to, uint256 amount, uint8 rarity, uint256[] usedTokenIds);
+    event SetMaxTokensInOneOrder(uint8 maxTokensInOneOrder);
 
     bytes32 public constant PAUSER_ROLE = keccak256("PAUSER_ROLE");
     bytes32 public constant UPGRADER_ROLE = keccak256("UPGRADER_ROLE");
     bytes32 public constant DESIGNER_ROLE = keccak256("DESIGNER_ROLE");
-    bytes32 public constant CLAIMER_ROLE = keccak256("CLAIMER_ROLE");
+    bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
     bytes32 public constant BURNER_ROLE = keccak256("BURNER_ROLE");
     bytes32 public constant OPEN_NFT_ROLE = keccak256("OPEN_NFT_ROLE");
 
     uint256 private constant maskLast8Bits = uint256(0xff);
     uint256 private constant maskFirst248Bits = ~uint256(0xff);
 
-    IERC20 public coinToken;
-    Counters.Counter public tokenIdCounter;
+    // Maketplace contract address => open for setting when in need
     IERC721 public marketPlace;
-    uint256 public maxFaction;
 
-    struct TokenDetail {
-        uint256 id;
-        uint256 index;
-    }
+    // Design of NFT => open for setting when in need
+    ICharacterDesign public design;
 
-    // Mapping from owner address to token ID.
+    // Counter for tokenID
+    Counters.Counter public tokenIdCounter;
+
+    // Mapping from owner address to list of token IDs.
     mapping(address => uint256[]) public tokenIds;
 
     // Mapping from token ID to token details.
     mapping(uint256 => TokenDetail) public tokenDetails;
 
-    // Mapping from owner address to claimable token count.
-    mapping(address => mapping(uint256 => uint256)) public claimableTokens;
+    // Mapping from dev wallet address to its minting nft requests.
+    CreateTokenRequest[] public createTokenRequests;
 
-    // Mapping from owner address to token requests.
-    mapping(address => CreateTokenRequest[]) public tokenRequests;
+    // Max tokens can mint in one order
+    uint8 public MAX_TOKENS_IN_ORDER;
 
     /**
      * @notice Checks if the msg.sender is a contract or a proxy
@@ -77,24 +96,37 @@ contract CharacterToken is
         _;
     }
 
-    ICharacterDesign public design;
+    constructor () public {
+        MAX_TOKENS_IN_ORDER = 10;
+    }
 
-    function initialize(IERC20 coinToken_) public initializer {
-        __ERC721_init("KATANA NFT CHARACTER", "KCHARACTER");
+    /**
+     *   Function: Initialized contract
+     */
+    function initialize() public initializer {
+        __ERC721_init("KATANA NFT CHARACTER", "KTNC");
         __AccessControl_init();
         __Pausable_init();
         __UUPSUpgradeable_init();
-        coinToken = coinToken_;
-        maxFaction = 0; // 0 to random faction. 5 for using fix faction.
 
         _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
         _setupRole(PAUSER_ROLE, msg.sender);
         _setupRole(UPGRADER_ROLE, msg.sender);
         _setupRole(DESIGNER_ROLE, msg.sender);
-        _setupRole(CLAIMER_ROLE, msg.sender);
+        _setupRole(MINTER_ROLE, msg.sender);
         _setupRole(OPEN_NFT_ROLE, msg.sender);
     }
 
+    function setMinterRole(address _newMinter) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        _setupRole(MINTER_ROLE, _newMinter);
+        emit SetNewMinter(_newMinter);
+    }
+
+    function setMaxTokensInOneMint(uint8 _maxTokensInOneMint) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        MAX_TOKENS_IN_ORDER = _maxTokensInOneMint;
+        emit SetMaxTokensInOneOrder(_maxTokensInOneMint);
+    }
+ 
     function pause() public onlyRole(PAUSER_ROLE) {
         _pause();
     }
@@ -118,15 +150,12 @@ contract CharacterToken is
         return super.supportsInterface(interfaceId);
     }
 
-    function withdraw() external onlyRole(DEFAULT_ADMIN_ROLE) {
-        coinToken.transfer(msg.sender, coinToken.balanceOf(address(this)));
-    }
-
     /** Burns a list of Characters. */
     function burn(uint256[] memory ids) override external onlyRole(BURNER_ROLE) {
         for (uint256 i = 0; i < ids.length; ++i) {
             _burn(ids[i]);
         }
+        emit BurnToken(ids);
     }
 
     /** Sets the design. */
@@ -135,26 +164,24 @@ contract CharacterToken is
         onlyRole(DESIGNER_ROLE)
     {
         design = ICharacterDesign(contractAddress);
+        emit SetDesign(contractAddress);
     }
 
     function setMarketPlace(address contractAddress) external onlyRole(DESIGNER_ROLE) {
         marketPlace = IERC721(contractAddress);
-    }
-
-    function setMaxFaction(uint256 _maxFaction) external onlyRole(DESIGNER_ROLE) {
-        maxFaction = _maxFaction;
+        emit SetMarketplace(contractAddress);
     }
 
     /** Gets token details for the specified owner. */
     function getTokenDetailsByOwner(address to)
         external
         view
-        returns (uint256[] memory)
+        returns (TokenDetail[] memory)
     {
         uint256[] storage ids = tokenIds[to];
-        uint256[] memory result = new uint256[](ids.length);
+        TokenDetail[] memory result = new TokenDetail[](ids.length);
         for (uint256 i = 0; i < ids.length; ++i) {
-            result[i] = tokenDetails[ids[i]].id;
+            result[i] = tokenDetails[ids[i]];
         }
         return result;
     }
@@ -169,272 +196,101 @@ contract CharacterToken is
         return ids;
     }
 
-    struct Recipient {
-        address to;
-        uint256 count;
+    /** Creates a token */
+    function createToken(
+        address _to,
+        uint8 _rarity,
+        string calldata _cid
+    ) internal returns (uint256){
+        uint256 _id = tokenIdCounter.current();
+        TokenDetail memory _tokenDetail;
+        _tokenDetail.rarity = _rarity;
+        _setTokenUri(_id, _cid);
+        tokenDetails[_id] = _tokenDetail;
+        _mint(_to, _id);
+        tokenIdCounter.increment();
+        emit TokenCreated(_to, _id, _tokenDetail);
+        return uint256(_id);
     }
 
-    /** Mints tokens. */
-    function mint(uint256 boxType, uint256 count, uint256 faction) external notContract {
-        require(count > 0, "No token to mint");
-        require(count <= 20, "Maximum 20 token each time");
-
-        // Check limit.
-        address to = msg.sender;
+    /** 
+     *  Function mint a single NFT from BE
+     *
+     */
+    function mint(
+        MintingOrder[] calldata _mintingOrders,
+        address _to,
+        string calldata _orderId
+    ) external notContract onlyRole(MINTER_ROLE) {
+        require(_mintingOrders.length > 0, "No token to mint");
+        require(_mintingOrders.length <= MAX_TOKENS_IN_ORDER, "Maximum tokens in one mint reached");
         require(
-            tokenIds[to].length + count <= design.getTokenLimit(),
-            "User limit reached"
+            tokenIdCounter.current() + _mintingOrders.length <= design.getTotalSupply(),
+            "Total supply of NFT reached"
+        );  
+
+        uint256[] memory _returnOrder = new ReturnMintingOrder[](_mintingOrders.length);
+        for (uint256 i=0; i < _mintingOrders.length; i++) {
+            uint256 _tokenId = createToken(
+                _to,
+                _mintingOrders[i].rarity,
+                _mintingOrders[i].cid
+            );
+            _returnOrder[i] = ReturnMintingOrder(
+                _tokenId,
+                _mintingOrders[i].rarity,
+                _mintingOrders[i].cid
+            );
+        }
+
+        // Create record of orders minting NFTs 
+        createTokenRequests.push(
+            CreateTokenRequest(
+                _orderId,
+                _to
+            )
         );
 
-        require(
-            boxType > 0 && boxType < 3,
-            "Invalid Rarity. 1: Normal box; 2: Golden box"
-        );
-
-        require(
-            faction >= 0 && faction <= maxFaction,
-            "Invalid faction."
-        );
-
-
-        // Transfer coin token.
-        coinToken.transferFrom(to, address(this), design.getMintCost(boxType) * count);
-
-        // Create requests
-        requestCreateToken(
-            to,
-            count,
-            CharacterDetails.ALL_RARITY
+        emit MintOrder(
+            _orderId,
+            _to,
+            _returnOrder
         );
     }
 
-    /** Call from backend when user by character using money in game */
-    function safeMint(
-        address to,
-        uint256 count,
-        uint8 rarity
-    ) public onlyRole(DESIGNER_ROLE) {
-        require(count > 0, "No token to mint");
-        require(rarity > 0 && rarity < 4, "Rarity invalid");
+    /** 
+     *      Function return tokenURI for specific NFT 
+     *      @param _tokenId ID of NFT
+     *      @return tokenURI of token with ID = _tokenId
+     */
+    function tokenURI(uint256 _tokenId) override public view returns (string memory) { 
+        return(tokenDetails[_tokenId].tokenURI);
+    }
 
-        // Check limit.
-        require(
-            tokenIds[to].length + count <= design.getTokenLimit(),
-            "User limit reached"
-        );
+    /**
+     *      Function that gets latest ID of this NFT contract
+     *      @return tokenId of latest NFT
+     */
+    function lastId() public view returns (uint256) {
+        return tokenIdCounter.current();
+    }
 
-        // Create requests.
-        requestCreateToken(to, count, CharacterDetails.ALL_RARITY);
+    function _setTokenUri(uint256 _tokenId, string calldata _cid) internal {
+        tokenDetails[_tokenId].tokenURI = string(abi.encodePacked("https://", _cid, ".ipfs.w3s.link/"));
     }
 
     /** Call from CharacterBoxBasket token to open character. */
-    function useNFTs(
-        address to,
-        uint256 count,
-        uint8 rarity
-    )   external override onlyRole(OPEN_NFT_ROLE){
+    function useNFTs(address to, uint256 count, uint8 rarity) external override  onlyRole(OPEN_NFT_ROLE) {
         require(count > 0, "No token to mint");
-        require(rarity > 0 && rarity < 4, "Rarity invalid");
-        // Check limit.
-        // require(
-        //     tokenIds[to].length + count <= design.getTokenLimit(),
-        //     "User limit reached"
-        // );
-
-        // Create requests.
-        requestCreateToken(to, count, CharacterDetails.ALL_RARITY);
-    }
-
-
-    /** Requests a create token request. */
-    function requestCreateToken(
-        address to,
-        uint256 count,
-        uint8 rarity
-    ) internal {
-        // Create request.
-        uint256 targetBlock = block.number + 5;
-        tokenRequests[to].push(
-            CreateTokenRequest(
-                targetBlock,
-                uint16(count),
-                uint8(rarity)
-            )
-        );
-        emit TokenCreateRequested(to, targetBlock);
-    }
-
-    /** Gets the number of tokens that can be processed at the moment. */
-    function getPendingTokens(address to) external view returns (uint256) {
-        uint256 result;
-        CreateTokenRequest[] storage requests = tokenRequests[to];
-        for (uint256 i = 0; i < requests.length; ++i) {
-            CreateTokenRequest storage request = requests[i];
-            if (block.number > request.targetBlock) {
-                result += request.count;
-            } else {
-                break;
-            }
+        require(tokenIds[to].length > count, "User doesn't have enough NFT to call useNFTs");
+        require(rarity > 0 && rarity < design.lastRarityId(), "Rarity invalid");
+        uint256[] memory _usedTokenIds = new uint256[](count);
+        for (uint256 i=0; i < count; i++) {
+            uint256[] memory _listToken = tokenIds[to];
+            design.createNewDesign(_listToken[i]);
+            _usedTokenIds[i] = _listToken[i];
         }
-        return result;
-    }
-
-    /** Gets the number of tokens that can be processed.  */
-    function getProcessableTokens(address to) external view returns (uint256) {
-        uint256 result;
-        CreateTokenRequest[] storage requests = tokenRequests[to];
-        for (uint256 i = 0; i < requests.length; ++i) {
-            result += requests[i].count;
-        }
-        return result;
-    }
-
-    /** Processes token requests. */
-    function processTokenRequests() external notContract {
-        address to = msg.sender;
-        uint256 size = tokenIds[to].length;
-        uint256 limit = design.getTokenLimit();
-        require(size < limit, "User limit reached");
-
-        uint256 available = limit - size;
-        // Process maximum 10 requests each time.
-        if (available > 50) {
-            available = 50;
-        }
-
-        CreateTokenRequest[] storage requests = tokenRequests[to];
-        for (uint256 i = requests.length; i > 0; --i) {
-            CreateTokenRequest storage request = requests[i - 1];
-            uint8 rarity = request.rarity;
-            uint256 targetBlock = request.targetBlock;
-            require(block.number > targetBlock, "Target block not arrived");
-            uint256 seed = uint256(blockhash(targetBlock));
-
-            // Force rarity common if process over 256 blocks.
-            if (block.number - 256 > targetBlock) {
-                rarity = 1;
-                // Box basket force to golden
-                // if (boxType == CharacterDetails.BOX_TYPE_BASKET) {
-                //     rarity = 2;
-                // } else {
-                //     // Force to common
-                //     rarity = 1;
-                // }
-            }
-
-            if (seed == 0) {
-                targetBlock = (block.number & maskFirst248Bits) + (targetBlock & maskLast8Bits);
-                if (targetBlock >= block.number) {
-                    targetBlock -= 256;
-                }
-                seed = uint256(blockhash(targetBlock));
-            }
-
-            if (available < request.count) {
-                request.count -= uint16(available);
-                createToken(
-                    to,
-                    available,
-                    rarity,
-                    seed
-                );
-                break;
-            }
-            available -= request.count;
-            createToken(
-                to,
-                request.count,
-                rarity,
-                seed
-            );
-            requests.pop();
-            if (available == 0) {
-                break;
-            }
-        }
-        emit ProcessTokenRequests(to);
-    }
-
-    /** Creates token(s) with a random seed. */
-    function createToken(
-        address to,
-        uint256 count,
-        uint8 rarity,
-        uint256 seed
-    ) internal {
-        uint256 nextSeed = seed;
-        for (uint256 i = 0; i < count; ++i) {
-            uint256 id = tokenIdCounter.current();
-            nextSeed = design.createRandomToken(id, rarity);
-            tokenIdCounter.increment();
-            TokenDetail memory tokenDetail;
-            tokenDetail.id = id;
-            tokenDetails[id] = tokenDetail;
-
-            _safeMint(to, id);
-            emit TokenCreated(to, id, id);
-        }
-    }
-
-    function _transfer(
-        address from,
-        address to,
-        uint256 tokenId
-    ) internal override {
-        //require(false, "Temporarily disabled");
-        // TODO allow marketplace
-
-        require(
-            design._transferable(from, to, tokenId),
-            "Only on chain Character allowed to transfer."
-        );
-
-        //Only transfer via market contract or from Design address
-        // TODO test permission
-        require(
-            from == address(marketPlace) || to == address(marketPlace) || hasRole(DESIGNER_ROLE, address(from)),
-            "Support sale/buy on market place only"
-        );
-
-        ERC721Upgradeable._transfer(from, to, tokenId);
-    }
-
-    function _beforeTokenTransfer(
-        address from,
-        address to,
-        uint256 id
-    ) internal override {
-        if (from == address(0)) {
-            // Mint.
-        } else {
-            // Transfer or burn.
-            // Swap and pop.
-            uint256[] storage ids = tokenIds[from];
-            uint256 index = tokenDetails[id].index;
-            uint256 lastId = ids[ids.length - 1];
-            ids[index] = lastId;
-            ids.pop();
-
-            // Update index.
-            TokenDetail storage tokenDetail = tokenDetails[lastId];
-            tokenDetail.index = index;
-        }
-        if (to == address(0)) {
-            // Burn.
-            delete tokenDetails[id];
-        } else {
-            // Transfer or mint.
-            uint256[] storage ids = tokenIds[to];
-            uint256 index = ids.length;
-            ids.push(id);
-            TokenDetail storage tokenDetail = tokenDetails[id];
-            tokenDetail.index = index;
-
-            // Check limit if not marketplace
-            if (to != address(marketPlace)) {
-                require(index + 1 <= design.getTokenLimit(), "User limit reached");
-            }
-        }
+        emit UseNFTs(to, count, rarity, _usedTokenIds);
     }
 
     /**
