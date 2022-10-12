@@ -18,11 +18,23 @@ module.exports = async function (deployer, network, accounts) {
     var _characterTokenInstant = await CharacterToken.at(process.env.iCharacterToken);
     
     /**
-     *          Set new MINTER => dev wallet in Katana Inu Case
+     *      Set Design
      */
-    var _minterAddress = "0x...";
-    await _characterTokenInstant.setMinterRole(_minterAddress);
+    var _characterDesignInstant = await CharacterDesign.at(process.env.iCharacterDesign);
+    await _characterTokenInstant.setDesign(_characterDesignInstant.address);
 
+    /**
+     *      Pause
+     */
+    await _characterTokenInstant.pause();
     
+    /**
+     *      Unpause
+     */
+     await _characterTokenInstant.unpause();
+    
+    /**
+     *      
+     */
 
 }

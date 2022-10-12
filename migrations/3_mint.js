@@ -18,11 +18,27 @@ module.exports = async function (deployer, network, accounts) {
     var _characterTokenInstant = await CharacterToken.at(process.env.iCharacterToken);
     
     /**
-     *          Set new MINTER => dev wallet in Katana Inu Case
+     *          Mint actions
      */
-    var _minterAddress = "0x...";
-    await _characterTokenInstant.setMinterRole(_minterAddress);
-
-    
-
+    var _mintingOrder = [
+        [
+            1,
+            "abc"
+        ],
+        [
+            1,
+            "adsad"
+        ],
+        [
+            2,
+            "asdasd"
+        ]
+    ]
+    var _to = "0x..";
+    var _orderId = "6340feed08daed595dd1c8c0";
+    await _characterTokenInstant.mint(
+        _mintingOrder,
+        _to,
+        _orderId
+    );
 }
