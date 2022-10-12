@@ -52,5 +52,9 @@ Thumbs.db
 
 # Contract build & dependencies
 build/
+.secret
+compiler_config.json
+remix-compiler.config.js
 
+.env
 
