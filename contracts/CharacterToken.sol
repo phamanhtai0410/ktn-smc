@@ -11,8 +11,8 @@ import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import "./CharacterDetails.sol";
-import "./interfaces/ICharacterDesign.sol";
 import "./interfaces/INFTToken.sol";
+import "./interfaces/ICharacterItem.sol";
 
 
 contract CharacterToken is
@@ -51,8 +51,9 @@ contract CharacterToken is
     event BurnToken(uint256[] ids);
     event SetNewMinter(address newMinter);
     event SetDesign(address designAddress);
-    event SetMarketplace(address marketplaceAddress); 
-    event MintOrder(string orderId, address to, ReturnMintingOrder[] returnMintingOrder);
+    event SetCharacterItem(address itemAddress);
+    event SetMarketplace(address marketplaceAddress);
+    event MintOrder(bytes callbackData, address to, ReturnMintingOrder[] returnMintingOrder);
     event UseNFTs(address to, uint256 amount, uint8 rarity, uint256[] usedTokenIds);
     event SetMaxTokensInOneOrder(uint8 maxTokensInOneOrder);
 
@@ -69,8 +70,8 @@ contract CharacterToken is
     // Maketplace contract address => open for setting when in need
     IERC721 public marketPlace;
 
-    // Design of NFT => open for setting when in need
-    ICharacterDesign public design;
+    // Character Item allow to generate game item NFT from this NFTs
+    ICharacterItem public item;
 
     // Counter for tokenID
     Counters.Counter public tokenIdCounter;
@@ -81,11 +82,15 @@ contract CharacterToken is
     // Mapping from token ID to token details.
     mapping(uint256 => TokenDetail) public tokenDetails;
 
-    // Mapping from dev wallet address to its minting nft requests.
-    CreateTokenRequest[] public createTokenRequests;
 
     // Max tokens can mint in one order
     uint8 public MAX_TOKENS_IN_ORDER;
+
+    // Total Supply
+    uint256 public totalSupply;
+
+    // Rarity List of this NFT contract
+    uint8[] rarityList;
 
     /**
      * @notice Checks if the msg.sender is a contract or a proxy
@@ -96,8 +101,10 @@ contract CharacterToken is
         _;
     }
 
-    constructor () public {
+    constructor (uint8[] memory _rarityList) {
         MAX_TOKENS_IN_ORDER = 10;
+        rarityList = _rarityList;
+        totalSupply = 100000000;
     }
 
     /**
@@ -116,6 +123,8 @@ contract CharacterToken is
         _setupRole(MINTER_ROLE, msg.sender);
         _setupRole(OPEN_NFT_ROLE, msg.sender);
     }
+
+    
 
     function setMinterRole(address _newMinter) external onlyRole(DEFAULT_ADMIN_ROLE) {
         _setupRole(MINTER_ROLE, _newMinter);
@@ -158,15 +167,16 @@ contract CharacterToken is
         emit BurnToken(ids);
     }
 
-    /** Sets the design. */
-    function setDesign(address contractAddress)
+    /** Sets the character item contract address. */
+    function setItemContract(address contractAddress)
         external
         onlyRole(DESIGNER_ROLE)
     {
-        design = ICharacterDesign(contractAddress);
-        emit SetDesign(contractAddress);
+        item = ICharacterItem(contractAddress);
+        emit SetCharacterItem(contractAddress);
     }
 
+    /** Set marketplace for integrate */
     function setMarketPlace(address contractAddress) external onlyRole(DESIGNER_ROLE) {
         marketPlace = IERC721(contractAddress);
         emit SetMarketplace(contractAddress);
@@ -196,6 +206,20 @@ contract CharacterToken is
         return ids;
     }
 
+    /**
+     *  Get total supply of NFTs
+     */
+    function getTotalSupply() internal view returns (uint256) {
+        return totalSupply;
+    }
+
+    /**
+     *      Get rarity list using in contract
+     */
+    function getCurrentRarityList() external view returns (uint8[] memory) {
+        return rarityList;
+    }
+
     /** Creates a token */
     function createToken(
         address _to,
@@ -214,22 +238,26 @@ contract CharacterToken is
     }
 
     /** 
-     *  Function mint a single NFT from BE
-     *
+     *  Function mint NFTs
      */
     function mint(
         MintingOrder[] calldata _mintingOrders,
         address _to,
-        string calldata _orderId
+        bytes calldata _callbackData
     ) external notContract onlyRole(MINTER_ROLE) {
         require(_mintingOrders.length > 0, "No token to mint");
         require(_mintingOrders.length <= MAX_TOKENS_IN_ORDER, "Maximum tokens in one mint reached");
         require(
-            tokenIdCounter.current() + _mintingOrders.length <= design.getTotalSupply(),
+            tokenIdCounter.current() + _mintingOrders.length <= getTotalSupply(),
             "Total supply of NFT reached"
         );  
 
-        uint256[] memory _returnOrder = new ReturnMintingOrder[](_mintingOrders.length);
+        for (uint256 i=0; i < _mintingOrders.length; i++) {
+            require(_isValidRarity(_mintingOrders[i].rarity), "Invalid rarity value");
+        }
+
+
+        ReturnMintingOrder[] memory _returnOrder = new ReturnMintingOrder[](_mintingOrders.length);
         for (uint256 i=0; i < _mintingOrders.length; i++) {
             uint256 _tokenId = createToken(
                 _to,
@@ -243,16 +271,8 @@ contract CharacterToken is
             );
         }
 
-        // Create record of orders minting NFTs 
-        createTokenRequests.push(
-            CreateTokenRequest(
-                _orderId,
-                _to
-            )
-        );
-
         emit MintOrder(
-            _orderId,
+            _callbackData,
             _to,
             _returnOrder
         );
@@ -283,14 +303,40 @@ contract CharacterToken is
     function useNFTs(address to, uint256 count, uint8 rarity) external override  onlyRole(OPEN_NFT_ROLE) {
         require(count > 0, "No token to mint");
         require(tokenIds[to].length > count, "User doesn't have enough NFT to call useNFTs");
-        require(rarity > 0 && rarity < design.lastRarityId(), "Rarity invalid");
+        require(_isValidRarity(rarity), "Invalid rarity value");
         uint256[] memory _usedTokenIds = new uint256[](count);
         for (uint256 i=0; i < count; i++) {
             uint256[] memory _listToken = tokenIds[to];
-            design.createNewDesign(_listToken[i]);
+            item.createNewItem(_listToken[i]);
             _usedTokenIds[i] = _listToken[i];
         }
         emit UseNFTs(to, count, rarity, _usedTokenIds);
+    }
+
+    /**
+     *      @notice Check if rarity is valid or not for external call
+     */
+    function isValidRarity(uint8 _rarity) external view returns (bool) {
+        bool isValid = false;
+        for (uint256 i=0; i < rarityList.length; i++) {
+            if (rarityList[i] == _rarity) {
+                isValid = true;
+                break;
+            }
+        }
+        return isValid;
+    }
+
+    /** Function check if a rarity is valid rarity value */
+    function _isValidRarity(uint8 _rarity) internal view returns (bool) {
+        bool isValid = false;
+        for (uint256 i=0; i < rarityList.length; i++) {
+            if (rarityList[i] == _rarity) {
+                isValid = true;
+                break;
+            }
+        }
+        return isValid;
     }
 
     /**

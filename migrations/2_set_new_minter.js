@@ -1,7 +1,6 @@
 const console = require("console");
 const fs = require("fs");
 
-var CharacterDesign = artifacts.require("CharacterDesign");
 var CharacterToken = artifacts.require("CharacterToken");
 
 function wf(name, address) {
@@ -20,7 +19,7 @@ module.exports = async function (deployer, network, accounts) {
     /**
      *          Set new MINTER => dev wallet in Katana Inu Case
      */
-    var _minterAddress = "0x...";
+    var _minterAddress = "0xF25AbDb08ff0e0e5561198A53F1325dcfBE92428";
     await _characterTokenInstant.setMinterRole(_minterAddress);
 
     

@@ -108,21 +108,23 @@ contract StakeNFT is ReentrancyGuard, AccessControl {
     }
 
     // Function allow ADMIN to remove new NFT collection and its rewards per hour
-    function removeCollection(address _nftCollection) external onlyAdmin {
-        uint256 _index = 0;
-        for (uint256 i; i < nftCollections.length; i++) {
-            if (nftCollections[i] == _nftCollection) {
-                _index = i;
-                break;
-            }
-        }    
-        require(i < nftCollections.length, "Not found collection in configed list");
-        for (uint i = _index; i<array.length-1; i++){
-            nftCollections[i] = nftCollections[i+1];
-        }
-        delete nftCollections[nftCollections.length-1];
-        nftCollections.length--;
-    }
+    // function removeCollection(address _nftCollection) external onlyAdmin {
+    //     uint256 _index = 0;
+    //     bool isIn = false;
+    //     for (uint256 i=0; i < nftCollections.length; i++) {
+    //         if (nftCollections[i] == _nftCollection) {
+    //             _index = i;
+    //             isIn = true;
+    //             break;
+    //         }
+    //     }    
+    //     require(isIn, "Not found collection in configed list");
+    //     for (uint i=_index; i<nftCollections.length-1; i++){
+    //         nftCollections[i] = nftCollections[i+1];
+    //     }
+    //     delete nftCollections[nftCollections.length-1];
+    //     nftCollections.length--;
+    // }
     
     // Function: check if a nft collection is in List nft collections was configed in this contract or not
     function isInListCollection(address _nftCollection) private view returns (bool) {
@@ -240,8 +242,8 @@ contract StakeNFT is ReentrancyGuard, AccessControl {
     function availableRewards(address _staker) public view returns (uint256) {
         uint256 rewards;
         for (uint256 i=0; i < nftCollections.length; i++) {
-            rewards += calculateRewards(_staker, _nftCollection) +
-                stakers[_nftCollection][_staker].unclaimedRewards;
+            rewards += calculateRewards(_staker, nftCollections[i]) +
+                stakers[nftCollections[i]][_staker].unclaimedRewards;
         }
         return rewards;
     }

@@ -1,7 +1,6 @@
 const console = require("console");
 const fs = require("fs");
 
-var CharacterDesign = artifacts.require("CharacterDesign");
 var CharacterToken = artifacts.require("CharacterToken");
 
 function wf(name, address) {
@@ -20,8 +19,8 @@ module.exports = async function (deployer, network, accounts) {
     /**
      *      Set Design
      */
-    var _characterDesignInstant = await CharacterDesign.at(process.env.iCharacterDesign);
-    await _characterTokenInstant.setDesign(_characterDesignInstant.address);
+    // var _characterDesignInstant = await CharacterDesign.at(process.env.iCharacterDesign);
+    // await _characterTokenInstant.setDesign(_characterDesignInstant.address);
 
     /**
      *      Pause

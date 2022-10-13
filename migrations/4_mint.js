@@ -1,7 +1,7 @@
 const console = require("console");
 const fs = require("fs");
+const web3 = require("web3");
 
-var CharacterDesign = artifacts.require("CharacterDesign");
 var CharacterToken = artifacts.require("CharacterToken");
 
 function wf(name, address) {
@@ -34,8 +34,10 @@ module.exports = async function (deployer, network, accounts) {
             "asdasd"
         ]
     ]
-    var _to = "0x..";
-    var _orderId = "6340feed08daed595dd1c8c0";
+    var _to = "0x29E754233F6A50ee5AE3ee6A0217aD907dc3386B";
+    
+    var _orderId =  web3.utils.fromAscii("6340feed08daed595dd1c8c0");
+    // "6340feed08daed595dd1c8c0";
     await _characterTokenInstant.mint(
         _mintingOrder,
         _to,

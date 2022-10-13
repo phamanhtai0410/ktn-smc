@@ -1,7 +1,6 @@
 const console = require("console");
 const fs = require("fs");
 
-var CharacterDesign = artifacts.require("CharacterDesign");
 var CharacterToken = artifacts.require("CharacterToken");
 
 function wf(name, address) {
@@ -33,12 +32,12 @@ module.exports = async function (deployer, network, accounts) {
     /**
      *      3. Gets token ids for the specified owner
      */
-    var _to = "0x..";
+    var _to = "0x29E754233F6A50ee5AE3ee6A0217aD907dc3386B";
     console.log(`3. List tokenIDs of ${_to} is ${JSON.stringify(await _characterTokenInstant.getTokenIdsByOwner(_to))}`);
 
     /**
      *      4. Gets token details for the specified owner
      */
-    var _to = "0x..";
+    var _to = "0x29E754233F6A50ee5AE3ee6A0217aD907dc3386B";
     console.log(`4. List tokenDetails of ${_to} is ${JSON.stringify(await _characterTokenInstant.getTokenDetailsByOwner(_to))}`);
 }

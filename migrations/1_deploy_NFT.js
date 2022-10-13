@@ -1,7 +1,6 @@
 const console = require("console");
 const fs = require("fs");
 
-var CharacterDesign = artifacts.require("CharacterDesign");
 var CharacterToken = artifacts.require("CharacterToken");
 
 function wf(name, address) {
@@ -16,24 +15,12 @@ module.exports = async function (deployer, network, accounts) {
     require('dotenv').config();
 
     /**
-     *      Deploy Character Design 
-     */
-    await deployer.deploy(
-        CharacterDesign
-    );
-    var _characterDesignInstant = await CharacterDesign.deployed();
-    wf("iCharacterDesign", _characterDesignInstant.address);
-
-    /**
-     *      Initialize Character Design
-     */
-    await _characterDesignInstant.initialize();
-
-    /**
      *      Deploy Character Token
      */
-     await deployer.deploy(
-        CharacterToken
+    var _rarityList = [0, 1, 2, 3, 4, 5];
+    await deployer.deploy(
+        CharacterToken,
+        _rarityList
     );
     var _characterTokenInstant = await CharacterToken.deployed();
     wf("iCharacterToken", _characterTokenInstant.address);
