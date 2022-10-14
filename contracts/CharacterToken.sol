@@ -24,6 +24,12 @@ contract CharacterToken is
     OwnableUpgradeable,
     INFTToken
 {
+    struct WhiteListInfo{
+        uint8[] rarites;
+        uint8[] nftTypes;
+        uint256[] amounts;
+    }
+
     struct MintingOrder {
         uint8 rarity;
         string cid;
@@ -104,8 +110,8 @@ contract CharacterToken is
     // Mapping nftType to Max Rariry value
     mapping(uint8 => uint8) public nftItems;
 
-    // Mapping whitelist addresses to buyable amount. "addrress => (nftType => (rarity => amount))"
-    mapping(address => mapping(uint8 => mapping(uint8 => uint256))) public whiteList;
+    // Mapping address whitelist to struct WhiteListInfo
+    mapping(address =>  WhiteListInfo) whiteListInfo;
 
     /**
      * @notice Checks if the msg.sender is a contract or a proxy
@@ -399,10 +405,10 @@ contract CharacterToken is
         );  
 
         for (uint256 i=0; i < _mintingOrders.length; i++) {
-            require(
-                whiteList[_to][_mintingOrders[i].nftType][_mintingOrders[i].rarity] > 0, 
-                "User not in whitelist or limit reached"
-            );
+            // require(
+            //     whiteListInfo[_to]...... > amount, 
+            //     "User not in whitelist or limit reached"
+            // ); // [TODO] Check amount each rarity & nftType in whiteListInfo.
             require(
                 _mintingOrders[i].nftType <= MAX_NFT_TYPE_VALUE,
                 "Invalid NFT type"
@@ -421,6 +427,7 @@ contract CharacterToken is
                 _mintingOrders[i].cid,
                 _mintingOrders[i].nftType
             );
+            // whiteListInfo[to]... -= amount; [TODO] minus amount minted
             _returnOrder[i] = ReturnMintingOrder(
                 _tokenId,
                 _mintingOrders[i].rarity,
@@ -585,7 +592,20 @@ contract CharacterToken is
      * Set whitelist address, land type and amount.
         If set after addr whitelistMint tokens, amount will be reset to input amount.
      */
-    function setWhitelist(address _addr, uint256 _amount, uint8 _nftType, uint8 _rarity) external onlyRole(WHITELIST_ROLE) {
-        whiteList[_addr][_nftType][_rarity] = _amount;
+    function setWhitelist(
+        WhiteListInfo memory _whitelistInfo, 
+        address _addr
+    ) external onlyRole(WHITELIST_ROLE) 
+    {
+        require(
+            _whitelistInfo.rarites.length > 0 && _whitelistInfo.nftTypes.length > 0 &&  _whitelistInfo.amounts.length > 0, 
+            "Length must be greater than 0"
+        );
+        require(
+            _whitelistInfo.rarites.length == _whitelistInfo.nftTypes.length && _whitelistInfo.nftTypes.length ==  _whitelistInfo.amounts.length,
+            "Length must be equal"
+            
+        );
+        whiteListInfo[_addr] = _whitelistInfo;
     }
 }
