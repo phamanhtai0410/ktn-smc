@@ -65,6 +65,7 @@ contract CharacterToken is
     bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
     bytes32 public constant BURNER_ROLE = keccak256("BURNER_ROLE");
     bytes32 public constant OPEN_NFT_ROLE = keccak256("OPEN_NFT_ROLE");
+    bytes32 public constant WHITELIST_ROLE = keccak256("WHITELIST_ROLE");
 
     uint256 private constant maskLast8Bits = uint256(0xff);
     uint256 private constant maskFirst248Bits = ~uint256(0xff);
@@ -103,6 +104,9 @@ contract CharacterToken is
     // Mapping nftType to Max Rariry value
     mapping(uint8 => uint8) public nftItems;
 
+    // Mapping whitelist addresses to buyable amount. "addrress => (nftType => (rarity => amount))"
+    mapping(address => mapping(uint8 => mapping(uint8 => uint256))) public whiteList;
+
     /**
      * @notice Checks if the msg.sender is a contract or a proxy
      */
@@ -136,6 +140,7 @@ contract CharacterToken is
         _setupRole(DESIGNER_ROLE, msg.sender);
         _setupRole(MINTER_ROLE, msg.sender);
         _setupRole(OPEN_NFT_ROLE, msg.sender);
+        _setupRole(WHITELIST_ROLE, msg.sender);
     }
 
     /**
@@ -379,6 +384,59 @@ contract CharacterToken is
     }
 
     /** 
+     *  Function whiteListMint NFTs
+     */
+    function whitelistMint(
+        MintingOrder[] calldata _mintingOrders,
+        address _to,
+        bytes calldata _callbackData
+    ) external notContract onlyRole(MINTER_ROLE) {
+        require(_mintingOrders.length > 0, "No token to mint");
+        require(_mintingOrders.length <= MAX_TOKENS_IN_ORDER, "Maximum tokens in one mint reached");
+        require(
+            tokenIdCounter.current() + _mintingOrders.length <= getTotalSupply(),
+            "Total supply of NFT reached"
+        );  
+
+        for (uint256 i=0; i < _mintingOrders.length; i++) {
+            require(
+                whiteList[_to][_mintingOrders[i].nftType][_mintingOrders[i].rarity] > 0, 
+                "User not in whitelist or limit reached"
+            );
+            require(
+                _mintingOrders[i].nftType <= MAX_NFT_TYPE_VALUE,
+                "Invalid NFT type"
+            );
+            require(
+                _mintingOrders[i].rarity > 0 && _mintingOrders[i].rarity <= nftItems[_mintingOrders[i].nftType],
+                "Invalid rarity"
+            );
+        }
+        
+        ReturnMintingOrder[] memory _returnOrder = new ReturnMintingOrder[](_mintingOrders.length);
+        for (uint256 i=0; i < _mintingOrders.length; i++) {
+            uint256 _tokenId = createToken(
+                _to,
+                _mintingOrders[i].rarity,
+                _mintingOrders[i].cid,
+                _mintingOrders[i].nftType
+            );
+            _returnOrder[i] = ReturnMintingOrder(
+                _tokenId,
+                _mintingOrders[i].rarity,
+                _mintingOrders[i].cid,
+                _mintingOrders[i].nftType
+            );
+        }
+
+        emit MintOrder(
+            _callbackData,
+            _to,
+            _returnOrder
+        );
+    }
+
+    /** 
      *      Function return tokenURI for specific NFT 
      *      @param _tokenId ID of NFT
      *      @return tokenURI of token with ID = _tokenId
@@ -521,5 +579,13 @@ contract CharacterToken is
             size := extcodesize(addr)
         }
         return size > 0;
+    }
+
+    /**
+     * Set whitelist address, land type and amount.
+        If set after addr whitelistMint tokens, amount will be reset to input amount.
+     */
+    function setWhitelist(address _addr, uint256 _amount, uint8 _nftType, uint8 _rarity) external onlyRole(WHITELIST_ROLE) {
+        whiteList[_addr][_nftType][_rarity] = _amount;
     }
 }
