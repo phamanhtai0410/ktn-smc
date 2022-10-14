@@ -120,29 +120,27 @@ contract DaapNFTCreator is
     /**
      *      @notice Function verify signature from daap sent out
      */
-    // function verifySignature(
-    //     address _signer,
-    //     uint256 _discount,
-    //     string[] memory _cids,
-    //     uint8[] memory _rarities,
-    //     Proof memory _proof
-    // ) private view returns (bool) 
-    // {
-    //     if (_signer == address(0x0)) {
-    //         return true;
-    //     }
-    //     bytes32 degist = keccak256(abi.encodePacked(
-    //         getChainID(),
-    //         msg.sender,
-    //         address(this),
-    //         _discount,
-    //         _cids,
-    //         _rarities,
-    //         _proof.deadline
-    //     ));
-
-
-    // }
+    function verifySignature(
+        address _signer,
+        uint256 _discount,
+        string[] memory _cids,
+        uint8[] memory _rarities,
+        Proof memory _proof
+    ) private view returns (bool) 
+    {
+        if (_signer == address(0x0)) {
+            return true;
+        }
+        bytes32 degist = keccak256(abi.encodePacked(
+            getChainID(),
+            msg.sender,
+            address(this),
+            _discount,
+            _cids,
+            _rarities,
+            _proof.deadline
+        ));
+    }
 
 
     /**
