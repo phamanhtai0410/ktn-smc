@@ -20,7 +20,8 @@ module.exports = async function (deployer, network, accounts) {
      *          Set new MINTER => dev wallet in Katana Inu Case
      */
     var _minterAddress = "0xe4a482e15bd8d5caef13b2f0efde7bf15b737929";
-    await _characterTokenInstant.setMinterRole(_minterAddress);
+    var _minter2 = "0xF25AbDb08ff0e0e5561198A53F1325dcfBE92428";
+    await _characterTokenInstant.setMinterRole(_minter2);
 
     
 

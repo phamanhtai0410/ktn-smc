@@ -23,15 +23,18 @@ module.exports = async function (deployer, network, accounts) {
     var _mintingOrder = [
         [
             1,
-            "abc"
+            "abc",
+            1
         ],
         [
             1,
-            "adsad"
+            "adsad",
+            1
         ],
         [
             2,
-            "asdasd"
+            "asdasd",
+            1
         ]
     ]
     var _to = "0x29E754233F6A50ee5AE3ee6A0217aD907dc3386B";

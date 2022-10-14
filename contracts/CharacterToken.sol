@@ -13,6 +13,7 @@ import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import "./CharacterDetails.sol";
 import "./interfaces/INFTToken.sol";
 import "./interfaces/ICharacterItem.sol";
+import "./interfaces/IDaapNFTCreator.sol";
 
 
 contract CharacterToken is
@@ -49,7 +50,6 @@ contract CharacterToken is
     event TokenCreated(address to, uint256 tokenId, TokenDetail details);
     event BurnToken(uint256[] ids);
     event SetNewMinter(address newMinter);
-    event SetDesign(address designAddress);
     event SetCharacterItem(address itemAddress);
     event SetMarketplace(address marketplaceAddress);
     event AddNewNftType(uint8 maxNftType, uint8[] maxRarityList);
@@ -57,6 +57,7 @@ contract CharacterToken is
     event UseNFTs(address to, uint256[] usedTokenIds);
     event SetMaxTokensInOneOrder(uint8 maxTokensInOneOrder);
     event SetMaxTokensInOneUsing(uint8 maxTokenInOneUsing);
+    event UpgradeExistingNftType(uint8 nftType, uint8 oldMaxRarityValue, uint8 upgradeMaxRarityValue);
 
     bytes32 public constant PAUSER_ROLE = keccak256("PAUSER_ROLE");
     bytes32 public constant UPGRADER_ROLE = keccak256("UPGRADER_ROLE");
@@ -74,6 +75,9 @@ contract CharacterToken is
     // Character Item allow to generate game item NFT from this NFTs
     ICharacterItem public item;
 
+    // DaapCreator contract
+    IDaapNFTCreator public daapCreator;
+
     // Counter for tokenID
     Counters.Counter public tokenIdCounter;
 
@@ -83,7 +87,6 @@ contract CharacterToken is
 
     // Mapping from token ID to token details.
     mapping(uint256 => TokenDetail) public tokenDetails;
-
 
     // Max tokens can mint in one order
     uint8 public MAX_TOKENS_IN_ORDER;
@@ -109,7 +112,8 @@ contract CharacterToken is
         _;
     }
 
-    constructor (uint8 _maxRarityValue) {
+    constructor (uint8 _maxRarityValue, address _daapCreator) {
+        daapCreator = IDaapNFTCreator(_daapCreator);
         MAX_TOKENS_IN_ORDER = 10;
         MAX_TOKENS_IN_USING = 10;
         MAX_NFT_TYPE_VALUE = 1;
@@ -143,11 +147,30 @@ contract CharacterToken is
             _maxRarityValues.length + MAX_NFT_TYPE_VALUE == _maxNftValue,
             "Invalid length of Max Rarity List"
         );
+        daapCreator.upgradeNewNftType(
+            _maxNftValue,
+            _maxRarityValues
+        );
         MAX_NFT_TYPE_VALUE = _maxNftValue;
         for (uint8 i = 0; i < _maxRarityValues.length; i ++) {
             nftItems[i + MAX_NFT_TYPE_VALUE + 1] = _maxRarityValues[i];
         }
         emit AddNewNftType(_maxNftValue, _maxRarityValues);
+    }
+
+    /**
+     *  @notice Function allows to upgrade number of rarity of existing nft type
+     */
+    function upgradeExistingNftType(uint8 _existingNftType, uint8 _upgradeMaxRarity) external onlyRole(DESIGNER_ROLE) {
+        require(_existingNftType <= MAX_NFT_TYPE_VALUE, "Invalid nft type");
+        require(_upgradeMaxRarity > nftItems[_existingNftType], "Invalid upgrade new max rarity value");
+        daapCreator.upgradeExisitingNftType(
+            _existingNftType,
+            _upgradeMaxRarity
+        );
+        uint8 oldMaxRarity = nftItems[_existingNftType];
+        nftItems[_existingNftType] = _upgradeMaxRarity;
+        emit UpgradeExistingNftType(_existingNftType, oldMaxRarity, _upgradeMaxRarity);
     }
 
     /**
@@ -257,6 +280,20 @@ contract CharacterToken is
      */
     function getTotalSupply() internal view returns (uint256) {
         return totalSupply;
+    }
+
+    /**
+     *  @notice Function get Max NFT type value
+     */
+    function getMaxNftType() external view returns(uint8) {
+        return MAX_NFT_TYPE_VALUE;
+    }
+
+    /**
+     *  @notice Function return Max Rarity Value of each nftType
+     */
+    function getMaxRarityValue(uint8 _nftType) external view returns (uint8) {
+        return nftItems[_nftType];
     }
 
     /** 

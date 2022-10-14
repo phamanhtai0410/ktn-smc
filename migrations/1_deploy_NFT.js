@@ -17,10 +17,10 @@ module.exports = async function (deployer, network, accounts) {
     /**
      *      Deploy Character Token
      */
-    var _rarityList = [0, 1, 2, 3, 4, 5];
+    var _maxRarityValue = 5;
     await deployer.deploy(
         CharacterToken,
-        _rarityList
+        _maxRarityValue
     );
     var _characterTokenInstant = await CharacterToken.deployed();
     wf("iCharacterToken", _characterTokenInstant.address);
