@@ -37,9 +37,10 @@ contract CharacterToken is
     }
 
     struct TokenDetail {
-        uint256 rarity;
+        uint8 rarity;
         uint8 nftType;
         string tokenURI;
+        bool isUsed;
     }
 
     using Counters for Counters.Counter;
@@ -51,10 +52,11 @@ contract CharacterToken is
     event SetDesign(address designAddress);
     event SetCharacterItem(address itemAddress);
     event SetMarketplace(address marketplaceAddress);
-    event AddNewNftType(uint8 nftType, uint8[] rarityList);
+    event AddNewNftType(uint8 maxNftType, uint8[] maxRarityList);
     event MintOrder(bytes callbackData, address to, ReturnMintingOrder[] returnMintingOrder);
-    event UseNFTs(address to, uint256 amount, uint8 rarity, uint256[] usedTokenIds);
+    event UseNFTs(address to, uint256[] usedTokenIds);
     event SetMaxTokensInOneOrder(uint8 maxTokensInOneOrder);
+    event SetMaxTokensInOneUsing(uint8 maxTokenInOneUsing);
 
     bytes32 public constant PAUSER_ROLE = keccak256("PAUSER_ROLE");
     bytes32 public constant UPGRADER_ROLE = keccak256("UPGRADER_ROLE");
@@ -77,7 +79,7 @@ contract CharacterToken is
 
     // Mapping from owner address to list of token IDs.
     mapping(address => uint256[]) public tokenIds;
-    mapping(address => (mapping(uint8 => (mapping(uint8 => uint256[]))))) public tokenIdsPerTypeAndRarity;
+    mapping(address => mapping(uint8 => mapping(uint8 => uint256[]))) public tokenIdsPerTypeAndRarity;
 
     // Mapping from token ID to token details.
     mapping(uint256 => TokenDetail) public tokenDetails;
@@ -86,11 +88,17 @@ contract CharacterToken is
     // Max tokens can mint in one order
     uint8 public MAX_TOKENS_IN_ORDER;
 
+    // Max tokens can use in one call
+    uint8 public MAX_TOKENS_IN_USING;
+
     // Total Supply
     uint256 public totalSupply;
 
-    // Mapping NFT Item from nftType and rarityList
-    mapping(uint8 => uint8[]) public nftItems;
+    // Max value of NFT TYPE
+    uint8 public MAX_NFT_TYPE_VALUE;
+
+    // Mapping nftType to Max Rariry value
+    mapping(uint8 => uint8) public nftItems;
 
     /**
      * @notice Checks if the msg.sender is a contract or a proxy
@@ -101,9 +109,11 @@ contract CharacterToken is
         _;
     }
 
-    constructor (uint8[] memory _rarityList) {
+    constructor (uint8 _maxRarityValue) {
         MAX_TOKENS_IN_ORDER = 10;
-        nftItems[uint8(1)] = _rarityList;
+        MAX_TOKENS_IN_USING = 10;
+        MAX_NFT_TYPE_VALUE = 1;
+        nftItems[uint8(1)] = _maxRarityValue;
         totalSupply = 100000000;
     }
 
@@ -127,9 +137,17 @@ contract CharacterToken is
     /**
      *  @notice Function allow DESIGNER add new NFT type
      */
-    function addNewNftType(uint8 _nftType, uint8[] memory _rarityList) external onlyRole(DESIGNER_ROLE) {
-        nftItems[_nftType] = _rarityList;
-        emit AddNewNftType(_nftType, _rarityList);
+    function addNewNftType(uint8 _maxNftValue, uint8[] memory _maxRarityValues) external onlyRole(DESIGNER_ROLE) {
+        require(_maxNftValue > MAX_NFT_TYPE_VALUE, "Invalid new max NFT type");
+        require(
+            _maxRarityValues.length + MAX_NFT_TYPE_VALUE == _maxNftValue,
+            "Invalid length of Max Rarity List"
+        );
+        MAX_NFT_TYPE_VALUE = _maxNftValue;
+        for (uint8 i = 0; i < _maxRarityValues.length; i ++) {
+            nftItems[i + MAX_NFT_TYPE_VALUE + 1] = _maxRarityValues[i];
+        }
+        emit AddNewNftType(_maxNftValue, _maxRarityValues);
     }
 
     /**
@@ -146,6 +164,14 @@ contract CharacterToken is
     function setMaxTokensInOneMint(uint8 _maxTokensInOneMint) external onlyRole(DEFAULT_ADMIN_ROLE) {
         MAX_TOKENS_IN_ORDER = _maxTokensInOneMint;
         emit SetMaxTokensInOneOrder(_maxTokensInOneMint);
+    }
+
+    /**
+     *  @notice Function allow ADMIN set max tokens per one use
+     */
+    function setMaxTokensInOneUing(uint8 _maxTokenInOneUsing) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        MAX_TOKENS_IN_USING = _maxTokenInOneUsing;
+        emit SetMaxTokensInOneUsing(_maxTokenInOneUsing);
     }
     
     function pause() public onlyRole(PAUSER_ROLE) {
@@ -233,13 +259,6 @@ contract CharacterToken is
         return totalSupply;
     }
 
-    /**
-     *      Get rarity list using in contract
-     */
-    function getCurrentRarityList() external view returns (uint8[] memory) {
-        return rarityList;
-    }
-
     /** 
      *  @notice Creates a token
      */
@@ -266,6 +285,7 @@ contract CharacterToken is
         _tokenDetail.rarity = _rarity;
         _tokenDetail.nftType = _nftType;
         _tokenDetail.tokenURI = tokenURI(_id);
+        _tokenDetail.isUsed = false;
         tokenDetails[_id] = _tokenDetail;
 
         emit TokenCreated(_to, _id, _tokenDetail);
@@ -288,9 +308,15 @@ contract CharacterToken is
         );  
 
         for (uint256 i=0; i < _mintingOrders.length; i++) {
-            require(_isValidRarity(_mintingOrders[i].rarity, _mintingOrders[i].nftType), "Invalid rarity value");
+            require(
+                _mintingOrders[i].nftType <= MAX_NFT_TYPE_VALUE,
+                "Invalid NFT type"
+            );
+            require(
+                _mintingOrders[i].rarity > 0 && _mintingOrders[i].rarity <= nftItems[_mintingOrders[i].nftType],
+                "Invalid rarity"
+            );
         }
-
 
         ReturnMintingOrder[] memory _returnOrder = new ReturnMintingOrder[](_mintingOrders.length);
         for (uint256 i=0; i < _mintingOrders.length; i++) {
@@ -337,43 +363,115 @@ contract CharacterToken is
     }
 
     /** Call from CharacterBoxBasket token to open character. */
-    function useNFTs(address _to, uint256 _count, uint8 _rarity, uint8 _nftType) external override  onlyRole(OPEN_NFT_ROLE) {
-        require(_count > 0, "No token to mint");
-        require(tokenIdsPerTypeAndRarity[_to][_nftType][_raity] > count, "User doesn't have enough NFT to call useNFTs");
-        require(_isValidRarity(rarity), "Invalid rarity value");
-        uint256[] memory _usedTokenIds = new uint256[](count);
-        for (uint256 i=0; i < count; i++) {
-            uint256[] memory _listToken = tokenIdsPerTypeAndRarity[_to][_nftType][_raity];
-            item.createNewItem(_listToken[i]);
-            _usedTokenIds[i] = _listToken[i];
+    function useNFTs(uint256[] memory _tokenIdsList, uint8 _rarity, uint8 _nftType) external override {
+        require(_tokenIdsList.length > 0, "No token to mint");
+        require(_tokenIdsList.length < MAX_TOKENS_IN_USING, "User doesn't have enough NFT to call useNFTs");
+        uint256[] memory _usedTokenIds = new uint256[](_tokenIdsList.length);
+        for (uint256 i=0; i < _tokenIdsList.length; i++) {
+            require(
+                isTokenIdInList(_tokenIdsList[i], tokenIdsPerTypeAndRarity[msg.sender][_nftType][_rarity]),
+                "TokenID in list of token ID is not match with type or rarity"
+            );
+            require(ownerOf(_tokenIdsList[i]) == msg.sender, "User not owned this token");
+            item.createNewItem(_tokenIdsList[i]);
+            tokenDetails[_tokenIdsList[i]].isUsed = true;
+            _usedTokenIds[i] = _tokenIdsList[i];
         }
-        emit UseNFTs(to, count, rarity, _usedTokenIds);
+        emit UseNFTs(msg.sender, _usedTokenIds);
     }
 
     /**
-     *      @notice Check if rarity is valid or not for external call
+     *      @notice Function check if _tokenId in _listTokenIds or not
      */
-    function isValidRarity(uint8 _rarity, uint8 _nftType) external view returns (bool) {
-        bool isValid = false;
-        for (uint256 i=0; i < nftItems[_nftType].length; i++) {
-            if (nftItems[_nftType][i] == _rarity) {
-                isValid = true;
+    function isTokenIdInList(uint256 _tokenId, uint256[] memory _listTokenIds) private pure returns (bool) {
+        bool isIn = false;
+        for (uint256 i=0; i < _listTokenIds.length; i++) {
+            if (_listTokenIds[i] == _tokenId) {
+                isIn = true;
                 break;
             }
         }
-        return isValid;
+        return isIn;
     }
 
-    /** Function check if a rarity is valid rarity value */
-    function _isValidRarity(uint8 _rarity, uint8 _nftType) internal view returns (bool) {
-        bool isValid = false;
-        for (uint256 i=0; i < nftItems[_nftType].length; i++) {
-            if (nftItems[_nftType][i] == _rarity) {
-                isValid = true;
-                break;
+    /**
+     *      @notice Function that override "_transfer" function default of ERC721 upgradeable
+     *      @dev Check token using or not
+     *      @dev Can not be transfer after using 
+     */
+    function _transfer(
+        address from,
+        address to,
+        uint256 tokenId
+    ) internal override {
+        TokenDetail storage _tokenDetail = tokenDetails[tokenId];
+        require(_tokenDetail.isUsed == true, "This token already used");
+        ERC721Upgradeable._transfer(from, to, tokenId);
+    }
+
+    /**
+     *      @notice Function checking before transfer action occurs
+     */
+    function _beforeTokenTransfer(
+        address from,
+        address to,
+        uint256 id
+    ) internal override {
+        if (from == address(0)) {
+            // Mint.
+        } else {
+            // Transfer or burn.
+            
+            // Pop tokenID out of list of user #"from": tokenIds
+            uint256[] storage ids = tokenIds[from];
+            uint256 index;
+            for (uint256 i=0; i < ids.length; i++) {
+                if (ids[i] == id) {
+                    index = i;
+                    break;
+                }
             }
+            ids[index] = ids[ids.length - 1];
+            ids.pop();
+
+            // Pop tokenID out of list of user #"from": tokenIdsPerTypeAndRarity 
+            TokenDetail storage _tokenDetail = tokenDetails[id];
+            uint8 _rarity = _tokenDetail.rarity;
+            uint8 _nftType = _tokenDetail.nftType;
+
+            uint256[] storage _listTokenPerTypeAndRarity = tokenIdsPerTypeAndRarity[from][_nftType][_rarity];
+            uint256 indexPerRarity;
+            for (uint256 i=0; i < _listTokenPerTypeAndRarity.length; i++) {
+                if (_listTokenPerTypeAndRarity[i] == id) {
+                    indexPerRarity = i;
+                    break;
+                }
+            }
+            _listTokenPerTypeAndRarity[index] = _listTokenPerTypeAndRarity[ids.length - 1];
+            _listTokenPerTypeAndRarity.pop();
         }
-        return isValid;
+        if (to == address(0)) {
+            // Burn.
+            delete tokenDetails[id];
+        } else {
+            // Transfer or mint.
+
+            // Get infos from tokenDetails
+            TokenDetail storage _tokenDetail = tokenDetails[id];
+            uint8 _rarity = _tokenDetail.rarity;
+            uint8 _nftType = _tokenDetail.nftType;
+
+            // Check valid of in used or not after
+            require(_tokenDetail.isUsed == false, "Token already used");
+
+            // Push new tokenID into list of user #"to": tokenIds
+            uint256[] storage ids = tokenIds[to];
+            ids.push(id);
+
+            // Push new tokenID into list of user #"to": tokenIdsPerTypeAndRarity
+            uint256[] storage _listTokenPerTypeAndRarity = tokenIdsPerTypeAndRarity[from][_nftType][_rarity];
+            _listTokenPerTypeAndRarity.push(id);  
+        }
     }
 
     /**

@@ -23,6 +23,12 @@ contract DaapNFTCreator is
         uint256 deadline;
     }
 
+    struct MintingInfo {
+        uint8 rarity;
+        bytes32 cid;
+        uint8 nftType;
+    }
+
     /**
      *      @dev Define variables in contract
      */
@@ -58,7 +64,7 @@ contract DaapNFTCreator is
     /**
      *      @dev Contructor
      */
-    constructor (address _signer, address _nftCollection, IERC20 _payToken ) {
+    constructor (address _signer, address _nftCollection, IERC20 _payToken) {
         signer = _signer;
         payToken = _payToken;
         nftCollection = ICharacterToken(_nftCollection);
@@ -123,7 +129,8 @@ contract DaapNFTCreator is
     function verifySignature(
         address _signer,
         uint256 _discount,
-        string[] memory _cids,
+        bytes32[] memory _cids,
+        uint8[] memory _nftTypes,
         uint8[] memory _rarities,
         Proof memory _proof
     ) private view returns (bool) 
@@ -131,15 +138,18 @@ contract DaapNFTCreator is
         if (_signer == address(0x0)) {
             return true;
         }
-        bytes32 degist = keccak256(abi.encodePacked(
+        bytes32 digest = keccak256(abi.encodePacked(
             getChainID(),
             msg.sender,
             address(this),
             _discount,
             _cids,
+            _nftTypes,
             _rarities,
             _proof.deadline
         ));
+        address signatory = ecrecover(digest, _proof.v, _proof.r, _proof.s);
+        return signatory == _signer && _proof.deadline >= block.timestamp;
     }
 
 
@@ -148,9 +158,31 @@ contract DaapNFTCreator is
      *
      */
     function makeMintingAction(
-        
+        MintingInfo[] calldata _mintingInfos,
+        uin256 _discount,
+        Proof memory _proof
     ) external notContract {
-        
+        require(_mintingInfos.length > 0, "Amount of minting NFTs must be greater than 0");
+        uint8[] memory _cids = new uint8[](_mintingInfos.length);
+        uint8[] memory _nftTypes = new uint8[](_mintingInfos.length);
+        uint8[] memory _rarities = new uint8[](_mintingInfos.length);
+        for (uint256 i=0; i < _mintingInfos.length; i++) {
+            _cids[i] = _mintingInfos[i].cid;
+            _nftTypes[i] = _mintingInfos[i].nftType;
+            _rarities[i] = _mintingInfos[i].rarity;
+        }
+        require(
+            verifySignature(
+                signer,
+                _discount,
+                _cids,
+                _nftTypes,
+                _rarities,
+                _proof
+            ),
+            "Invalid Signature"
+        );
+
     }
 
 
