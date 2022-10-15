@@ -24,11 +24,11 @@ contract CharacterToken is
     OwnableUpgradeable,
     INFTToken
 {
-    struct WhiteListInfo{
-        uint8[] rarites;
-        uint8[] nftTypes;
-        uint256[] amounts;
-    }
+    // struct WhiteListInfo{
+    //     uint8[] rarites;
+    //     uint8[] nftTypes;
+    //     uint256[] amounts;
+    // }
 
     struct MintingOrder {
         uint8 rarity;
@@ -111,7 +111,7 @@ contract CharacterToken is
     mapping(uint8 => uint8) public nftItems;
 
     // Mapping address whitelist to struct WhiteListInfo
-    mapping(address =>  WhiteListInfo) whiteListInfo;
+    // mapping(address =>  WhiteListInfo) whiteListInfo;
 
     /**
      * @notice Checks if the msg.sender is a contract or a proxy
@@ -184,6 +184,9 @@ contract CharacterToken is
         emit UpgradeExistingNftType(_existingNftType, oldMaxRarity, _upgradeMaxRarity);
     }
 
+    function setDappCreator(address _daapCreator) external  onlyRole(DEFAULT_ADMIN_ROLE) {
+        daapCreator = IDaapNFTCreator(_daapCreator);
+    }
     /**
      *  @notice Function allow ADMIN set new wallet is MINTER
      */
@@ -206,6 +209,23 @@ contract CharacterToken is
     function setMaxTokensInOneUing(uint8 _maxTokenInOneUsing) external onlyRole(DEFAULT_ADMIN_ROLE) {
         MAX_TOKENS_IN_USING = _maxTokenInOneUsing;
         emit SetMaxTokensInOneUsing(_maxTokenInOneUsing);
+    }
+
+    /** 
+     *  @notice Sets the character item contract address.
+     */
+    function setItemContract(address contractAddress)
+        external
+        onlyRole(DESIGNER_ROLE)
+    {
+        item = ICharacterItem(contractAddress);
+        emit SetCharacterItem(contractAddress);
+    }
+
+    /** Set marketplace for integrate */
+    function setMarketPlace(address contractAddress) external onlyRole(DESIGNER_ROLE) {
+        marketPlace = IERC721(contractAddress);
+        emit SetMarketplace(contractAddress);
     }
     
     function pause() public onlyRole(PAUSER_ROLE) {
@@ -239,23 +259,6 @@ contract CharacterToken is
             _burn(ids[i]);
         }
         emit BurnToken(ids);
-    }
-
-    /** 
-     *  @notice Sets the character item contract address.
-     */
-    function setItemContract(address contractAddress)
-        external
-        onlyRole(DESIGNER_ROLE)
-    {
-        item = ICharacterItem(contractAddress);
-        emit SetCharacterItem(contractAddress);
-    }
-
-    /** Set marketplace for integrate */
-    function setMarketPlace(address contractAddress) external onlyRole(DESIGNER_ROLE) {
-        marketPlace = IERC721(contractAddress);
-        emit SetMarketplace(contractAddress);
     }
 
     /** 
@@ -392,56 +395,56 @@ contract CharacterToken is
     /** 
      *  Function whiteListMint NFTs
      */
-    function whitelistMint(
-        MintingOrder[] calldata _mintingOrders,
-        address _to,
-        bytes calldata _callbackData
-    ) external notContract onlyRole(MINTER_ROLE) {
-        require(_mintingOrders.length > 0, "No token to mint");
-        require(_mintingOrders.length <= MAX_TOKENS_IN_ORDER, "Maximum tokens in one mint reached");
-        require(
-            tokenIdCounter.current() + _mintingOrders.length <= getTotalSupply(),
-            "Total supply of NFT reached"
-        );  
+    // function whitelistMint(
+    //     MintingOrder[] calldata _mintingOrders,
+    //     address _to,
+    //     bytes calldata _callbackData
+    // ) external notContract onlyRole(MINTER_ROLE) {
+    //     require(_mintingOrders.length > 0, "No token to mint");
+    //     require(_mintingOrders.length <= MAX_TOKENS_IN_ORDER, "Maximum tokens in one mint reached");
+    //     require(
+    //         tokenIdCounter.current() + _mintingOrders.length <= getTotalSupply(),
+    //         "Total supply of NFT reached"
+    //     );  
 
-        for (uint256 i=0; i < _mintingOrders.length; i++) {
-            // require(
-            //     whiteListInfo[_to]...... > amount, 
-            //     "User not in whitelist or limit reached"
-            // ); // [TODO] Check amount each rarity & nftType in whiteListInfo.
-            require(
-                _mintingOrders[i].nftType <= MAX_NFT_TYPE_VALUE,
-                "Invalid NFT type"
-            );
-            require(
-                _mintingOrders[i].rarity > 0 && _mintingOrders[i].rarity <= nftItems[_mintingOrders[i].nftType],
-                "Invalid rarity"
-            );
-        }
+    //     for (uint256 i=0; i < _mintingOrders.length; i++) {
+    //         // require(
+    //         //     whiteListInfo[_to]...... > amount, 
+    //         //     "User not in whitelist or limit reached"
+    //         // ); // [TODO] Check amount each rarity & nftType in whiteListInfo.
+    //         require(
+    //             _mintingOrders[i].nftType <= MAX_NFT_TYPE_VALUE,
+    //             "Invalid NFT type"
+    //         );
+    //         require(
+    //             _mintingOrders[i].rarity > 0 && _mintingOrders[i].rarity <= nftItems[_mintingOrders[i].nftType],
+    //             "Invalid rarity"
+    //         );
+    //     }
         
-        ReturnMintingOrder[] memory _returnOrder = new ReturnMintingOrder[](_mintingOrders.length);
-        for (uint256 i=0; i < _mintingOrders.length; i++) {
-            uint256 _tokenId = createToken(
-                _to,
-                _mintingOrders[i].rarity,
-                _mintingOrders[i].cid,
-                _mintingOrders[i].nftType
-            );
-            // whiteListInfo[to]... -= amount; [TODO] minus amount minted
-            _returnOrder[i] = ReturnMintingOrder(
-                _tokenId,
-                _mintingOrders[i].rarity,
-                _mintingOrders[i].cid,
-                _mintingOrders[i].nftType
-            );
-        }
+    //     ReturnMintingOrder[] memory _returnOrder = new ReturnMintingOrder[](_mintingOrders.length);
+    //     for (uint256 i=0; i < _mintingOrders.length; i++) {
+    //         uint256 _tokenId = createToken(
+    //             _to,
+    //             _mintingOrders[i].rarity,
+    //             _mintingOrders[i].cid,
+    //             _mintingOrders[i].nftType
+    //         );
+    //         // whiteListInfo[to]... -= amount; [TODO] minus amount minted
+    //         _returnOrder[i] = ReturnMintingOrder(
+    //             _tokenId,
+    //             _mintingOrders[i].rarity,
+    //             _mintingOrders[i].cid,
+    //             _mintingOrders[i].nftType
+    //         );
+    //     }
 
-        emit MintOrder(
-            _callbackData,
-            _to,
-            _returnOrder
-        );
-    }
+    //     emit MintOrder(
+    //         _callbackData,
+    //         _to,
+    //         _returnOrder
+    //     );
+    // }
 
     /** 
      *      Function return tokenURI for specific NFT 
@@ -592,20 +595,20 @@ contract CharacterToken is
      * Set whitelist address, land type and amount.
         If set after addr whitelistMint tokens, amount will be reset to input amount.
      */
-    function setWhitelist(
-        WhiteListInfo memory _whitelistInfo, 
-        address _addr
-    ) external onlyRole(WHITELIST_ROLE) 
-    {
-        require(
-            _whitelistInfo.rarites.length > 0 && _whitelistInfo.nftTypes.length > 0 &&  _whitelistInfo.amounts.length > 0, 
-            "Length must be greater than 0"
-        );
-        require(
-            _whitelistInfo.rarites.length == _whitelistInfo.nftTypes.length && _whitelistInfo.nftTypes.length ==  _whitelistInfo.amounts.length,
-            "Length must be equal"
+    // function setWhitelist(
+    //     WhiteListInfo memory _whitelistInfo, 
+    //     address _addr
+    // ) external onlyRole(WHITELIST_ROLE) 
+    // {
+    //     require(
+    //         _whitelistInfo.rarites.length > 0 && _whitelistInfo.nftTypes.length > 0 &&  _whitelistInfo.amounts.length > 0, 
+    //         "Length must be greater than 0"
+    //     );
+    //     require(
+    //         _whitelistInfo.rarites.length == _whitelistInfo.nftTypes.length && _whitelistInfo.nftTypes.length ==  _whitelistInfo.amounts.length,
+    //         "Length must be equal"
             
-        );
-        whiteListInfo[_addr] = _whitelistInfo;
-    }
+    //     );
+    //     whiteListInfo[_addr] = _whitelistInfo;
+    // }
 }
