@@ -50,6 +50,8 @@ contract DaapNFTCreator is
     event SetNewSigner(address oldSigner, address newSigner);
     event UpdatePrice(uint8 nftType, uint8 rarity, uint256 newPrice);
     event MakingMintingAction(MintingInfo[] mintingInfos, uint256 discount, address to);
+    event SetNewPayToken(address oldPayToken, address newPayToken);
+
     /**
      *      @dev Modifiers using in contract 
      */
@@ -96,9 +98,18 @@ contract DaapNFTCreator is
     }
 
     /**
+     *  @notice Function allows UPGRADER to set new PayToken
+     */
+    function setPayToken(address _newPayToken) external onlyRole(UPGRADER_ROLE) {
+        oldPayToken = payToken;
+        payToken = IERC20(_newPayToken);
+        emit SetNewPayToken(oldPayToken, _newPayToken);
+    }
+
+    /**
      *  @notice Set new signer who confirm a call from daap
      */
-    function setNewSigner(address _newSigner) external onlyRole(DEFAULT_ADMIN_ROLE) {
+    function setNewSigner(address _newSigner) external onlyRole(UPGRADER_ROLE) {
         address oldSigner = signer;
         signer = _newSigner;
         emit SetNewSigner(oldSigner, _newSigner);
@@ -195,7 +206,7 @@ contract DaapNFTCreator is
             _nftTypes[i] = _mintingInfos[i].nftType;
             require(
                 _mintingInfos[i].rarity <= nftCollection.getMaxRarityValue(_mintingInfos[i].nftType),
-                "Invalid nft type"
+                "Invalid rarity"
             );
             _rarities[i] = _mintingInfos[i].rarity;
         }
@@ -215,6 +226,7 @@ contract DaapNFTCreator is
             _amount += nftPrice[_mintingInfos[i].nftType][_mintingInfos[i].rarity];
         }
         bytes memory _callbackData = bytes("daap-creator");
+        require(payToken.balanceOf(msg.sender) > _amount - _discount, "User needs to hold enough token to buy this token");
         payToken.transferFrom(msg.sender, address(this), _amount - _discount);
         nftCollection.mint(
             _mintingInfos,
