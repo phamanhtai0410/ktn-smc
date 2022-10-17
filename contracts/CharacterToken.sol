@@ -159,7 +159,6 @@ contract CharacterToken is
             "Invalid length of Max Rarity List"
         );
         daapCreator.upgradeNewNftType(
-            _maxNftValue,
             _maxRarityValues
         );
         MAX_NFT_TYPE_VALUE = _maxNftValue;
@@ -352,7 +351,7 @@ contract CharacterToken is
         bytes calldata _callbackData
     ) external notContract onlyRole(MINTER_ROLE) {
         require(_mintingOrders.length > 0, "No token to mint");
-        require(_mintingOrders.length <= MAX_TOKENS_IN_ORDER, "Maximum tokens in one mint reached");
+        // require(_mintingOrders.length <= MAX_TOKENS_IN_ORDER, "Maximum tokens in one mint reached");
         require(
             tokenIdCounter.current() + _mintingOrders.length <= getTotalSupply(),
             "Total supply of NFT reached"

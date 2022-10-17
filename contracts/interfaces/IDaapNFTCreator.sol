@@ -6,7 +6,7 @@ interface IDaapNFTCreator {
     /**
      *  @notice Set price for each rarity type
      */
-    function upgradeNewNftType(uint8 _maxNftType, uint8[] memory _maxRarityList) external;
+    function upgradeNewNftType(uint8[] memory _maxRarityList) external;
 
     /**
      *  @notice Set price for upgrade existing nft type
