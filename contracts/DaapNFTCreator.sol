@@ -84,7 +84,6 @@ contract DaapNFTCreator is
             for (uint8 j=1; j < nftCollection.getMaxRarityValue(i) + 1; j++) {
                 nftPrice[i][j] = 100 * 10 ** 18;
             }
-            
         }
     }
 

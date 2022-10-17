@@ -161,10 +161,10 @@ contract CharacterToken is
         daapCreator.upgradeNewNftType(
             _maxRarityValues
         );
-        MAX_NFT_TYPE_VALUE = _maxNftValue;
-        for (uint8 i = 0; i < _maxRarityValues.length; i ++) {
+        for (uint8 i=0; i < _maxRarityValues.length; i++) {
             nftItems[i + MAX_NFT_TYPE_VALUE + 1] = _maxRarityValues[i];
         }
+        MAX_NFT_TYPE_VALUE = _maxNftValue;
         emit AddNewNftType(_maxNftValue, _maxRarityValues);
     }
 
