@@ -50,6 +50,7 @@ contract DaapNFTCreator is
     event UpdatePrice(uint8 nftType, uint8 rarity, uint256 newPrice);
     event MakingMintingAction(CharacterToken.MintingOrder[] mintingInfos, uint256 discount, address to);
     event SetNewPayToken(address oldPayToken, address newPayToken);
+    event withdraw(uint256 amount);
 
     /**
      *      @dev Modifiers using in contract 
@@ -85,6 +86,15 @@ contract DaapNFTCreator is
                 nftPrice[i][j] = 100 * 10 ** 18;
             }
         }
+    }
+
+    /**
+     *      @dev Function allows ADMIN to withdraw token in contract
+     */
+    function withdraw(uint256 _amount) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        require(payToken.balanceOf(address(this)) >= _amount, "Not enough tokens to withdraw");
+        payToken.transfer(msg.sender, _amount);
+        emit Withdraw(_amount);
     }
 
     function pause() public onlyRole(PAUSER_ROLE) {

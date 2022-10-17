@@ -63,6 +63,8 @@ contract CharacterToken is
     event UseNFTs(address to, uint256[] usedTokenIds);
     event SetMaxTokensInOneOrder(uint8 maxTokensInOneOrder);
     event SetMaxTokensInOneUsing(uint8 maxTokenInOneUsing);
+    event SetWhiteList(address to);
+    event SwitchFreeTransferMode(bool oldMode, bool newMode);
     event UpgradeExistingNftType(uint8 nftType, uint8 oldMaxRarityValue, uint8 upgradeMaxRarityValue);
 
     bytes32 public constant PAUSER_ROLE = keccak256("PAUSER_ROLE");
@@ -110,8 +112,11 @@ contract CharacterToken is
     // Mapping nftType to Max Rariry value
     mapping(uint8 => uint8) public nftItems;
 
-    // Mapping address whitelist to struct WhiteListInfo
-    // mapping(address =>  WhiteListInfo) whiteListInfo;
+    // Mapping address of user and its ability in whitelist or not
+    mapping(address => bool) public whiteList;
+
+    // Flag Free transfer NFT
+    bool public FREE_TRANSFER;
 
     /**
      * @notice Checks if the msg.sender is a contract or a proxy
@@ -129,6 +134,8 @@ contract CharacterToken is
         MAX_NFT_TYPE_VALUE = 1;
         nftItems[uint8(1)] = _maxRarityValue;
         totalSupply = 100000000;
+        whiteList[msg.sender] = true;
+        FREE_TRANSFER = false;
     }
 
     /**
@@ -147,6 +154,28 @@ contract CharacterToken is
         _setupRole(MINTER_ROLE, msg.sender);
         _setupRole(OPEN_NFT_ROLE, msg.sender);
         _setupRole(WHITELIST_ROLE, msg.sender);
+    }
+
+    /**
+     *      @dev Function allow ADMIN to set user in whitelist
+     */
+    function setWhiteList(address _to) external onlyRole(DESIGNER_ROLE) {
+        whiteList[_to] = true;
+        emit SetWhiteList(_to);
+    }
+
+    /**
+     *      @dev Function allow ADMIN to set free transfer flag
+     */
+    function switchFreeTransferMode() external onlyRole(DESIGNER_ROLE) {
+        bool oldMode = FREE_TRANSFER;
+        if (FREE_TRANSFER) {
+            FREE_TRANSFER = false;
+        } else {
+            FREE_TRANSFER = true;
+        }
+        bool newMode = FREE_TRANSFER;
+        emit SwitchFreeTransferMode(oldMode, newMode);
     }
 
     /**
@@ -392,60 +421,6 @@ contract CharacterToken is
     }
 
     /** 
-     *  Function whiteListMint NFTs
-     */
-    // function whitelistMint(
-    //     MintingOrder[] calldata _mintingOrders,
-    //     address _to,
-    //     bytes calldata _callbackData
-    // ) external notContract onlyRole(MINTER_ROLE) {
-    //     require(_mintingOrders.length > 0, "No token to mint");
-    //     require(_mintingOrders.length <= MAX_TOKENS_IN_ORDER, "Maximum tokens in one mint reached");
-    //     require(
-    //         tokenIdCounter.current() + _mintingOrders.length <= getTotalSupply(),
-    //         "Total supply of NFT reached"
-    //     );  
-
-    //     for (uint256 i=0; i < _mintingOrders.length; i++) {
-    //         // require(
-    //         //     whiteListInfo[_to]...... > amount, 
-    //         //     "User not in whitelist or limit reached"
-    //         // ); // [TODO] Check amount each rarity & nftType in whiteListInfo.
-    //         require(
-    //             _mintingOrders[i].nftType <= MAX_NFT_TYPE_VALUE,
-    //             "Invalid NFT type"
-    //         );
-    //         require(
-    //             _mintingOrders[i].rarity > 0 && _mintingOrders[i].rarity <= nftItems[_mintingOrders[i].nftType],
-    //             "Invalid rarity"
-    //         );
-    //     }
-        
-    //     ReturnMintingOrder[] memory _returnOrder = new ReturnMintingOrder[](_mintingOrders.length);
-    //     for (uint256 i=0; i < _mintingOrders.length; i++) {
-    //         uint256 _tokenId = createToken(
-    //             _to,
-    //             _mintingOrders[i].rarity,
-    //             _mintingOrders[i].cid,
-    //             _mintingOrders[i].nftType
-    //         );
-    //         // whiteListInfo[to]... -= amount; [TODO] minus amount minted
-    //         _returnOrder[i] = ReturnMintingOrder(
-    //             _tokenId,
-    //             _mintingOrders[i].rarity,
-    //             _mintingOrders[i].cid,
-    //             _mintingOrders[i].nftType
-    //         );
-    //     }
-
-    //     emit MintOrder(
-    //         _callbackData,
-    //         _to,
-    //         _returnOrder
-    //     );
-    // }
-
-    /** 
      *      Function return tokenURI for specific NFT 
      *      @param _tokenId ID of NFT
      *      @return tokenURI of token with ID = _tokenId
@@ -510,6 +485,12 @@ contract CharacterToken is
     ) internal override {
         TokenDetail storage _tokenDetail = tokenDetails[tokenId];
         require(_tokenDetail.isUsed == true, "This token already used");
+        if (FREE_TRANSFER == false) {
+            require(
+                whiteList[to] == true || whiteList[from],
+                "Not support to transfer directly"
+            );
+        }
         ERC721Upgradeable._transfer(from, to, tokenId);
     }
 
@@ -589,25 +570,4 @@ contract CharacterToken is
         }
         return size > 0;
     }
-
-    /**
-     * Set whitelist address, land type and amount.
-        If set after addr whitelistMint tokens, amount will be reset to input amount.
-     */
-    // function setWhitelist(
-    //     WhiteListInfo memory _whitelistInfo, 
-    //     address _addr
-    // ) external onlyRole(WHITELIST_ROLE) 
-    // {
-    //     require(
-    //         _whitelistInfo.rarites.length > 0 && _whitelistInfo.nftTypes.length > 0 &&  _whitelistInfo.amounts.length > 0, 
-    //         "Length must be greater than 0"
-    //     );
-    //     require(
-    //         _whitelistInfo.rarites.length == _whitelistInfo.nftTypes.length && _whitelistInfo.nftTypes.length ==  _whitelistInfo.amounts.length,
-    //         "Length must be equal"
-            
-    //     );
-    //     whiteListInfo[_addr] = _whitelistInfo;
-    // }
 }
