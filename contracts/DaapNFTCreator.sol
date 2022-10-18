@@ -50,7 +50,7 @@ contract DaapNFTCreator is
     event UpdatePrice(uint8 nftType, uint8 rarity, uint256 newPrice);
     event MakingMintingAction(CharacterToken.MintingOrder[] mintingInfos, uint256 discount, address to);
     event SetNewPayToken(address oldPayToken, address newPayToken);
-    event withdraw(uint256 amount);
+    event Withdraw(uint256 amount);
 
     /**
      *      @dev Modifiers using in contract 
