@@ -24,11 +24,6 @@ contract CharacterToken is
     OwnableUpgradeable,
     INFTToken
 {
-    // struct WhiteListInfo{
-    //     uint8[] rarites;
-    //     uint8[] nftTypes;
-    //     uint256[] amounts;
-    // }
 
     struct MintingOrder {
         uint8 rarity;
@@ -315,6 +310,13 @@ contract CharacterToken is
     {
         uint256[] memory ids = tokenIds[to];
         return ids;
+    }
+
+    /**
+     *      @notice Function allow to get token details by token ID 
+     */
+    function getTokenDetailsByID(uint256 _tokenId) external view returns (TokenDetail memory) {
+        return tokenDetails[_tokenId];
     }
 
     /**

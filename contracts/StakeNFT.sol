@@ -3,7 +3,7 @@ pragma solidity ^0.8.4;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import "./interfaces/IKatanaNFT.sol";
+import "./interfaces/ICharacterToken.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
 
@@ -21,7 +21,7 @@ contract StakeNFT is ReentrancyGuard, AccessControl {
 
     // Interfaces for ERC20 and ERC721
     IERC20 public immutable rewardsToken;
-    address[] public nftCollections;
+    ICharacterToken[] public nftCollections;
 
     // Rewards per hour per token deposited in wei.
     mapping(address => uint256) public rewardsPerHour;
@@ -47,7 +47,7 @@ contract StakeNFT is ReentrancyGuard, AccessControl {
 
     // Constructor function to set the rewards token and the NFT collection addresses
     constructor(
-        address[] memory _nftCollections,
+        ICharacterToken[] memory _nftCollections,
         IERC20 _rewardsToken,
         uint256[] memory _rewardsPerHour,
         uint256 _startStaking,
@@ -57,7 +57,7 @@ contract StakeNFT is ReentrancyGuard, AccessControl {
         nftCollections = _nftCollections;
         rewardsToken = _rewardsToken;
         for (uint256 i; i < _nftCollections.length; i++) {
-            rewardsPerHour[_nftCollections[i]] = _rewardsPerHour[i];
+            rewardsPerHour[address(_nftCollections[i])] = _rewardsPerHour[i];
         }
         startStaking = _startStaking;
         endStaking = _endStaking;
@@ -66,10 +66,14 @@ contract StakeNFT is ReentrancyGuard, AccessControl {
     struct StakedToken {
         address staker;
         uint256 tokenId;
-        // string rarity;
-        // uint256 ranking_point;
+        uint8 rarity;
+        uint8 nftType;
     }
     
+    // Define events
+    event Stake(uint256 tokenId, address nftCollection);
+    event Withdraw(uint256 tokenId, address nftCollection);
+
     // Staker info
     struct Staker {
         // Amount of tokens staked by the staker
@@ -102,13 +106,13 @@ contract StakeNFT is ReentrancyGuard, AccessControl {
     }
 
     // Function allow ADMIN to add new NFT collection and its rewards per hour
-    function addNewCollection(uint256 _rewardsPerHour, address _nftCollection) external onlyAdmin {
+    function addNewCollection(uint256 _rewardsPerHour, ICharacterToken _nftCollection) external onlyAdmin {
         nftCollections.push(_nftCollection);
-        rewardsPerHour[_nftCollection] = _rewardsPerHour;
+        rewardsPerHour[address(_nftCollection)] = _rewardsPerHour;
     }
 
     // Function allow ADMIN to remove new NFT collection and its rewards per hour
-    function removeCollection(address _nftCollection) external onlyAdmin {
+    function removeCollection(ICharacterToken _nftCollection) external onlyAdmin {
         uint256 _index = 0;
         bool isIn = false;
         for (uint256 i=0; i < nftCollections.length; i++) {
@@ -126,7 +130,7 @@ contract StakeNFT is ReentrancyGuard, AccessControl {
     }
     
     // Function: check if a nft collection is in List nft collections was configed in this contract or not
-    function isInListCollection(address _nftCollection) private view returns (bool) {
+    function isInListCollection(ICharacterToken _nftCollection) private view returns (bool) {
         bool _isIn = false;
         for (uint256 i; i< nftCollections.length; i++) {
             if (nftCollections[i] == _nftCollection) {
@@ -141,16 +145,16 @@ contract StakeNFT is ReentrancyGuard, AccessControl {
     // Increment the amountStaked and map msg.sender to the Token Id of the staked
     // Token to later send back on withdrawal. Finally give timeOfLastUpdate the
     // value of now.
-    function stake(uint256 _tokenId, address _nftCollection) external nonReentrant onlyWhenInStaking {
+    function stake(uint256 _tokenId, ICharacterToken _nftCollection) external nonReentrant onlyWhenInStaking {
         // If wallet has tokens staked, calculate the rewards before adding the new token
-        if (stakers[_nftCollection][msg.sender].amountStaked > 0) {
-            uint256 rewards = calculateRewards(msg.sender, _nftCollection);
-            stakers[_nftCollection][msg.sender].unclaimedRewards += rewards;
+        if (stakers[address(_nftCollection)][msg.sender].amountStaked > 0) {
+            uint256 rewards = calculateRewards(msg.sender, address(_nftCollection));
+            stakers[address(_nftCollection)][msg.sender].unclaimedRewards += rewards;
         }
 
         // Wallet must own the token they are trying to stake
         require(
-            IKatanaNFT(_nftCollection).ownerOf(_tokenId) == msg.sender,
+            _nftCollection.ownerOf(_tokenId) == msg.sender,
             "You don't own this NFT!"
         );
 
@@ -158,36 +162,37 @@ contract StakeNFT is ReentrancyGuard, AccessControl {
         require(isInListCollection(_nftCollection), "NFT collection not found in staking config");
 
         // Transfer the token from the wallet to the Smart contract
-        IKatanaNFT(_nftCollection).transferFrom(msg.sender, address(this), _tokenId);
+        _nftCollection.transferFrom(msg.sender, address(this), _tokenId);
 
         // Create StakedToken
-        // (string memory rarity, uint256 ranking_point) = nftCollection.getItemInfoById(_tokenId);
-        // StakedToken memory stakedToken = StakedToken(msg.sender, _tokenId, rarity, ranking_point);
-        StakedToken memory stakedToken = StakedToken(msg.sender, _tokenId);
+        CharacterToken.TokenDetail memory _tokenDetails = _nftCollection.getTokenDetailsByID(_tokenId);
+        StakedToken memory stakedToken = StakedToken(msg.sender, _tokenId, _tokenDetails.rarity, _tokenDetails.nftType);
 
         // Add the token to the stakedTokens array
-        stakers[_nftCollection][msg.sender].stakedTokens.push(stakedToken);
+        stakers[address(_nftCollection)][msg.sender].stakedTokens.push(stakedToken);
 
         // Increment the amount staked for this wallet
-        stakers[_nftCollection][msg.sender].amountStaked++;
+        stakers[address(_nftCollection)][msg.sender].amountStaked++;
 
         //Add the index of newly stakedToken in stakedTokenIdxs mapping
-        stakedTokenIdxs[_nftCollection][_tokenId] = stakers[_nftCollection][msg.sender].stakedTokens.length - 1;
+        stakedTokenIdxs[address(_nftCollection)][_tokenId] = stakers[address(_nftCollection)][msg.sender].stakedTokens.length - 1;
 
         // Update the mapping of the tokenId to the staker's address
-        stakerAddress[_nftCollection][_tokenId] = msg.sender;
+        stakerAddress[address(_nftCollection)][_tokenId] = msg.sender;
 
         // Update the timeOfLastUpdate for the staker   
-        stakers[_nftCollection][msg.sender].timeOfLastUpdate = block.timestamp;
+        stakers[address(_nftCollection)][msg.sender].timeOfLastUpdate = block.timestamp;
+
+        emit Stake(_tokenId, address(_nftCollection));
     }
     
     // Check if user has any ERC721 Tokens Staked and if they tried to withdraw,
     // calculate the rewards and store them in the unclaimedRewards
     // decrement the amountStaked of the user and transfer the ERC721 token back to them
-    function withdraw(uint256 _tokenId, address _nftCollection) external nonReentrant {
+    function withdraw(uint256 _tokenId, ICharacterToken _nftCollection) external nonReentrant {
         // Make sure the user has at least one token staked before withdrawing
         require(
-            stakers[_nftCollection][msg.sender].amountStaked > 0,
+            stakers[address(_nftCollection)][msg.sender].amountStaked > 0,
             "You have no tokens staked"
         );
 
@@ -195,30 +200,32 @@ contract StakeNFT is ReentrancyGuard, AccessControl {
         require(isInListCollection(_nftCollection), "NFT collection not found in staking config");
         
         // Wallet must own the token they are trying to withdraw
-        require(stakerAddress[_nftCollection][_tokenId] == msg.sender, "You don't own this token!");
+        require(stakerAddress[address(_nftCollection)][_tokenId] == msg.sender, "You don't own this token!");
 
         // Update the rewards for this user, as the amount of rewards decreases with less tokens.
 
-        uint256 rewards = calculateRewards(msg.sender, _nftCollection);
-        stakers[_nftCollection][msg.sender].unclaimedRewards += rewards;
+        uint256 rewards = calculateRewards(msg.sender, address(_nftCollection));
+        stakers[address(_nftCollection)][msg.sender].unclaimedRewards += rewards;
 
         // Get the index of stakedToken from stakedTokenIdxs mapping
-        uint256 tokenIdx = stakedTokenIdxs[_nftCollection][_tokenId];
-        if (stakers[_nftCollection][msg.sender].stakedTokens[tokenIdx].staker != address(0)) {
+        uint256 tokenIdx = stakedTokenIdxs[address(_nftCollection)][_tokenId];
+        if (stakers[address(_nftCollection)][msg.sender].stakedTokens[tokenIdx].staker != address(0)) {
             // Set this token's .staker to be address 0 to mark it as no longer staked
-            stakers[_nftCollection][msg.sender].stakedTokens[tokenIdx].staker = address(0);
+            stakers[address(_nftCollection)][msg.sender].stakedTokens[tokenIdx].staker = address(0);
 
             // Decrement the amount staked for this wallet
-            stakers[_nftCollection][msg.sender].amountStaked--;
+            stakers[address(_nftCollection)][msg.sender].amountStaked--;
 
             // Update the mapping of the tokenId to the be address(0) to indicate that the token is no longer staked
-            stakerAddress[_nftCollection][_tokenId] = address(0);
+            stakerAddress[address(_nftCollection)][_tokenId] = address(0);
 
             // Transfer the token back to the withdrawer
-            IKatanaNFT(_nftCollection).transferFrom(address(this), msg.sender, _tokenId);
+            _nftCollection.transferFrom(address(this), msg.sender, _tokenId);
 
             // Update the timeOfLastUpdate for the withdrawer   
-            stakers[_nftCollection][msg.sender].timeOfLastUpdate = block.timestamp;
+            stakers[address(_nftCollection)][msg.sender].timeOfLastUpdate = block.timestamp;
+
+            emit Withdraw(_tokenId, address(_nftCollection));
         }
     }
 
@@ -228,7 +235,7 @@ contract StakeNFT is ReentrancyGuard, AccessControl {
     function claimRewards() external onlyWhenEndStaking {
         uint256 rewards;
         for (uint256 i=0; i < nftCollections.length; i++) {
-            address _nftCollection = nftCollections[i];
+            address _nftCollection = address(nftCollections[i]);
             rewards += calculateRewards(msg.sender, _nftCollection) + stakers[_nftCollection][msg.sender].unclaimedRewards;
             stakers[_nftCollection][msg.sender].timeOfLastUpdate = block.timestamp;
             stakers[_nftCollection][msg.sender].unclaimedRewards = 0;
@@ -241,8 +248,8 @@ contract StakeNFT is ReentrancyGuard, AccessControl {
     function availableRewards(address _staker) public view returns (uint256) {
         uint256 rewards;
         for (uint256 i=0; i < nftCollections.length; i++) {
-            rewards += calculateRewards(_staker, nftCollections[i]) +
-                stakers[nftCollections[i]][_staker].unclaimedRewards;
+            rewards += calculateRewards(_staker, address(nftCollections[i])) +
+                stakers[address(nftCollections[i])][_staker].unclaimedRewards;
         }
         return rewards;
     }
