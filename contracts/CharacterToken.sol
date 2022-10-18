@@ -486,7 +486,7 @@ contract CharacterToken is
         uint256 tokenId
     ) internal override {
         TokenDetail storage _tokenDetail = tokenDetails[tokenId];
-        require(_tokenDetail.isUsed == true, "This token already used");
+        require(_tokenDetail.isUsed == false, "This token already used");
         if (FREE_TRANSFER == false) {
             require(
                 whiteList[to] == true || whiteList[from],
