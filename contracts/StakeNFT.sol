@@ -12,10 +12,17 @@ contract StakeNFT is ReentrancyGuard, AccessControl {
 
     // Create a new role identifier for the admin role
     bytes32 public constant ADMIN_ROLE = keccak256("ADMIN_ROLE");
+    bytes32 public constant UPGRADER_ROLE = keccak256("UPGRADER_ROLE");
     
     // Modifier check if caller is admin or not
     modifier onlyAdmin() {
         require(hasRole(ADMIN_ROLE, msg.sender), "Caller is not admin");
+        _;
+    }
+
+    // Modifier check if caller is upgrader or not
+    modifier onlyUpgrader() {
+        require(hasRole(UPGRADER_ROLE, msg.sender), "Caller is not upgrader");
         _;
     }
 
@@ -53,6 +60,9 @@ contract StakeNFT is ReentrancyGuard, AccessControl {
         uint256 _startStaking,
         uint256 _endStaking
     ) {
+        _setupRole(ADMIN_ROLE, msg.sender);
+        _setupRole(UPGRADER_ROLE, msg.sender);
+
         require(_nftCollections.length == _rewardsPerHour.length, "Invalid config: number of collections and rewards per hour not match");
         nftCollections = _nftCollections;
         rewardsToken = _rewardsToken;
@@ -101,18 +111,18 @@ contract StakeNFT is ReentrancyGuard, AccessControl {
     mapping(address => mapping(uint256 => uint256)) private stakedTokenIdxs;
 
     // Function allow ADMIN to re-config "rewardsPerHour"
-    function setRewardsPerHour(uint256 _rewardsPerHour, address _nftCollection) external onlyAdmin {
+    function setRewardsPerHour(uint256 _rewardsPerHour, address _nftCollection) external onlyUpgrader {
         rewardsPerHour[_nftCollection] = _rewardsPerHour;
     }
 
     // Function allow ADMIN to add new NFT collection and its rewards per hour
-    function addNewCollection(uint256 _rewardsPerHour, ICharacterToken _nftCollection) external onlyAdmin {
+    function addNewCollection(uint256 _rewardsPerHour, ICharacterToken _nftCollection) external onlyUpgrader {
         nftCollections.push(_nftCollection);
         rewardsPerHour[address(_nftCollection)] = _rewardsPerHour;
     }
 
     // Function allow ADMIN to remove new NFT collection and its rewards per hour
-    function removeCollection(ICharacterToken _nftCollection) external onlyAdmin {
+    function removeCollection(ICharacterToken _nftCollection) external onlyUpgrader {
         uint256 _index = 0;
         bool isIn = false;
         for (uint256 i=0; i < nftCollections.length; i++) {
@@ -253,6 +263,18 @@ contract StakeNFT is ReentrancyGuard, AccessControl {
         }
         return rewards;
     }
+
+    // View available rewards at any point of time of multi users
+    function availableRewardsForMultiUsers(address[] memory _stakers) public view returns (uint256[] memory) {
+        uint256[] memory rewards = new uint256[](_stakers.length);
+        for (uint256 i=0; i < _stakers.length; i++) {
+            for (uint256 j=0; j < nftCollections.length; j++) {
+                rewards[i] += calculateRewards(_stakers[i], address(nftCollections[i])) +
+                    stakers[address(nftCollections[i])][_stakers[i]].unclaimedRewards;
+            }
+        }
+        return rewards;
+    } 
 
     // View list staked NFT of each user
     function getStakedTokens(address _user, address _nftCollection) public view returns (StakedToken[] memory) {
