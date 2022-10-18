@@ -355,11 +355,11 @@ contract CharacterToken is
         _setTokenUri(_id, _cid);
         _mint(_to, _id);
         
-        // Save data for "tokenIds"
-        tokenIds[_to].push(_id);
+        // // Save data for "tokenIds"
+        // tokenIds[_to].push(_id);
 
-        // Save data for "tokenIdsPerTypeAndRarity"
-        tokenIdsPerTypeAndRarity[_to][_nftType][_rarity].push(_id);
+        // // Save data for "tokenIdsPerTypeAndRarity"
+        // tokenIdsPerTypeAndRarity[_to][_nftType][_rarity].push(_id);
 
         // Save data for "tokenDetails"
         TokenDetail memory _tokenDetail;
