@@ -126,7 +126,7 @@ contract StakeNFT is
     ) public virtual override returns (bytes4) {
         return this.onERC721Received.selector;
     }
-
+    
     // Function allow ADMIN to re-config "rewardsPerHour"
     function setRewardsPerHour(uint256 _rewardsPerHour, address _nftCollection) external onlyUpgrader {
         rewardsPerHour[_nftCollection] = _rewardsPerHour;
@@ -221,6 +221,9 @@ contract StakeNFT is
         emit Withdraw(_tokenId, msg.sender, address(_nftCollection));
     }
 
+    /**
+     *      @notice Function allows user to unstake all staked NFTs of them in one call
+     */
     function unstakeAll(ICharacterToken _nftCollection) external nonReentrant {
         StakedToken[] memory _stakedTokens = stakers[address(_nftCollection)][msg.sender].stakedTokens;
         for (uint256 i=0; i < _stakedTokens.length; i++) {
