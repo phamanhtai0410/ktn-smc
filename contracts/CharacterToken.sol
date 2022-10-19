@@ -10,6 +10,7 @@ import "@openzeppelin/contracts-upgradeable/token/ERC721/ERC721Upgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
+import "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
 import "./CharacterDetails.sol";
 import "./interfaces/INFTToken.sol";
 import "./interfaces/ICharacterItem.sol";
@@ -18,6 +19,7 @@ import "./interfaces/IDaapNFTCreator.sol";
 
 contract CharacterToken is
     ERC721Upgradeable,
+    IERC721Receiver,
     AccessControlUpgradeable,
     PausableUpgradeable,
     UUPSUpgradeable,
@@ -87,7 +89,6 @@ contract CharacterToken is
 
     // Mapping from owner address to list of token IDs.
     mapping(address => uint256[]) public tokenIds;
-    mapping(address => mapping(uint8 => mapping(uint8 => uint256[]))) public tokenIdsPerTypeAndRarity;
 
     // Mapping from token ID to token details.
     mapping(uint256 => TokenDetail) public tokenDetails;
@@ -151,6 +152,15 @@ contract CharacterToken is
         _setupRole(WHITELIST_ROLE, msg.sender);
     }
 
+    function onERC721Received(
+        address,
+        address,
+        uint256,
+        bytes memory
+    ) public virtual override returns (bytes4) {
+        return this.onERC721Received.selector;
+    }
+    
     /**
      *      @dev Function allow ADMIN to set user in whitelist
      */
@@ -358,9 +368,6 @@ contract CharacterToken is
         // // Save data for "tokenIds"
         // tokenIds[_to].push(_id);
 
-        // // Save data for "tokenIdsPerTypeAndRarity"
-        // tokenIdsPerTypeAndRarity[_to][_nftType][_rarity].push(_id);
-
         // Save data for "tokenDetails"
         TokenDetail memory _tokenDetail;
         _tokenDetail.rarity = _rarity;
@@ -444,35 +451,17 @@ contract CharacterToken is
     }
 
     /** Call from CharacterBoxBasket token to open character. */
-    function useNFTs(uint256[] memory _tokenIdsList, uint8 _rarity, uint8 _nftType) external override {
+    function useNFTs(uint256[] memory _tokenIdsList) external override {
         require(_tokenIdsList.length > 0, "No token to mint");
         require(_tokenIdsList.length < MAX_TOKENS_IN_USING, "User doesn't have enough NFT to call useNFTs");
         uint256[] memory _usedTokenIds = new uint256[](_tokenIdsList.length);
         for (uint256 i=0; i < _tokenIdsList.length; i++) {
-            require(
-                isTokenIdInList(_tokenIdsList[i], tokenIdsPerTypeAndRarity[msg.sender][_nftType][_rarity]),
-                "TokenID in list of token ID is not match with type or rarity"
-            );
             require(ownerOf(_tokenIdsList[i]) == msg.sender, "User not owned this token");
             item.createNewItem(_tokenIdsList[i]);
             tokenDetails[_tokenIdsList[i]].isUsed = true;
             _usedTokenIds[i] = _tokenIdsList[i];
         }
         emit UseNFTs(msg.sender, _usedTokenIds);
-    }
-
-    /**
-     *      @notice Function check if _tokenId in _listTokenIds or not
-     */
-    function isTokenIdInList(uint256 _tokenId, uint256[] memory _listTokenIds) private pure returns (bool) {
-        bool isIn = false;
-        for (uint256 i=0; i < _listTokenIds.length; i++) {
-            if (_listTokenIds[i] == _tokenId) {
-                isIn = true;
-                break;
-            }
-        }
-        return isIn;
     }
 
     /**
@@ -496,6 +485,7 @@ contract CharacterToken is
         ERC721Upgradeable._transfer(from, to, tokenId);
     }
 
+    event Debug(uint56 index, uint256[] list);
     /**
      *      @notice Function checking before transfer action occurs
      */
@@ -520,22 +510,6 @@ contract CharacterToken is
             }
             ids[index] = ids[ids.length - 1];
             ids.pop();
-
-            // Pop tokenID out of list of user #"from": tokenIdsPerTypeAndRarity 
-            TokenDetail storage _tokenDetail = tokenDetails[id];
-            uint8 _rarity = _tokenDetail.rarity;
-            uint8 _nftType = _tokenDetail.nftType;
-
-            uint256[] storage _listTokenPerTypeAndRarity = tokenIdsPerTypeAndRarity[from][_nftType][_rarity];
-            uint256 indexPerRarity;
-            for (uint256 i=0; i < _listTokenPerTypeAndRarity.length; i++) {
-                if (_listTokenPerTypeAndRarity[i] == id) {
-                    indexPerRarity = i;
-                    break;
-                }
-            }
-            _listTokenPerTypeAndRarity[index] = _listTokenPerTypeAndRarity[ids.length - 1];
-            _listTokenPerTypeAndRarity.pop();
         }
         if (to == address(0)) {
             // Burn.
@@ -545,8 +519,6 @@ contract CharacterToken is
 
             // Get infos from tokenDetails
             TokenDetail storage _tokenDetail = tokenDetails[id];
-            uint8 _rarity = _tokenDetail.rarity;
-            uint8 _nftType = _tokenDetail.nftType;
 
             // Check valid of in used or not after
             require(_tokenDetail.isUsed == false, "Token already used");
@@ -554,10 +526,6 @@ contract CharacterToken is
             // Push new tokenID into list of user #"to": tokenIds
             uint256[] storage ids = tokenIds[to];
             ids.push(id);
-
-            // Push new tokenID into list of user #"to": tokenIdsPerTypeAndRarity
-            uint256[] storage _listTokenPerTypeAndRarity = tokenIdsPerTypeAndRarity[from][_nftType][_rarity];
-            _listTokenPerTypeAndRarity.push(id);  
         }
     }
 
