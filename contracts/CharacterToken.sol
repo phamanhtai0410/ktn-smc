@@ -15,6 +15,7 @@ import "./CharacterDetails.sol";
 import "./interfaces/INFTToken.sol";
 import "./interfaces/ICharacterItem.sol";
 import "./interfaces/IDaapNFTCreator.sol";
+import "./libraries/CharacterTokenDetails.sol";
 
 
 contract CharacterToken is
@@ -26,37 +27,18 @@ contract CharacterToken is
     OwnableUpgradeable,
     INFTToken
 {
-
-    struct MintingOrder {
-        uint8 rarity;
-        string cid;
-        uint8 nftType;
-    }
-
-    struct ReturnMintingOrder {
-        uint256 tokenId;
-        uint8 rarity;
-        string cid;
-        uint8 nftType;
-    }
-
-    struct TokenDetail {
-        uint8 rarity;
-        uint8 nftType;
-        string tokenURI;
-        bool isUsed;
-    }
-
     using Counters for Counters.Counter;
-    using CharacterDetails for CharacterDetails.Details;
-
-    event TokenCreated(address to, uint256 tokenId, TokenDetail details);
+    using CharacterTokenDetails for CharacterTokenDetails.TokenDetail;
+    using CharacterTokenDetails for CharacterTokenDetails.MintingOrder;
+    using CharacterTokenDetails for CharacterTokenDetails.ReturnMintingOrder;
+    
+    event TokenCreated(address to, uint256 tokenId, CharacterTokenDetails.TokenDetail details);
     event BurnToken(uint256[] ids);
     event SetNewMinter(address newMinter);
     event SetCharacterItem(address itemAddress);
     event SetMarketplace(address marketplaceAddress);
     event AddNewNftType(uint8 maxNftType, uint8[] maxRarityList);
-    event MintOrder(bytes callbackData, address to, ReturnMintingOrder[] returnMintingOrder);
+    event MintOrder(bytes callbackData, address to, CharacterTokenDetails.ReturnMintingOrder[] returnMintingOrder);
     event UseNFTs(address to, uint256[] usedTokenIds);
     event SetMaxTokensInOneOrder(uint8 maxTokensInOneOrder);
     event SetMaxTokensInOneUsing(uint8 maxTokenInOneUsing);
@@ -91,7 +73,7 @@ contract CharacterToken is
     mapping(address => uint256[]) public tokenIds;
 
     // Mapping from token ID to token details.
-    mapping(uint256 => TokenDetail) public tokenDetails;
+    mapping(uint256 => CharacterTokenDetails.TokenDetail) public tokenDetails;
 
     // Max tokens can mint in one order
     uint8 public MAX_TOKENS_IN_ORDER;
@@ -300,10 +282,10 @@ contract CharacterToken is
     function getTokenDetailsByOwner(address to)
         external
         view
-        returns (TokenDetail[] memory)
+        returns (CharacterTokenDetails.TokenDetail[] memory)
     {
         uint256[] storage ids = tokenIds[to];
-        TokenDetail[] memory result = new TokenDetail[](ids.length);
+        CharacterTokenDetails.TokenDetail[] memory result = new CharacterTokenDetails.TokenDetail[](ids.length);
         for (uint256 i = 0; i < ids.length; ++i) {
             result[i] = tokenDetails[ids[i]];
         }
@@ -325,7 +307,7 @@ contract CharacterToken is
     /**
      *      @notice Function allow to get token details by token ID 
      */
-    function getTokenDetailsByID(uint256 _tokenId) external view returns (TokenDetail memory) {
+    function getTokenDetailsByID(uint256 _tokenId) external  view returns (CharacterTokenDetails.TokenDetail memory) {
         return tokenDetails[_tokenId];
     }
 
@@ -339,14 +321,14 @@ contract CharacterToken is
     /**
      *  @notice Function get Max NFT type value
      */
-    function getMaxNftType() external view returns(uint8) {
+    function getMaxNftType() external  view returns(uint8) {
         return MAX_NFT_TYPE_VALUE;
     }
 
     /**
      *  @notice Function return Max Rarity Value of each nftType
      */
-    function getMaxRarityValue(uint8 _nftType) external view returns (uint8) {
+    function getMaxRarityValue(uint8 _nftType) external  view returns (uint8) {
         return nftItems[_nftType];
     }
 
@@ -369,7 +351,7 @@ contract CharacterToken is
         // tokenIds[_to].push(_id);
 
         // Save data for "tokenDetails"
-        TokenDetail memory _tokenDetail;
+        CharacterTokenDetails.TokenDetail memory _tokenDetail;
         _tokenDetail.rarity = _rarity;
         _tokenDetail.nftType = _nftType;
         _tokenDetail.tokenURI = tokenURI(_id);
@@ -384,10 +366,10 @@ contract CharacterToken is
      *  Function mint NFTs
      */
     function mint(
-        MintingOrder[] calldata _mintingOrders,
+        CharacterTokenDetails.MintingOrder[] calldata _mintingOrders,
         address _to,
         bytes calldata _callbackData
-    ) external notContract onlyRole(MINTER_ROLE) {
+    ) external  notContract onlyRole(MINTER_ROLE) {
         require(_mintingOrders.length > 0, "No token to mint");
         // require(_mintingOrders.length <= MAX_TOKENS_IN_ORDER, "Maximum tokens in one mint reached");
         require(
@@ -406,7 +388,7 @@ contract CharacterToken is
             );
         }
 
-        ReturnMintingOrder[] memory _returnOrder = new ReturnMintingOrder[](_mintingOrders.length);
+        CharacterTokenDetails.ReturnMintingOrder[] memory _returnOrder = new CharacterTokenDetails.ReturnMintingOrder[](_mintingOrders.length);
         for (uint256 i=0; i < _mintingOrders.length; i++) {
             uint256 _tokenId = createToken(
                 _to,
@@ -414,7 +396,7 @@ contract CharacterToken is
                 _mintingOrders[i].cid,
                 _mintingOrders[i].nftType
             );
-            _returnOrder[i] = ReturnMintingOrder(
+            _returnOrder[i] = CharacterTokenDetails.ReturnMintingOrder(
                 _tokenId,
                 _mintingOrders[i].rarity,
                 _mintingOrders[i].cid,
@@ -474,7 +456,7 @@ contract CharacterToken is
         address to,
         uint256 tokenId
     ) internal override {
-        TokenDetail storage _tokenDetail = tokenDetails[tokenId];
+        CharacterTokenDetails.TokenDetail storage _tokenDetail = tokenDetails[tokenId];
         require(_tokenDetail.isUsed == false, "This token already used");
         if (FREE_TRANSFER == false) {
             require(
@@ -509,6 +491,7 @@ contract CharacterToken is
                 }
             }
             ids[index] = ids[ids.length - 1];
+            
             ids.pop();
         }
         if (to == address(0)) {
@@ -518,8 +501,7 @@ contract CharacterToken is
             // Transfer or mint.
 
             // Get infos from tokenDetails
-            TokenDetail storage _tokenDetail = tokenDetails[id];
-
+            CharacterTokenDetails.TokenDetail storage _tokenDetail = tokenDetails[id];
             // Check valid of in used or not after
             require(_tokenDetail.isUsed == false, "Token already used");
 
@@ -528,7 +510,7 @@ contract CharacterToken is
             ids.push(id);
         }
     }
-
+    
     /**
      * @notice Checks if address is a contract
      * @dev It prevents contract from being targetted

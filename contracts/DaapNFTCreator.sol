@@ -6,7 +6,7 @@ import "@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "./interfaces/ICharacterToken.sol";
-import "./CharacterToken.sol";
+import "./libraries/CharacterTokenDetails.sol";
 
 
 contract DaapNFTCreator is 
@@ -14,6 +14,7 @@ contract DaapNFTCreator is
     PausableUpgradeable
 {   
     using SafeERC20 for IERC20;
+    using CharacterTokenDetails for CharacterTokenDetails.MintingOrder;
 
     /**
      *      @dev Defines using Structs
@@ -48,7 +49,7 @@ contract DaapNFTCreator is
      */
     event SetNewSigner(address oldSigner, address newSigner);
     event UpdatePrice(uint8 nftType, uint8 rarity, uint256 newPrice);
-    event MakingMintingAction(CharacterToken.MintingOrder[] mintingInfos, uint256 discount, address to);
+    event MakingMintingAction(CharacterTokenDetails.MintingOrder[] mintingInfos, uint256 discount, address to);
     event SetNewPayToken(address oldPayToken, address newPayToken);
     event Withdraw(uint256 amount);
 
@@ -197,7 +198,7 @@ contract DaapNFTCreator is
      *
      */
     function makeMintingAction(
-        CharacterToken.MintingOrder[] calldata _mintingInfos,
+        CharacterTokenDetails.MintingOrder[] calldata _mintingInfos,
         uint256 _discount,
         Proof memory _proof
     ) external payable  notContract {

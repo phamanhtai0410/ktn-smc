@@ -7,7 +7,8 @@ import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
 import "./interfaces/ICharacterToken.sol";
-import "./CharacterToken.sol";
+import "./libraries/CharacterTokenDetails.sol";
+
 
 contract StakeNFT is 
     ReentrancyGuard,
@@ -15,6 +16,7 @@ contract StakeNFT is
     IERC721Receiver
 {
     using SafeERC20 for IERC20;
+    using CharacterTokenDetails for CharacterTokenDetails.TokenDetail;
 
     // Create a new role identifier for the admin role
     bytes32 public constant ADMIN_ROLE = keccak256("ADMIN_ROLE");
@@ -190,7 +192,7 @@ contract StakeNFT is
         _nftCollection.safeTransferFrom(msg.sender, address(this), _tokenId);
 
         // Create StakedToken
-        CharacterToken.TokenDetail memory _tokenDetails = _nftCollection.getTokenDetailsByID(_tokenId);
+        CharacterTokenDetails.TokenDetail memory _tokenDetails = _nftCollection.getTokenDetailsByID(_tokenId);
         StakedToken memory stakedToken = StakedToken(msg.sender, _tokenId, _tokenDetails.rarity, _tokenDetails.nftType);
 
         // Add the token to the stakedTokens array
