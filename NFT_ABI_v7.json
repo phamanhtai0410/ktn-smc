@@ -200,7 +200,7 @@
 					}
 				],
 				"indexed": false,
-				"internalType": "struct CharacterToken.ReturnMintingOrder[]",
+				"internalType": "struct CharacterTokenDetails.ReturnMintingOrder[]",
 				"name": "returnMintingOrder",
 				"type": "tuple[]"
 			}
@@ -451,7 +451,7 @@
 					}
 				],
 				"indexed": false,
-				"internalType": "struct CharacterToken.TokenDetail",
+				"internalType": "struct CharacterTokenDetails.TokenDetail",
 				"name": "details",
 				"type": "tuple"
 			}
@@ -894,7 +894,7 @@
 						"type": "bool"
 					}
 				],
-				"internalType": "struct CharacterToken.TokenDetail",
+				"internalType": "struct CharacterTokenDetails.TokenDetail",
 				"name": "",
 				"type": "tuple"
 			}
@@ -935,7 +935,7 @@
 						"type": "bool"
 					}
 				],
-				"internalType": "struct CharacterToken.TokenDetail[]",
+				"internalType": "struct CharacterTokenDetails.TokenDetail[]",
 				"name": "",
 				"type": "tuple[]"
 			}
@@ -1094,7 +1094,7 @@
 						"type": "uint8"
 					}
 				],
-				"internalType": "struct CharacterToken.MintingOrder[]",
+				"internalType": "struct CharacterTokenDetails.MintingOrder[]",
 				"name": "_mintingOrders",
 				"type": "tuple[]"
 			},

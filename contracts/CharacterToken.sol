@@ -11,7 +11,6 @@ import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
-import "./CharacterDetails.sol";
 import "./interfaces/INFTToken.sol";
 import "./interfaces/ICharacterItem.sol";
 import "./interfaces/IDaapNFTCreator.sol";

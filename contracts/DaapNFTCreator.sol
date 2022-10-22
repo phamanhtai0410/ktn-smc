@@ -3,6 +3,7 @@ pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "./interfaces/ICharacterToken.sol";
@@ -11,7 +12,8 @@ import "./libraries/CharacterTokenDetails.sol";
 
 contract DaapNFTCreator is 
     AccessControlUpgradeable,
-    PausableUpgradeable
+    PausableUpgradeable,
+    OwnableUpgradeable
 {   
     using SafeERC20 for IERC20;
     using CharacterTokenDetails for CharacterTokenDetails.MintingOrder;
@@ -169,7 +171,7 @@ contract DaapNFTCreator is
     function verifySignature(
         address _signer,
         uint256 _discount,
-        bytes32[] memory _cids,
+        string[] memory _cids,
         uint8[] memory _nftTypes,
         uint8[] memory _rarities,
         Proof memory _proof
@@ -178,7 +180,7 @@ contract DaapNFTCreator is
         if (_signer == address(0x0)) {
             return true;
         }
-        bytes32 digest = keccak256(abi.encodePacked(
+        bytes32 digest = keccak256(abi.encode(
             getChainID(),
             msg.sender,
             address(this),
@@ -203,11 +205,11 @@ contract DaapNFTCreator is
         Proof memory _proof
     ) external payable  notContract {
         require(_mintingInfos.length > 0, "Amount of minting NFTs must be greater than 0");
-        bytes32[] memory _cids = new bytes32[](_mintingInfos.length);
+        string[] memory _cids = new string[](_mintingInfos.length);
         uint8[] memory _nftTypes = new uint8[](_mintingInfos.length);
         uint8[] memory _rarities = new uint8[](_mintingInfos.length);
         for (uint256 i=0; i < _mintingInfos.length; i++) {
-            _cids[i] = _convertStringToBytes32(_mintingInfos[i].cid);
+            _cids[i] = _mintingInfos[i].cid;
             require(
                 _mintingInfos[i].nftType <= nftCollection.getMaxNftType(),
                 "Invalid nft type"
@@ -248,16 +250,16 @@ contract DaapNFTCreator is
     /**
      *  @notice Function convert string to bytes32
      */
-    function _convertStringToBytes32(string memory _string) internal pure returns (bytes32 result) {
-        bytes memory tempEmptyStringTest = bytes(_string);
-        if (tempEmptyStringTest.length == 0) {
-            return 0x0;
-        }
+    // function _convertStringToBytes32(string memory _string) internal pure returns (bytes32 result) {
+    //     bytes memory tempEmptyStringTest = bytes(_string);
+    //     if (tempEmptyStringTest.length == 0) {
+    //         return 0x0;
+    //     }
 
-        assembly {
-            result := mload(add(_string, 32))
-        }
-    }
+    //     assembly {
+    //         result := mload(add(_string, 32))
+    //     }
+    // }
 
     /**
      * @notice Checks if address is a contract
