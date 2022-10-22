@@ -58,3 +58,4 @@ remix-compiler.config.js
 **/artifacts/**
 .env
 
+venv
