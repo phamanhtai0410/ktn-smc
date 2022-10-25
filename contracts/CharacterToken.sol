@@ -368,7 +368,7 @@ contract CharacterToken is
         CharacterTokenDetails.MintingOrder[] calldata _mintingOrders,
         address _to,
         bytes calldata _callbackData
-    ) external  notContract onlyRole(MINTER_ROLE) {
+    ) external onlyRole(MINTER_ROLE) {
         require(_mintingOrders.length > 0, "No token to mint");
         // require(_mintingOrders.length <= MAX_TOKENS_IN_ORDER, "Maximum tokens in one mint reached");
         require(

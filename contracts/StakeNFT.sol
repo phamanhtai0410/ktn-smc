@@ -48,8 +48,8 @@ contract StakeNFT is
 
      // Define events
     event Stake(uint256 tokenId, address to, address nftCollection);
-    event Withdraw(uint256 tokenId, address to ,address nftCollection);
-    event UnstakeAll(address to, address nftCollection);
+    event Withdraw(uint256 tokenId, address to , address nftCollection);
+    event UnstakeAll(address to, uint256[] ids, address nftCollection);
 
     // Staker info
     struct Staker {
@@ -226,10 +226,16 @@ contract StakeNFT is
      */
     function unstakeAll(ICharacterToken _nftCollection) external nonReentrant {
         StakedToken[] memory _stakedTokens = stakers[address(_nftCollection)][msg.sender].stakedTokens;
+        uint256[] memory _ids = new uint256[](_stakedTokens.length);
+        uint256 _index;
         for (uint256 i=0; i < _stakedTokens.length; i++) {
-            _unstakeOne(_nftCollection, _stakedTokens[i].tokenId);
+            if (stakers[address(_nftCollection)][msg.sender].stakedTokens[i].staker != (address(0))) {
+                _unstakeOne(_nftCollection, _stakedTokens[i].tokenId);
+                _ids[_index] = _stakedTokens[i].tokenId;
+                _index = _index + 1;
+            }
         }
-        emit UnstakeAll(msg.sender, address(_nftCollection));
+        emit UnstakeAll(msg.sender, _ids, address(_nftCollection));
     }
 
     // Calculate rewards for the msg.sender, check if there are any rewards

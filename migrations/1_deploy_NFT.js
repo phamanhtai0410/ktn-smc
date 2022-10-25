@@ -86,6 +86,4 @@ module.exports = async function (deployer, network, accounts) {
         await _characterTokenInstant.UPGRADER_ROLE(),
         account
     );
-    
-
 }
