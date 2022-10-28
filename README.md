@@ -1,2 +1,3 @@
-# ktn-smc
+# Katana Inu NFTs SMART CONTRACTS
 
+##
