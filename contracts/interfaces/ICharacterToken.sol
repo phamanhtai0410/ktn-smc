@@ -9,10 +9,10 @@ interface ICharacterToken is IERC721Upgradeable {
     /**
      *      @dev Funtion let MINTER_ROLE can mint token(s) for user
      */
-    function mint(
+    function mintOrderFromDaapCreator(
         CharacterTokenDetails.MintingOrder[] calldata _mintingOrders,
         address _to,
-        bytes calldata _callbackData
+        string calldata _callbackData
     ) external;
 
     /**

@@ -47,7 +47,7 @@ contract verifySignatureTesting {
         bytes32 digest = keccak256(abi.encode(
             uint256(97),
             msg.sender,
-            address(this),
+            address(0x938926Bb46bCb51A0Bf43F73f99500f6b9c217a4),
             _discount,
             _cids,
             _nftTypes,

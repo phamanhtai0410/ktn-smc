@@ -202,7 +202,8 @@ contract DaapNFTCreator is
     function makeMintingAction(
         CharacterTokenDetails.MintingOrder[] calldata _mintingInfos,
         uint256 _discount,
-        Proof memory _proof
+        Proof memory _proof,
+        string memory _callbackData
     ) external payable  notContract {
         require(_mintingInfos.length > 0, "Amount of minting NFTs must be greater than 0");
         string[] memory _cids = new string[](_mintingInfos.length);
@@ -236,10 +237,9 @@ contract DaapNFTCreator is
         for (uint256 i=0; i < _mintingInfos.length; i++) {
             _amount += nftPrice[_mintingInfos[i].nftType][_mintingInfos[i].rarity];
         }
-        bytes memory _callbackData = bytes("daap-creator");
         require(payToken.balanceOf(msg.sender) > _amount - _discount, "User needs to hold enough token to buy this token");
         payToken.transferFrom(msg.sender, address(this), _amount - _discount);
-        nftCollection.mint(
+        nftCollection.mintOrderFromDaapCreator(
             _mintingInfos,
             msg.sender,
             _callbackData
