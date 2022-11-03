@@ -1,0 +1,27 @@
+{
+  "name": "ktn-smc",
+  "version": "1.0.0",
+  "description": "",
+  "directories": {
+    "test": "test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "ssh://git@gitlab.rinznetwork.com:2222/katana/ktn-smc.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@openzeppelin/contracts": "^4.6.0",
+    "@openzeppelin/contracts-upgradeable": "^4.6.0",
+    "@truffle/hdwallet-provider": "^2.0.17",
+    "dotenv": "^16.0.1",
+    "ethereumjs-util": "^7.1.5",
+    "ethers": "^5.7.2",
+    "node-xlsx": "^0.21.0",
+    "truffle": "^5.5.13",
+    "truffle-contract-size": "^2.0.1",
+    "truffle-flatten": "^1.0.8",
+    "web3": "^1.8.0"
+  }
+}
