@@ -6,6 +6,8 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
 import { Clones } from "@openzeppelin/contracts/proxy/Clones.sol";
 import "./CharacterToken.sol";
+import "./DaapNFTCreator.sol";
+
 
 contract KatanaNftFactory is AccessControl {
 
@@ -14,12 +16,16 @@ contract KatanaNftFactory is AccessControl {
         uint8 maxRarityValue,
         address dappCreatorAddress
     );
-    event RemoveCampaign(address campaignAddress);
+    event SetDappCreator(address newDappCreator);
+    event SetNewMinterRole(address nftCollection, address newMinter);
 
     bytes32 public constant IMPLEMENTATION_ROLE = keccak256("IMPLEMENTATION_ROLE");
 
-    // RinZCampaigns Address list
+    // Katana Collection Address list
     address[] public nftCollectionsAddress;
+
+    // Checker isInListCollections
+    mapping(address => bool) public isInListCollections;
 
     // Wrapper Creator address: using for calling from dapp
     address public dappCreatorAddress;
@@ -37,26 +43,35 @@ contract KatanaNftFactory is AccessControl {
 
 
     /*
-    *   Create instance of RinZCampaign
+    *   Create instance of NftCollection
     *   @param {uint8} _maxRarityValue - the maximum of the rarity's indexs
     */
-    function createCampaign(
-        uint8 _maxRarityValue
+    function createNftCollection(
+        string memory _name,
+        string memory _symbol,
+        uint8 _maxRarityValue,
+        uint256[] memory _prices
     ) external onlyRole(IMPLEMENTATION_ROLE) {
         address collection = Clones.clone(implementationAddress);
 
         // Initialize
         CharacterToken(collection).initialize(
+            _name,
+            _symbol,
             _maxRarityValue
         );
-
-        // TODO: grant role DESIGNER_ROLE for new collection in DappCreator
-        // Note: Factory need role UPGRADER to grant 
         
-        // TODO: set MINTER_ROLE for [dappCreator, Dev_wallet] in new collection contract
-        // TODO: call to dappCreator to submit new collection
+        // Add new collection to DappCreator
+        DaapNFTCreator(dappCreatorAddress).addNewCollection(
+            collection,
+            _prices
+        );
 
-        nftCollectionsAddress.push(address(collection));
+        // set Minter Role for Daap Creator
+        CharacterToken(collection).setMinterRole(dappCreatorAddress);
+
+        nftCollectionsAddress.push(collection);
+        isInListCollections[collection] = true;
         
         emit CreateNftCollection(
             address(collection),
@@ -81,5 +96,18 @@ contract KatanaNftFactory is AccessControl {
     // Setters
     function setDappCreatorAddress(address _dappCreatorAddress) external onlyRole(IMPLEMENTATION_ROLE) {
         dappCreatorAddress = _dappCreatorAddress;
+        implementationAddress = address(new CharacterToken(_dappCreatorAddress));
+        emit SetDappCreator(_dappCreatorAddress);
+    }
+
+    /**
+     *  function Set new minter Role for a collection
+     */
+    function setNewMinter(
+        address _characterToken,
+        address _newMinter
+    ) external onlyRole(IMPLEMENTATION_ROLE) {
+        CharacterToken(_characterToken).setMinterRole(_newMinter);
+        emit SetNewMinterRole(_characterToken, _newMinter);
     }
 }

@@ -12,7 +12,6 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
 import "./interfaces/INFTToken.sol";
-import "./interfaces/ICharacterItem.sol";
 import "./interfaces/IDaapNFTCreator.sol";
 import "./libraries/CharacterTokenDetails.sol";
 
@@ -23,7 +22,6 @@ contract CharacterToken is
     AccessControlUpgradeable,
     PausableUpgradeable,
     UUPSUpgradeable,
-    OwnableUpgradeable,
     INFTToken
 {
     using Counters for Counters.Counter;
@@ -60,9 +58,6 @@ contract CharacterToken is
     // Maketplace contract address => open for setting when in need
     IERC721 public marketPlace;
 
-    // Character Item allow to generate game item NFT from this NFTs
-    ICharacterItem public item;
-
     // DaapCreator contract
     IDaapNFTCreator public daapCreator;
 
@@ -84,11 +79,8 @@ contract CharacterToken is
     // Total Supply
     uint256 public totalSupply;
 
-    // Max value of NFT TYPE
-    uint8 public MAX_NFT_TYPE_VALUE;
-
-    // Mapping nftType to Max Rariry value
-    mapping(uint8 => uint8) public nftItems;
+    // Max value of NFT rarity
+    uint8 public MAX_NFT_RARITY;
 
     // Mapping address of user and its ability in whitelist or not
     mapping(address => bool) public whiteList;
@@ -122,8 +114,12 @@ contract CharacterToken is
     /**
      *   Function: Initialized contract
      */
-    function initialize(uint8 _maxRarityValue) public initializer {
-        __ERC721_init("KATANA NFT CHARACTER", "KTNC");
+    function initialize(
+        string memory _name,
+        string memory _symbol,
+        uint8 _maxRarityValue
+    ) public initializer {
+        __ERC721_init(_name, _symbol);
         __AccessControl_init();
         __Pausable_init();
         __UUPSUpgradeable_init();
@@ -136,8 +132,7 @@ contract CharacterToken is
         _setupRole(OPEN_NFT_ROLE, msg.sender);
         _setupRole(WHITELIST_ROLE, msg.sender);
 
-        MAX_NFT_TYPE_VALUE = 1;
-        nftItems[uint8(1)] = _maxRarityValue;
+        MAX_NFT_RARITY = _maxRarityValue;
     }
 
     function onERC721Received(
@@ -171,41 +166,7 @@ contract CharacterToken is
         emit SwitchFreeTransferMode(oldMode, newMode);
     }
 
-    /**
-     *  @notice Function allow DESIGNER add new NFT type
-     */
-    function addNewNftType(uint8 _maxNftValue, uint8[] memory _maxRarityValues) external onlyRole(DESIGNER_ROLE) {
-        require(_maxNftValue > MAX_NFT_TYPE_VALUE, "Invalid new max NFT type");
-        require(
-            _maxRarityValues.length + MAX_NFT_TYPE_VALUE == _maxNftValue,
-            "Invalid length of Max Rarity List"
-        );
-        daapCreator.upgradeNewNftType(
-            _maxRarityValues
-        );
-        for (uint8 i=0; i < _maxRarityValues.length; i++) {
-            nftItems[i + MAX_NFT_TYPE_VALUE + 1] = _maxRarityValues[i];
-        }
-        MAX_NFT_TYPE_VALUE = _maxNftValue;
-        emit AddNewNftType(_maxNftValue, _maxRarityValues);
-    }
-
-    /**
-     *  @notice Function allows to upgrade number of rarity of existing nft type
-     */
-    function upgradeExistingNftType(uint8 _existingNftType, uint8 _upgradeMaxRarity) external onlyRole(DESIGNER_ROLE) {
-        require(_existingNftType <= MAX_NFT_TYPE_VALUE, "Invalid nft type");
-        require(_upgradeMaxRarity > nftItems[_existingNftType], "Invalid upgrade new max rarity value");
-        daapCreator.upgradeExisitingNftType(
-            _existingNftType,
-            _upgradeMaxRarity
-        );
-        uint8 oldMaxRarity = nftItems[_existingNftType];
-        nftItems[_existingNftType] = _upgradeMaxRarity;
-        emit UpgradeExistingNftType(_existingNftType, oldMaxRarity, _upgradeMaxRarity);
-    }
-
-    function setDappCreator(address _daapCreator) external  onlyRole(DEFAULT_ADMIN_ROLE) {
+    function setDappCreator(address _daapCreator) external onlyRole(DEFAULT_ADMIN_ROLE) {
         daapCreator = IDaapNFTCreator(_daapCreator);
     }
     /**
@@ -230,17 +191,6 @@ contract CharacterToken is
     function setMaxTokensInOneUsing(uint8 _maxTokenInOneUsing) external onlyRole(DEFAULT_ADMIN_ROLE) {
         MAX_TOKENS_IN_USING = _maxTokenInOneUsing;
         emit SetMaxTokensInOneUsing(_maxTokenInOneUsing);
-    }
-
-    /** 
-     *  @notice Sets the character item contract address.
-     */
-    function setItemContract(address contractAddress)
-        external
-        onlyRole(DESIGNER_ROLE)
-    {
-        item = ICharacterItem(contractAddress);
-        emit SetCharacterItem(contractAddress);
     }
 
     /** Set marketplace for integrate */
@@ -325,17 +275,10 @@ contract CharacterToken is
     }
 
     /**
-     *  @notice Function get Max NFT type value
-     */
-    function getMaxNftType() external  view returns(uint8) {
-        return MAX_NFT_TYPE_VALUE;
-    }
-
-    /**
      *  @notice Function return Max Rarity Value of each nftType
      */
-    function getMaxRarityValue(uint8 _nftType) external  view returns (uint8) {
-        return nftItems[_nftType];
+    function getMaxRarityValue() external view returns (uint8) {
+        return MAX_NFT_RARITY;
     }
 
     /** 

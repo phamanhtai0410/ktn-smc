@@ -16,14 +16,9 @@ interface ICharacterToken is IERC721Upgradeable {
     ) external;
 
     /**
-     *      @dev Function allow to get current max of nftType
+     *      @dev Function allow to get current max rarity of current NFT collection
      */
-    function getMaxRarityValue(uint8 _nftType) external view returns (uint8);
-
-    /**
-     *      @dev Function allow to get max rarity of current nftType
-     */
-    function getMaxNftType() external view returns(uint8);
+    function getMaxRarityValue() external view returns (uint8);
 
     /**
      *      @dev Function returns tokenDetails by tokenId
