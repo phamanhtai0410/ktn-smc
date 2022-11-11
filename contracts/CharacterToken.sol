@@ -416,6 +416,14 @@ contract CharacterToken is
     }
 
     /**
+     *      @notice Function open boxes from Box 
+     *      @param tokenIds_ Array boxNFT ID
+    */
+    function openBoxes(uint256[] memory tokenIds_) external override {
+        emit UseNFTs(msg.sender, tokenIds_);
+    }
+
+    /**
      *      @notice Function that override "_transfer" function default of ERC721 upgradeable
      *      @dev Check token using or not
      *      @dev Can not be transfer after using 
