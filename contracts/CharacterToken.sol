@@ -110,12 +110,10 @@ contract CharacterToken is
         _;
     }
 
-    constructor (uint8 _maxRarityValue, address _daapCreator) {
+    constructor (address _daapCreator) {
         daapCreator = IDaapNFTCreator(_daapCreator);
         MAX_TOKENS_IN_ORDER = 10;
         MAX_TOKENS_IN_USING = 10;
-        MAX_NFT_TYPE_VALUE = 1;
-        nftItems[uint8(1)] = _maxRarityValue;
         totalSupply = 100000000;
         whiteList[msg.sender] = true;
         FREE_TRANSFER = false;
@@ -124,7 +122,7 @@ contract CharacterToken is
     /**
      *   Function: Initialized contract
      */
-    function initialize() public initializer {
+    function initialize(uint8 _maxRarityValue) public initializer {
         __ERC721_init("KATANA NFT CHARACTER", "KTNC");
         __AccessControl_init();
         __Pausable_init();
@@ -137,6 +135,9 @@ contract CharacterToken is
         _setupRole(MINTER_ROLE, msg.sender);
         _setupRole(OPEN_NFT_ROLE, msg.sender);
         _setupRole(WHITELIST_ROLE, msg.sender);
+
+        MAX_NFT_TYPE_VALUE = 1;
+        nftItems[uint8(1)] = _maxRarityValue;
     }
 
     function onERC721Received(

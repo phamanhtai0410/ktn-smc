@@ -15,6 +15,11 @@ module.exports = async function (deployer, network, accounts) {
     require('dotenv').config();
 
     var _characterTokenInstant = await CharacterToken.at(process.env.iCharacterToken);
+
+    /**
+     *          0. Testing
+     */
+     console.log("1. MAX TOKEN IN A ORDER : ", (await _characterTokenInstant.MAX_TOKENS_IN_ORDER()).toString());
     
     /**
      *      1. Get latest token Id was minted

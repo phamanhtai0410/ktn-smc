@@ -38,7 +38,7 @@ contract DaapNFTCreator is
     address public signer;
     
     // NFT collection using
-    ICharacterToken public nftCollection;
+    ICharacterToken[] public nftCollections;
 
     // Token using to pay for minting NFT
     IERC20 public payToken;
@@ -67,10 +67,9 @@ contract DaapNFTCreator is
     /**
      *      @dev Contructor
      */
-    constructor (address _signer, address _nftCollection, IERC20 _payToken) {
+    constructor (address _signer, IERC20 _payToken) {
         signer = _signer;
         payToken = _payToken;
-        nftCollection = ICharacterToken(_nftCollection);
     }
 
     /**
@@ -83,12 +82,13 @@ contract DaapNFTCreator is
         _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
         _setupRole(PAUSER_ROLE, msg.sender);
         _setupRole(UPGRADER_ROLE, msg.sender);
+    }
 
-        for (uint8 i=1; i < nftCollection.getMaxNftType() + 1; i++) {
-            for (uint8 j=1; j < nftCollection.getMaxRarityValue(i) + 1; j++) {
-                nftPrice[i][j] = 100 * 10 ** 18;
-            }
-        }
+    /**
+     *      @notice Function allows admin to add new collection
+     */
+    function addNewCollection(ICharacterToken _charaterToken) external onlyRole(UPGRADER_ROLE) {
+        
     }
 
     /**
