@@ -18,6 +18,8 @@ contract KatanaNftFactory is AccessControl {
     );
     event SetDappCreator(address newDappCreator);
     event SetNewMinterRole(address nftCollection, address newMinter);
+    event AddNewNftRariies(address nftColelction, uint256[] addingPrices);
+    event UpdateNewPrice(address nftCollection, uint8 rarity, uint256 newPrice);
 
     bytes32 public constant IMPLEMENTATION_ROLE = keccak256("IMPLEMENTATION_ROLE");
 
@@ -93,6 +95,10 @@ contract KatanaNftFactory is AccessControl {
         return dappCreatorAddress;
     }
 
+    function isValidNftCollection(address _nftCollection) external view returns(bool) {
+        return isInListCollections[_nftCollection];
+    }
+
     // Setters
     function setDappCreatorAddress(address _dappCreatorAddress) external onlyRole(IMPLEMENTATION_ROLE) {
         dappCreatorAddress = _dappCreatorAddress;
@@ -109,5 +115,34 @@ contract KatanaNftFactory is AccessControl {
     ) external onlyRole(IMPLEMENTATION_ROLE) {
         CharacterToken(_characterToken).setMinterRole(_newMinter);
         emit SetNewMinterRole(_characterToken, _newMinter);
+    }
+
+    /**
+     *  Function allows Factory as ADMIN of all NFT collection to upgrade new rarity for existing nft collection
+     */
+    function AddNewNftRarities(
+        ICharacterToken _nftCollection,
+        uint256[] memory _prices
+    ) external onlyRole(IMPLEMENTATION_ROLE) {
+        uint8 _currMaxRarity = _nftCollection.getMaxRarityValue();
+        _nftCollection.setNewMaxOfRarity(_currMaxRarity + uint8(_prices.length));
+        DaapNFTCreator(dappCreatorAddress).upgradeNewNftRarity(
+            _nftCollection,
+            _prices
+        );
+        emit AddNewNftRariies(address(_nftCollection), _prices);
+    }
+
+    /**
+     *  Function allow Factory to change price of one existing NFT rarity
+     */
+    function updatePrice(
+        ICharacterToken _nftCollection,
+        uint8 _rarity,
+        uint256 _newPrice
+    ) external onlyRole(IMPLEMENTATION_ROLE) {
+        require(isInListCollections[address(_nftCollection)], "Invalid NFT collection");
+        DaapNFTCreator(dappCreatorAddress).updatePrice(_nftCollection, _rarity, _newPrice);
+        emit UpdateNewPrice(address(_nftCollection), _rarity, _newPrice);
     }
 }

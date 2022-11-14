@@ -40,6 +40,7 @@ contract CharacterToken is
     event UseNFTs(address to, uint256[] usedTokenIds);
     event SetMaxTokensInOneOrder(uint8 maxTokensInOneOrder);
     event SetMaxTokensInOneUsing(uint8 maxTokenInOneUsing);
+    event SetNewMaxRarity(uint8 oldMaxRarity, uint8 newMaxRarity);
     event SetWhiteList(address to);
     event SwitchFreeTransferMode(bool oldMode, bool newMode);
     event UpgradeExistingNftType(uint8 nftType, uint8 oldMaxRarityValue, uint8 upgradeMaxRarityValue);
@@ -175,6 +176,16 @@ contract CharacterToken is
     function setMinterRole(address _newMinter) external onlyRole(DEFAULT_ADMIN_ROLE) {
         _setupRole(MINTER_ROLE, _newMinter);
         emit SetNewMinter(_newMinter);
+    }
+
+    /**
+     *  @notice Function allow ADMIN to set Max_Rarity of collection
+     */
+    function setNewMaxOfRarity(uint8 _newMaxRarity) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        require(_newMaxRarity > MAX_NFT_RARITY, "Invalid new max of rarity");
+        uint8 oldMaxRarity = MAX_NFT_RARITY;
+        MAX_NFT_RARITY = _newMaxRarity;
+        emit SetNewMaxRarity(oldMaxRarity, _newMaxRarity);
     }
 
     /**
@@ -344,20 +355,6 @@ contract CharacterToken is
         tokenDetails[_tokenId].tokenURI = string(abi.encodePacked("https://", _cid, ".ipfs.w3s.link/"));
     }
 
-    /** Call from CharacterBoxBasket token to open character. */
-    function useNFTs(uint256[] memory _tokenIdsList) external override {
-        require(_tokenIdsList.length > 0, "No token to mint");
-        require(_tokenIdsList.length < MAX_TOKENS_IN_USING, "User doesn't have enough NFT to call useNFTs");
-        uint256[] memory _usedTokenIds = new uint256[](_tokenIdsList.length);
-        for (uint256 i=0; i < _tokenIdsList.length; i++) {
-            require(ownerOf(_tokenIdsList[i]) == msg.sender, "User not owned this token");
-            item.createNewItem(_tokenIdsList[i]);
-            tokenDetails[_tokenIdsList[i]].isUsed = true;
-            _usedTokenIds[i] = _tokenIdsList[i];
-        }
-        emit UseNFTs(msg.sender, _usedTokenIds);
-    }
-
     /**
      *      @notice Function open boxes from Box 
      *      @param tokenIds_ Array boxNFT ID
@@ -403,11 +400,7 @@ contract CharacterToken is
 
         for (uint256 i=0; i < _mintingOrders.length; i++) {
             require(
-                _mintingOrders[i].nftType <= MAX_NFT_TYPE_VALUE,
-                "Invalid NFT type"
-            );
-            require(
-                _mintingOrders[i].rarity > 0 && _mintingOrders[i].rarity <= nftItems[_mintingOrders[i].nftType],
+                _mintingOrders[i].rarity > 0 && _mintingOrders[i].rarity <= MAX_NFT_RARITY,
                 "Invalid rarity"
             );
         }
@@ -417,14 +410,12 @@ contract CharacterToken is
             uint256 _tokenId = createToken(
                 _to,
                 _mintingOrders[i].rarity,
-                _mintingOrders[i].cid,
-                _mintingOrders[i].nftType
+                _mintingOrders[i].cid
             );
             _returnOrder[i] = CharacterTokenDetails.ReturnMintingOrder(
                 _tokenId,
                 _mintingOrders[i].rarity,
-                _mintingOrders[i].cid,
-                _mintingOrders[i].nftType
+                _mintingOrders[i].cid
             );
         }
         return _returnOrder;
@@ -436,8 +427,7 @@ contract CharacterToken is
     function createToken(
         address _to,
         uint8 _rarity,
-        string calldata _cid,
-        uint8 _nftType
+        string calldata _cid
     ) internal returns (uint256){
         // Mint NFT for user "_to"
         tokenIdCounter.increment();
@@ -451,7 +441,6 @@ contract CharacterToken is
         // Save data for "tokenDetails"
         CharacterTokenDetails.TokenDetail memory _tokenDetail;
         _tokenDetail.rarity = _rarity;
-        _tokenDetail.nftType = _nftType;
         _tokenDetail.tokenURI = tokenURI(_id);
         _tokenDetail.isUsed = false;
         tokenDetails[_id] = _tokenDetail;

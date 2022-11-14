@@ -24,4 +24,9 @@ interface ICharacterToken is IERC721Upgradeable {
      *      @dev Function returns tokenDetails by tokenId
      */
     function getTokenDetailsByID(uint256 _tokenId) external view returns(CharacterTokenDetails.TokenDetail memory);
+
+    /**
+     *      @dev Set new max rarity when need to update NFT collection settings
+     */
+    function setNewMaxOfRarity(uint8 _newMaxRarity) external;
 }

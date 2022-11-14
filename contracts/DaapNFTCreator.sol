@@ -36,9 +36,6 @@ contract DaapNFTCreator is
 
     // Signer for mint with signature
     address public signer;
-    
-    // NFT collection using
-    ICharacterToken[] public nftCollections;
 
     // Factory
     address public nftFactoryAddress;
@@ -53,7 +50,7 @@ contract DaapNFTCreator is
      *      @dev Define events that contract will emit
      */
     event SetNewSigner(address oldSigner, address newSigner);
-    event UpdatePrice(uint8 nftType, uint8 rarity, uint256 newPrice);
+    event UpdatePrice(address nftCollection, uint8 rarity, uint256 newPrice);
     event MakingMintingAction(CharacterTokenDetails.MintingOrder[] mintingInfos, uint256 discount, address to);
     event SetNewPayToken(address oldPayToken, address newPayToken);
     event Withdraw(uint256 amount);
@@ -103,11 +100,23 @@ contract DaapNFTCreator is
     ) external onlyFromFactory {
         uint8 _maxRarity = ICharacterToken(_charaterToken).getMaxRarityValue();
         require(_prices.length == _maxRarity, "Invalid length of prices array");
-        nftCollections.push(ICharacterToken(_charaterToken));
         for (uint8 i=0; i < _maxRarity; i++) {
             nftPrice[_charaterToken][i] = _prices[i];
         }
         emit AddNewCollection(_charaterToken, _prices);
+    }
+
+    /**
+     *  @notice Set price for each new rarity type
+     */
+    function upgradeNewNftRarity(
+        ICharacterToken _nftCollection,
+        uint256[] memory _prices
+    ) external onlyFromFactory {
+        uint8 _currentMaxRarity = _nftCollection.getMaxRarityValue();
+        for (uint8 i=0; i <_prices.length; i++) {
+            nftPrice[address(_nftCollection)][_currentMaxRarity + i +  1] = _prices[i];
+        }
     }
 
     /**
@@ -146,44 +155,17 @@ contract DaapNFTCreator is
     }
 
     /**
-     *  @notice Set price for each new rarity type
-     */
-    function upgradeNewNftType(
-        ICharacterToken _nftCollection,
-        uint8 _totalNewRarities,
-        uint256[] memory _prices
-    ) external onlyRole(UPGRADER_ROLE) {
-        for (uint8 i=0; i < _maxRarityList.length; i++) {
-            for (uint8 j=1; j <= _maxRarityList[i]; j++) {
-                nftPrice[address(_nftCollection)][_nftCollection.getMaxNftType() + i +  1][j] = 100 * 10 ** 18;
-            }
-        }
-    }
-
-    /**
-     *  @notice Upgradde max rarity of one existing nft type
-     */
-    function upgradeExisitingNftType(
-        ICharacterToken _nftCollection,
-        uint8 _exisitingNftType,
-        uint8 _upgradeMaxRarity
-    ) external onlyRole(UPGRADER_ROLE) {
-        for (uint8 i = _nftCollection.getMaxRarityValue(_exisitingNftType) + 1; i <= _upgradeMaxRarity; i++) {
-            nftPrice[address(_nftCollection)][_exisitingNftType][i] = 100 * 10 ** 18;
-        }
-    }
-
-    /**
      *  @notice Update price for a nft type in one rarity level
      */
     function updatePrice(
         ICharacterToken _nftCollection,
-        uint8 _nftType,
         uint8 _rarity,
         uint256 _newPrice
-    ) external onlyRole(UPGRADER_ROLE) {
+    ) external onlyFromFactory {
+        uint8 _currentMaxRarity = _nftCollection.getMaxRarityValue();
+        require(_rarity <= _currentMaxRarity, "Invalid NFT rarity");
         nftPrice[address(_nftCollection)][_rarity] = _newPrice;
-        emit UpdatePrice(_nftType, _rarity, _newPrice);
+        emit UpdatePrice(address(_nftCollection), _rarity, _newPrice);
     }
 
     /**
@@ -205,7 +187,6 @@ contract DaapNFTCreator is
         address _nftCollection,
         uint256 _discount,
         string[] memory _cids,
-        uint8[] memory _nftTypes,
         uint8[] memory _rarities,
         Proof memory _proof
     ) private view returns (bool) 
@@ -220,7 +201,6 @@ contract DaapNFTCreator is
             address(_nftCollection),
             _discount,
             _cids,
-            _nftTypes,
             _rarities,
             _proof.deadline
         ));
@@ -242,17 +222,11 @@ contract DaapNFTCreator is
     ) external payable  notContract {
         require(_mintingInfos.length > 0, "Amount of minting NFTs must be greater than 0");
         string[] memory _cids = new string[](_mintingInfos.length);
-        uint8[] memory _nftTypes = new uint8[](_mintingInfos.length);
         uint8[] memory _rarities = new uint8[](_mintingInfos.length);
         for (uint256 i=0; i < _mintingInfos.length; i++) {
             _cids[i] = _mintingInfos[i].cid;
             require(
-                _mintingInfos[i].nftType <= _nftCollection.getMaxNftType(),
-                "Invalid nft type"
-            );
-            _nftTypes[i] = _mintingInfos[i].nftType;
-            require(
-                _mintingInfos[i].rarity <= _nftCollection.getMaxRarityValue(_mintingInfos[i].nftType),
+                _mintingInfos[i].rarity <= _nftCollection.getMaxRarityValue(),
                 "Invalid rarity"
             );
             _rarities[i] = _mintingInfos[i].rarity;
@@ -263,7 +237,6 @@ contract DaapNFTCreator is
                 address(_nftCollection),
                 _discount,
                 _cids,
-                _nftTypes,
                 _rarities,
                 _proof
             ),
@@ -271,7 +244,7 @@ contract DaapNFTCreator is
         );
         uint256 _amount = 0;
         for (uint256 i=0; i < _mintingInfos.length; i++) {
-            _amount += nftPrice[address(_nftCollection)][_mintingInfos[i].nftType][_mintingInfos[i].rarity];
+            _amount += nftPrice[address(_nftCollection)][_mintingInfos[i].rarity];
         }
         require(payToken.balanceOf(msg.sender) > _amount - _discount, "User needs to hold enough token to buy this token");
         payToken.transferFrom(msg.sender, address(this), _amount - _discount);
