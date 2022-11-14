@@ -11,6 +11,7 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
 import "./libraries/BoxNFTDetails.sol";
 import "./interfaces/INFTToken.sol";
+import "./interfaces/IBoxNFTCreator.sol";
 
 
 contract MysteryBoxNFT is
@@ -24,9 +25,8 @@ contract MysteryBoxNFT is
     using Counters for Counters.Counter;
 
     event TokenCreated(address to, uint256 tokenId, uint256 details);
-    event DeactiveSale(address to, uint256 tokenId, uint256 price);
-    event Sale(address to, uint256 tokenId, uint256 price);
-    event Buy(address to, uint256 tokenId, uint256 price, address owner_by);
+    event MintOrderForDev(bytes callbackData, address to, BoxNFTDetails.BoxNFTDetail[] returnMintingOrder);
+    event MintOrderFromDaapCreator(string callbackData, address to, BoxNFTDetails.BoxNFTDetail[] returnMintingOrder);
     event OpenBox(address to, uint256[] tokenIds);
     event SendNft(address from, address to, uint256 tokenId);
 
@@ -34,12 +34,16 @@ contract MysteryBoxNFT is
     bytes32 public constant DESIGNER_ROLE = keccak256("DESIGNER_ROLE");
     bytes32 public constant BURNER_ROLE = keccak256("BURNER_ROLE");
     bytes32 public constant WHITELIST_ROLE = keccak256("WHITELIST_ROLE");
+    bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
 
     uint public constant COIN_DECIMALS = 10 ** 18;
     uint public constant TOTAL_BOX = 10000;
     uint public constant MAX_OPEN_BOX_UNIT = 5;
 
     IERC20 public coinToken;
+    // DaapCreator contract
+    IBoxNFTCreator public boxNFTCreator;
+
     INFTToken public characterToken;
     Counters.Counter public tokenIdCounter;
     
@@ -72,6 +76,15 @@ contract MysteryBoxNFT is
         require(!_isContract(msg.sender), "Contract not allowed");
         require(msg.sender == tx.origin, "Proxy contract not allowed");
         _;
+    }
+
+    modifier onlyFromDaapCreator() {
+        require(msg.sender == address(boxNFTCreator), "Not be called from Box NFT Creator");
+        _;
+    }
+
+    constructor (address _boxNFTCreator) {
+        boxNFTCreator = IBoxNFTCreator(_boxNFTCreator);            
     }
 
     function initialize(
@@ -193,30 +206,53 @@ contract MysteryBoxNFT is
         return boxs;
     }
 
-    /** Mints tokens. */
-    function mint(uint256 count) external notContract {
-        require(count > 0, "No token to mint");
-        require(tokenIdCounter.current() + count <= TOTAL_BOX, "Egg basket sold out");
+
+    /** 
+     *  Function mint NFTs Box from admin
+    */
+    function mintOrderForDev(
+        uint256 _count,
+        address _to,
+        bytes calldata _callbackData
+    ) external onlyRole(MINTER_ROLE) {
+        BoxNFTDetails.BoxNFTDetail[] memory _boxDetails = _mintOneOrder(
+            _count,
+            _to
+        );
+        emit MintOrderForDev(
+            _callbackData,
+            _to,
+            _boxDetails
+        );
+    }
+    
+    /** 
+     *  Function mint NFTs order from daap creator
+     */
+    function mintBoxFromDaapCreator(
+        uint256 _count,
+        address _to,
+        string calldata _callbackData
+    ) external onlyFromDaapCreator {
+        require(_count > 0, "No token to mint");
+        require(tokenIdCounter.current() + _count <= TOTAL_BOX, "Box sold out");
         // Check limit.
         address to = msg.sender;
-        require(boughtList[to] + count <= boxLimit, "User limit buy reached");
+        require(boughtList[to] + _count <= boxLimit, "User limit buy reached");
         require(buyable == true, "Mint token have not start yet");
         address owner = address(this);
         // Transfer token
-        coinToken.transferFrom(to, owner, boxPrice * count);
-        for (uint256 i = 0; i < count; ++i) {
-            uint256 id = tokenIdCounter.current();
-            tokenIdCounter.increment();
-            BoxNFTDetails.BoxNFTDetail memory boxDetail;
-            boxDetail.id = id;
-            boxDetail.index = i;
-            boxDetail.price = boxPrice;
-            boxDetail.owner_by = to;
-            tokenDetails[id] = boxDetail;
-            _safeMint(to, id);
-            emit TokenCreated(to, id, id);
-        }
-        boughtList[to] = boughtList[to] + count;
+        coinToken.transferFrom(to, owner, boxPrice * _count);
+        BoxNFTDetails.BoxNFTDetail[] memory _boxDetails = _mintOneOrder(
+            _count,
+            _to
+        );
+        boughtList[_to] = boughtList[_to] + _count;
+        emit MintOrderFromDaapCreator(
+            _callbackData,
+            _to,
+            _boxDetails
+        );
     }
 
     /** Whitelist mint tokens.*/
@@ -262,6 +298,34 @@ contract MysteryBoxNFT is
             emit TokenCreated(to, id, id);
         }
         
+    }
+
+    function _mintOneOrder(
+        uint256 _count,
+        address _to
+    ) internal returns(BoxNFTDetails.BoxNFTDetail[] memory) {
+        BoxNFTDetails.BoxNFTDetail[] memory _returnOrder = new BoxNFTDetails.BoxNFTDetail[](_count);
+        for (uint256 i = 0; i < _returnOrder.length; ++i) {
+            uint256 id = tokenIdCounter.current();
+            tokenIdCounter.increment();
+            BoxNFTDetails.BoxNFTDetail memory boxDetail;
+            boxDetail.id = id;
+            boxDetail.index = i;
+            boxDetail.price = boxPrice;
+            boxDetail.owner_by = _to;
+            tokenDetails[id] = boxDetail;
+            _safeMint(_to, id);
+            _returnOrder[i] = BoxNFTDetails.BoxNFTDetail(
+                id,
+                i,
+                boxPrice,
+                false,
+                _to
+            );
+            
+            emit TokenCreated(_to, id, id);
+        }
+        return _returnOrder;
     }
 
     /** Open multiple Boxes NFT. */
