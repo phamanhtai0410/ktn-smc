@@ -9,8 +9,8 @@ interface IMysteryBoxNFT is IERC721Upgradeable {
     /**
      *      @dev Funtion let MINTER_ROLE can mint token(s) for user
      */
-    function mintOrderFromDaapCreator(
-        BoxNFTDetails.BoxNFTDetail[] calldata _mintingOrders,
+    function mintBoxFromDaapCreator(
+        uint256 _count,
         address _to,
         string calldata _callbackData
     ) external;

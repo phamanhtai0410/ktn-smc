@@ -7,13 +7,15 @@ import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "./interfaces/IMysteryBoxNFT.sol";
+import "./interfaces/IBoxNFTCreator.sol";
 import "./libraries/BoxNFTDetails.sol";
 
 
 contract BoxNFTCreator is 
     AccessControlUpgradeable,
     PausableUpgradeable,
-    OwnableUpgradeable
+    OwnableUpgradeable,
+    IBoxNFTCreator
 {   
     using SafeERC20 for IERC20;
     using BoxNFTDetails for BoxNFTDetails.BoxNFTDetail;
@@ -51,7 +53,7 @@ contract BoxNFTCreator is
      */
     event SetNewSigner(address oldSigner, address newSigner);
     event UpdatePrice(uint256 newPrice);
-    event MakingMintingAction(BoxNFTDetails.BoxNFTDetail[] mintingInfos, uint256 discount, address to);
+    event MakingMintingAction(uint256 amount, uint256 discount, address to);
     event SetNewPayToken(address oldPayToken, address newPayToken);
     event Withdraw(uint256 amount);
 
@@ -169,39 +171,46 @@ contract BoxNFTCreator is
         return signatory == _signer && _proof.deadline >= block.timestamp;
     }
 
+    /**
+     *  @notice Function get boxPirce.
+     *
+     */
+    function getBoxPrice()
+        external override view
+        returns (uint256)
+    {
+        return boxPrice;
+    }
 
     /**
      *  @notice Function allow call external from daap to make miting action
      *
      */
     function makeMintingAction(
-        BoxNFTDetails.BoxNFTDetail[] calldata _mintingInfos,
+        uint256 _amount,
         uint256 _discount,
         Proof memory _proof,
         string memory _callbackData
     ) external payable  notContract {
-        require(_mintingInfos.length > 0, "Amount of minting NFTs must be greater than 0");
+        require(_amount > 0, "Amount of minting NFTs must be greater than 0");
         require(
             verifySignature(
                 signer,
                 _discount,
-                _mintingInfos.length,
+                _amount,
                 _proof
             ),
             "Invalid Signature"
         );
-        uint256 _amount = 0;
-        for (uint256 i=0; i < _mintingInfos.length; i++) {
-            _amount += boxPrice;
-        }
-        require(payToken.balanceOf(msg.sender) > _amount - _discount, "User needs to hold enough token to buy this token");
-        payToken.transferFrom(msg.sender, address(this), _amount - _discount);
-        boxCollection.mintOrderFromDaapCreator(
-            _mintingInfos,
+        uint256 _price = _amount * boxPrice;
+        require(payToken.balanceOf(msg.sender) > _price - _discount, "User needs to hold enough token to buy this token");
+        payToken.transferFrom(msg.sender, address(this), _price - _discount);
+        boxCollection.mintBoxFromDaapCreator(
+            _amount,
             msg.sender,
             _callbackData
         );
-        emit MakingMintingAction(_mintingInfos, _discount, msg.sender);
+        emit MakingMintingAction(_amount, _discount, msg.sender);
     }
 
     /**

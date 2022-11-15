@@ -37,9 +37,9 @@ contract MysteryBoxNFT is
     bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
 
     uint public constant COIN_DECIMALS = 10 ** 18;
-    uint public constant TOTAL_BOX = 10000;
-    uint public constant MAX_OPEN_BOX_UNIT = 5;
 
+    uint256 public TOTAL_BOX;
+    uint256 public MAX_OPEN_BOX_UNIT;
     IERC20 public coinToken;
     // DaapCreator contract
     IBoxNFTCreator public boxNFTCreator;
@@ -49,8 +49,6 @@ contract MysteryBoxNFT is
     
     // Limit each common user to by.
     uint256 public boxLimit;
-    // Box price in KTN
-    uint256 public boxPrice;
     bool public buyable;
 
     // Total boxes in whitelist pool
@@ -100,10 +98,10 @@ contract MysteryBoxNFT is
         _setupRole(DESIGNER_ROLE, msg.sender);
         _setupRole(WHITELIST_ROLE, msg.sender);
         
+        TOTAL_BOX = 10000;
+        MAX_OPEN_BOX_UNIT = 5;
         // Limit box each user can mint
         boxLimit = 3;
-        boxPrice = 100 * COIN_DECIMALS;
-
         _transferOwnership(msg.sender);
     }
 
@@ -138,25 +136,33 @@ contract MysteryBoxNFT is
         boxLimit = boxLimit_;
     }
 
+
+    /** Set total box minted. */
+    function setTotalBox(uint256 totalBox_) external onlyRole(DESIGNER_ROLE) {
+        TOTAL_BOX = totalBox_;
+    }
+
+    /** Set max number for each open box. */
+    function setMaxOpenBox(uint256 maxOpen_) external onlyRole(DESIGNER_ROLE) {
+        MAX_OPEN_BOX_UNIT = maxOpen_;
+    }
+
     /** Enable common user mint box */
     function setBuyable(bool isBuyable) external onlyRole(DESIGNER_ROLE) {
         buyable = isBuyable;
     }
 
+    /** Set BoxNFTCreator */
+    function setBoxCreator(address boxCreator_) external onlyRole(UPGRADER_ROLE) {
+        boxNFTCreator = IBoxNFTCreator(boxCreator_);
+    }
+    
     /** Set whitelist addresses and amount.
     If set after addr whitelistMint tokens, amount will be reset to input amount. */
     function setWhitelist(address addr, uint256 amount) external onlyRole(WHITELIST_ROLE) {
         whiteList[addr] = amount;
         // If owner add addr to whitelist multiple time, whiteListPool will increase multiple time.
         whiteListPool += amount;
-    }
-
-    /** Set price for box */
-    function setBoxPrice(uint256 boxPrice_)
-        external
-        onlyRole(DESIGNER_ROLE)
-    {
-        boxPrice = boxPrice_ * COIN_DECIMALS;
     }
 
     /** Sets the design for open box. */
@@ -240,9 +246,6 @@ contract MysteryBoxNFT is
         address to = msg.sender;
         require(boughtList[to] + _count <= boxLimit, "User limit buy reached");
         require(buyable == true, "Mint token have not start yet");
-        address owner = address(this);
-        // Transfer token
-        coinToken.transferFrom(to, owner, boxPrice * _count);
         BoxNFTDetails.BoxNFTDetail[] memory _boxDetails = _mintOneOrder(
             _count,
             _to
@@ -261,9 +264,11 @@ contract MysteryBoxNFT is
         address to = msg.sender;
         require(whiteList[to] >= count, "User not in whitelist or limit reached");
         require(tokenIdCounter.current() + count <= TOTAL_BOX, "Box sold out");
+        
+        uint256 _boxPrice = boxNFTCreator.getBoxPrice();
         address owner = address(this);
         // Transfer token
-        coinToken.transferFrom(to, owner, boxPrice * count);
+        coinToken.transferFrom(to, owner, _boxPrice * count);
         whiteList[to] -= count;
         for (uint256 i = 0; i < count; ++i) {
             uint256 id = tokenIdCounter.current();
@@ -271,7 +276,7 @@ contract MysteryBoxNFT is
             BoxNFTDetails.BoxNFTDetail memory boxDetail;
             boxDetail.id = id;
             boxDetail.index = i;
-            boxDetail.price = boxPrice;
+            boxDetail.price = _boxPrice;
             boxDetail.owner_by = to;
             tokenDetails[id] = boxDetail;
             _safeMint(to, id);
@@ -285,13 +290,14 @@ contract MysteryBoxNFT is
         require(count > 0, "No token to mint");
         address to = msg.sender;
         require(tokenIdCounter.current() + count <= TOTAL_BOX, "Box sold out");
+        uint256 _boxPrice = boxNFTCreator.getBoxPrice();
         for (uint256 i = 0; i < count; ++i) {
             uint256 id = tokenIdCounter.current();
             tokenIdCounter.increment();
             BoxNFTDetails.BoxNFTDetail memory boxDetail;
             boxDetail.id = id;
             boxDetail.index = i;
-            boxDetail.price = boxPrice;
+            boxDetail.price = _boxPrice;
             boxDetail.owner_by = to;
             tokenDetails[id] = boxDetail;
             _safeMint(to, id);
@@ -304,6 +310,7 @@ contract MysteryBoxNFT is
         uint256 _count,
         address _to
     ) internal returns(BoxNFTDetails.BoxNFTDetail[] memory) {
+        uint256 _boxPrice = boxNFTCreator.getBoxPrice();
         BoxNFTDetails.BoxNFTDetail[] memory _returnOrder = new BoxNFTDetails.BoxNFTDetail[](_count);
         for (uint256 i = 0; i < _returnOrder.length; ++i) {
             uint256 id = tokenIdCounter.current();
@@ -311,14 +318,14 @@ contract MysteryBoxNFT is
             BoxNFTDetails.BoxNFTDetail memory boxDetail;
             boxDetail.id = id;
             boxDetail.index = i;
-            boxDetail.price = boxPrice;
+            boxDetail.price = _boxPrice;
             boxDetail.owner_by = _to;
             tokenDetails[id] = boxDetail;
             _safeMint(_to, id);
             _returnOrder[i] = BoxNFTDetails.BoxNFTDetail(
                 id,
                 i,
-                boxPrice,
+                _boxPrice,
                 false,
                 _to
             );
