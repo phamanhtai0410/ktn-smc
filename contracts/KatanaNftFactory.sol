@@ -18,8 +18,9 @@ contract KatanaNftFactory is AccessControl {
     );
     event SetDappCreator(address newDappCreator);
     event SetNewMinterRole(address nftCollection, address newMinter);
-    event AddNewNftRariies(address nftColelction, uint256[] addingPrices);
+    event AddNewNftRariies(address nftColelction, uint256[] addingPrices, uint8 oldMaxRarity, uint8 newMaxRarity);
     event UpdateNewPrice(address nftCollection, uint8 rarity, uint256 newPrice);
+    event UpdateCidOfExistingRarity(address nftCollection, uint8 rarity, string newCid);
 
     bytes32 public constant IMPLEMENTATION_ROLE = keccak256("IMPLEMENTATION_ROLE");
 
@@ -37,7 +38,7 @@ contract KatanaNftFactory is AccessControl {
 
     constructor(address _dappCreatorAddress) {
         dappCreatorAddress = _dappCreatorAddress;
-        implementationAddress = address(new CharacterToken(_dappCreatorAddress));
+        implementationAddress = address(new CharacterToken());
 
         _setupRole(IMPLEMENTATION_ROLE, msg.sender);
         _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
@@ -52,15 +53,21 @@ contract KatanaNftFactory is AccessControl {
         string memory _name,
         string memory _symbol,
         uint8 _maxRarityValue,
+        string[] memory _cids,
         uint256[] memory _prices
     ) external onlyRole(IMPLEMENTATION_ROLE) {
+        require(uint8(_cids.length) == _maxRarityValue, "Invalid cids legnth");
+        require(uint8(_prices.length) == _maxRarityValue, "Invalid prices legnth");
+
         address collection = Clones.clone(implementationAddress);
 
         // Initialize
         CharacterToken(collection).initialize(
             _name,
             _symbol,
-            _maxRarityValue
+            _maxRarityValue,
+            _cids,
+            dappCreatorAddress
         );
         
         // Add new collection to DappCreator
@@ -102,7 +109,6 @@ contract KatanaNftFactory is AccessControl {
     // Setters
     function setDappCreatorAddress(address _dappCreatorAddress) external onlyRole(IMPLEMENTATION_ROLE) {
         dappCreatorAddress = _dappCreatorAddress;
-        implementationAddress = address(new CharacterToken(_dappCreatorAddress));
         emit SetDappCreator(_dappCreatorAddress);
     }
 
@@ -122,15 +128,23 @@ contract KatanaNftFactory is AccessControl {
      */
     function AddNewNftRarities(
         ICharacterToken _nftCollection,
-        uint256[] memory _prices
+        uint256[] memory _prices,
+        string[] memory _cids
     ) external onlyRole(IMPLEMENTATION_ROLE) {
         uint8 _currMaxRarity = _nftCollection.getMaxRarityValue();
-        _nftCollection.setNewMaxOfRarity(_currMaxRarity + uint8(_prices.length));
+        
+        // Add prices for new rarities 
         DaapNFTCreator(dappCreatorAddress).upgradeNewNftRarity(
             _nftCollection,
             _prices
         );
-        emit AddNewNftRariies(address(_nftCollection), _prices);
+
+        // Add new cids for new rarities
+        _nftCollection.addCidsForNewRarities(_cids);
+
+        // Set new max of rarities
+        _nftCollection.setNewMaxOfRarity(_currMaxRarity + uint8(_prices.length));
+        emit AddNewNftRariies(address(_nftCollection), _prices, _currMaxRarity, _currMaxRarity + uint8(_prices.length));
     }
 
     /**
@@ -142,7 +156,22 @@ contract KatanaNftFactory is AccessControl {
         uint256 _newPrice
     ) external onlyRole(IMPLEMENTATION_ROLE) {
         require(isInListCollections[address(_nftCollection)], "Invalid NFT collection");
+        require(_nftCollection.getMaxRarityValue() >= _rarity, "Invalid rarity value");
         DaapNFTCreator(dappCreatorAddress).updatePrice(_nftCollection, _rarity, _newPrice);
         emit UpdateNewPrice(address(_nftCollection), _rarity, _newPrice);
+    }
+    
+    /**
+     *  Function allow Factory to change cid of one existing NFT rarity
+     */
+    function updateCidOfRarity(
+        ICharacterToken _nftCollection,
+        uint8 _rarity,
+        string memory _newCid
+    ) external onlyRole(IMPLEMENTATION_ROLE) {
+        require(isInListCollections[address(_nftCollection)], "Invalid NFT collection");
+        require(_nftCollection.getMaxRarityValue() >= _rarity, "Invalid rarity value");
+        _nftCollection.updateCidOfExistingRarity(_rarity, _newCid);
+        emit UpdateCidOfExistingRarity(address(_nftCollection), _rarity, _newCid);
     }
 }

@@ -29,4 +29,14 @@ interface ICharacterToken is IERC721Upgradeable {
      *      @dev Set new max rarity when need to update NFT collection settings
      */
     function setNewMaxOfRarity(uint8 _newMaxRarity) external;
+
+    /**
+     *      @dev Function allows ADMIN to add cids for each new rarities
+     */
+    function addCidsForNewRarities(string[] memory _cids) external;
+
+    /**
+     *      @dev Function allows ADMIN to modify cid for existing rarity
+     */
+    function updateCidOfExistingRarity(uint8 _rarity, string memory _cid) external;
 }

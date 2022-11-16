@@ -28,6 +28,12 @@ contract CharacterToken is
     using CharacterTokenDetails for CharacterTokenDetails.TokenDetail;
     using CharacterTokenDetails for CharacterTokenDetails.MintingOrder;
     using CharacterTokenDetails for CharacterTokenDetails.ReturnMintingOrder;
+
+    struct CreateBoxRequest {
+        uint256 targetBlock;    // Use future block.
+        uint16 count;           // Amount of tokens to mint.
+        uint8 rarity;           // 0: random rarity, 1 - 6: specified rarity.
+    }
     
     event TokenCreated(address to, uint256 tokenId, CharacterTokenDetails.TokenDetail details);
     event BurnToken(uint256[] ids);
@@ -46,6 +52,7 @@ contract CharacterToken is
     event UpgradeExistingNftType(uint8 nftType, uint8 oldMaxRarityValue, uint8 upgradeMaxRarityValue);
 
     bytes32 public constant PAUSER_ROLE = keccak256("PAUSER_ROLE");
+    bytes32 public constant OPEN_BOX_ROLE = keccak256("OPEN_BOX_ROLE");
     bytes32 public constant UPGRADER_ROLE = keccak256("UPGRADER_ROLE");
     bytes32 public constant DESIGNER_ROLE = keccak256("DESIGNER_ROLE");
     bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
@@ -89,6 +96,12 @@ contract CharacterToken is
     // Flag Free transfer NFT
     bool public FREE_TRANSFER;
 
+    // cid per rarity
+    mapping(uint8 => string) public cidPerRarity;
+
+    // Mapping from owner address to Box token requests.
+    mapping(address => CreateBoxRequest[]) public boxRequests;
+
     /**
      * @notice Checks if the msg.sender is a contract or a proxy
      */
@@ -103,13 +116,7 @@ contract CharacterToken is
         _;
     }
 
-    constructor (address _daapCreator) {
-        daapCreator = IDaapNFTCreator(_daapCreator);
-        MAX_TOKENS_IN_ORDER = 10;
-        MAX_TOKENS_IN_USING = 10;
-        totalSupply = 100000000;
-        whiteList[msg.sender] = true;
-        FREE_TRANSFER = false;
+    constructor () {
     }
 
     /**
@@ -118,7 +125,9 @@ contract CharacterToken is
     function initialize(
         string memory _name,
         string memory _symbol,
-        uint8 _maxRarityValue
+        uint8 _maxRarityValue,
+        string[] memory _cids,
+        address _daapCreator
     ) public initializer {
         __ERC721_init(_name, _symbol);
         __AccessControl_init();
@@ -134,6 +143,16 @@ contract CharacterToken is
         _setupRole(WHITELIST_ROLE, msg.sender);
 
         MAX_NFT_RARITY = _maxRarityValue;
+        daapCreator = IDaapNFTCreator(_daapCreator);
+        MAX_TOKENS_IN_ORDER = 10;
+        MAX_TOKENS_IN_USING = 10;
+        totalSupply = 100000000;
+        whiteList[msg.sender] = true;
+        FREE_TRANSFER = false;
+
+        for (uint8 i=0; i < _cids.length; i++) {
+            cidPerRarity[i + 1] = _cids[i];
+        }
     }
 
     function onERC721Received(
@@ -208,6 +227,22 @@ contract CharacterToken is
     function setMarketPlace(address contractAddress) external onlyRole(DESIGNER_ROLE) {
         marketPlace = IERC721(contractAddress);
         emit SetMarketplace(contractAddress);
+    }
+
+    /**
+     *  @notice Function allows ADMIN to add cids for each new rarities
+     */
+    function addCidsForNewRarities(string[] memory _cids) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        for (uint8 i=0; i < _cids.length; i++) {
+            cidPerRarity[MAX_NFT_RARITY + i + 1] = _cids[i];
+        }
+    }
+
+    /**
+     *  @notice Function allow ADMIN to update cid of one existing rarity
+     */
+    function updateCidOfExistingRarity(uint8 _rarity, string memory _cid) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        cidPerRarity[_rarity] = _cid;
     }
     
     function pause() public onlyRole(PAUSER_ROLE) {
@@ -296,13 +331,13 @@ contract CharacterToken is
      *  Function mint NFTs order from admin
      */
     function mintOrderForDev(
-        CharacterTokenDetails.MintingOrder[] calldata _mintingOrders,
+        uint8[] calldata _rarities,
         address _to,
         bytes calldata _callbackData
     ) external onlyRole(MINTER_ROLE) {
         
         CharacterTokenDetails.ReturnMintingOrder[] memory _returnOrder = _mintOneOrder(
-            _mintingOrders,
+            _rarities,
             _to
         );
 
@@ -317,13 +352,13 @@ contract CharacterToken is
      *  Function mint NFTs order from daap creator
      */
     function mintOrderFromDaapCreator(
-        CharacterTokenDetails.MintingOrder[] calldata _mintingOrders,
+        uint8[] calldata _rarities,
         address _to,
         string calldata _callbackData
     ) external onlyFromDaapCreator {
         
         CharacterTokenDetails.ReturnMintingOrder[] memory _returnOrder = _mintOneOrder(
-            _mintingOrders,
+            _rarities,
             _to
         );
 
@@ -351,18 +386,6 @@ contract CharacterToken is
         return tokenIdCounter.current();
     }
 
-    function _setTokenUri(uint256 _tokenId, string calldata _cid) internal {
-        tokenDetails[_tokenId].tokenURI = string(abi.encodePacked("https://", _cid, ".ipfs.w3s.link/"));
-    }
-
-    /**
-     *      @notice Function open boxes from Box 
-     *      @param tokenIds_ Array boxNFT ID
-    */
-    function openBoxes(uint256[] memory tokenIds_) external override {
-        emit UseNFTs(msg.sender, tokenIds_);
-    }
-
     /**
      *      @notice Function that override "_transfer" function default of ERC721 upgradeable
      *      @dev Check token using or not
@@ -384,55 +407,56 @@ contract CharacterToken is
         ERC721Upgradeable._transfer(from, to, tokenId);
     }
 
+    function _setTokenUri(uint256 _tokenId, uint8 _rarity) internal {
+        tokenDetails[_tokenId].tokenURI = string(abi.encodePacked("https://", cidPerRarity[_rarity], ".ipfs.w3s.link/"));
+    }
+
     /**
      *      @notice Internal function allow to mint an order of minting list of NFTs
      */
     function _mintOneOrder(
-        CharacterTokenDetails.MintingOrder[] calldata _mintingOrders,
+        uint8[] calldata _rarities,
         address _to
     ) internal returns(CharacterTokenDetails.ReturnMintingOrder[] memory) {
-        require(_mintingOrders.length > 0, "No token to mint");
-        require(_mintingOrders.length <= MAX_TOKENS_IN_ORDER, "Maximum tokens in one mint reached");
+        require(_rarities.length > 0, "No token to mint");
+        require(_rarities.length <= MAX_TOKENS_IN_ORDER, "Maximum tokens in one mint reached");
         require(
-            tokenIdCounter.current() + _mintingOrders.length <= getTotalSupply(),
+            tokenIdCounter.current() + _rarities.length <= getTotalSupply(),
             "Total supply of NFT reached"
         );  
 
-        for (uint256 i=0; i < _mintingOrders.length; i++) {
+        for (uint256 i=0; i < _rarities.length; i++) {
             require(
-                _mintingOrders[i].rarity > 0 && _mintingOrders[i].rarity <= MAX_NFT_RARITY,
+                _rarities[i] > 0 && _rarities[i] <= MAX_NFT_RARITY,
                 "Invalid rarity"
             );
         }
 
-        CharacterTokenDetails.ReturnMintingOrder[] memory _returnOrder = new CharacterTokenDetails.ReturnMintingOrder[](_mintingOrders.length);
-        for (uint256 i=0; i < _mintingOrders.length; i++) {
+        CharacterTokenDetails.ReturnMintingOrder[] memory _returnOrder = new CharacterTokenDetails.ReturnMintingOrder[](_rarities.length);
+        for (uint256 i=0; i < _rarities.length; i++) {
             uint256 _tokenId = createToken(
                 _to,
-                _mintingOrders[i].rarity,
-                _mintingOrders[i].cid
+                _rarities[i]
             );
             _returnOrder[i] = CharacterTokenDetails.ReturnMintingOrder(
                 _tokenId,
-                _mintingOrders[i].rarity,
-                _mintingOrders[i].cid
+                _rarities[i]
             );
         }
         return _returnOrder;
     }
 
     /** 
-     *  @notice Creates a token
+     *  @notice Creates a token only for normal minting action
      */
     function createToken(
         address _to,
-        uint8 _rarity,
-        string calldata _cid
+        uint8 _rarity
     ) internal returns (uint256){
         // Mint NFT for user "_to"
         tokenIdCounter.increment();
         uint256 _id = tokenIdCounter.current();
-        _setTokenUri(_id, _cid);
+        _setTokenUri(_id, _rarity);
         _mint(_to, _id);
         
         // // Save data for "tokenIds"

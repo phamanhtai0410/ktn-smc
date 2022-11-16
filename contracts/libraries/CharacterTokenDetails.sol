@@ -6,6 +6,7 @@ library CharacterTokenDetails {
         uint8 rarity;
         string tokenURI;
         bool isUsed;
+        uint8 nftType;
     }
 
     struct MintingOrder {
@@ -16,6 +17,5 @@ library CharacterTokenDetails {
     struct ReturnMintingOrder {
         uint256 tokenId;
         uint8 rarity;
-        string cid;
     }
 }

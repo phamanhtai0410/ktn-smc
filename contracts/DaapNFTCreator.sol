@@ -101,7 +101,7 @@ contract DaapNFTCreator is
         uint8 _maxRarity = ICharacterToken(_charaterToken).getMaxRarityValue();
         require(_prices.length == _maxRarity, "Invalid length of prices array");
         for (uint8 i=0; i < _maxRarity; i++) {
-            nftPrice[_charaterToken][i] = _prices[i];
+            nftPrice[_charaterToken][i + 1] = _prices[i];
         }
         emit AddNewCollection(_charaterToken, _prices);
     }
