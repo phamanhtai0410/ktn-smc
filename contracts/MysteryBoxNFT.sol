@@ -11,9 +11,10 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
 import "./libraries/BoxNFTDetails.sol";
 import "./interfaces/INFTToken.sol";
+import "./interfaces/IBoxNFTCreator.sol";
 
 
-contract BoxNFT is
+contract MysteryBoxNFT is
     ERC721Upgradeable,
     AccessControlUpgradeable,
     UUPSUpgradeable,
@@ -24,9 +25,8 @@ contract BoxNFT is
     using Counters for Counters.Counter;
 
     event TokenCreated(address to, uint256 tokenId, uint256 details);
-    event DeactiveSale(address to, uint256 tokenId, uint256 price);
-    event Sale(address to, uint256 tokenId, uint256 price);
-    event Buy(address to, uint256 tokenId, uint256 price, address owner_by);
+    event MintOrderForDev(bytes callbackData, address to, BoxNFTDetails.BoxNFTDetail[] returnMintingOrder);
+    event MintOrderFromDaapCreator(string callbackData, address to, BoxNFTDetails.BoxNFTDetail[] returnMintingOrder);
     event OpenBox(address to, uint256[] tokenIds);
     event SendNft(address from, address to, uint256 tokenId);
 
@@ -34,20 +34,32 @@ contract BoxNFT is
     bytes32 public constant DESIGNER_ROLE = keccak256("DESIGNER_ROLE");
     bytes32 public constant BURNER_ROLE = keccak256("BURNER_ROLE");
     bytes32 public constant WHITELIST_ROLE = keccak256("WHITELIST_ROLE");
+    bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
 
     uint public constant COIN_DECIMALS = 10 ** 18;
-    uint public constant TOTAL_BOX = 10000;
-    uint public constant MAX_OPEN_BOX_UNIT = 5;
 
+    uint256 public TOTAL_BOX;
+    uint256 public MAX_OPEN_BOX_UNIT;
     IERC20 public coinToken;
+    // DaapCreator contract
+    IBoxNFTCreator public boxNFTCreator;
+
     INFTToken public characterToken;
     Counters.Counter public tokenIdCounter;
     
     // Limit each common user to by.
     uint256 public boxLimit;
-    // Box price in KTN
-    uint256 public boxPrice;
     bool public buyable;
+
+    // Total boxes in whitelist pool
+    uint256 public whiteListPool;
+    uint256 public whiteListBought;
+
+    // Mapping whitelist addresses to buyable amount
+    mapping(address => uint256) public whiteList;
+
+    // Mapping addresses to buyable amount
+    mapping(address => uint256) public boughtList;
 
     // Mapping from owner address to token ID.
     mapping(address => uint256[]) public tokenIds;
@@ -64,10 +76,19 @@ contract BoxNFT is
         _;
     }
 
+    modifier onlyFromDaapCreator() {
+        require(msg.sender == address(boxNFTCreator), "Not be called from Box NFT Creator");
+        _;
+    }
+
+    constructor (address _boxNFTCreator) {
+        boxNFTCreator = IBoxNFTCreator(_boxNFTCreator);            
+    }
+
     function initialize(
         IERC20 coinToken_
     ) public initializer {
-        __ERC721_init("KATANA BOX NFT", "KTNBOX");
+        __ERC721_init("KATANA MYSTERY BOX NFT", "KTNBOX");
         __AccessControl_init();
         __UUPSUpgradeable_init();
         coinToken = coinToken_;
@@ -76,18 +97,12 @@ contract BoxNFT is
         _setupRole(UPGRADER_ROLE, msg.sender);
         _setupRole(DESIGNER_ROLE, msg.sender);
         _setupRole(WHITELIST_ROLE, msg.sender);
-
+        
+        TOTAL_BOX = 10000;
+        MAX_OPEN_BOX_UNIT = 5;
         // Limit box each user can mint
         boxLimit = 3;
-        boxPrice = 100 * COIN_DECIMALS;
-        buyable = false;
         _transferOwnership(msg.sender);
-    }
-
-    /** TODO Marketplace fee */
-    function marketFee(uint256 amount) internal pure returns (uint256 fee) {
-        // TODO check rate
-        fee = (amount / 1000) * 45;
     }
 
     function _authorizeUpgrade(address newImplementation)
@@ -121,12 +136,33 @@ contract BoxNFT is
         boxLimit = boxLimit_;
     }
 
-    /** Set price for box */
-    function setBoxPrice(uint256 boxPrice_)
-        external
-        onlyRole(DESIGNER_ROLE)
-    {
-        boxPrice = boxPrice_ * COIN_DECIMALS;
+
+    /** Set total box minted. */
+    function setTotalBox(uint256 totalBox_) external onlyRole(DESIGNER_ROLE) {
+        TOTAL_BOX = totalBox_;
+    }
+
+    /** Set max number for each open box. */
+    function setMaxOpenBox(uint256 maxOpen_) external onlyRole(DESIGNER_ROLE) {
+        MAX_OPEN_BOX_UNIT = maxOpen_;
+    }
+
+    /** Enable common user mint box */
+    function setBuyable(bool isBuyable) external onlyRole(DESIGNER_ROLE) {
+        buyable = isBuyable;
+    }
+
+    /** Set BoxNFTCreator */
+    function setBoxCreator(address boxCreator_) external onlyRole(UPGRADER_ROLE) {
+        boxNFTCreator = IBoxNFTCreator(boxCreator_);
+    }
+    
+    /** Set whitelist addresses and amount.
+    If set after addr whitelistMint tokens, amount will be reset to input amount. */
+    function setWhitelist(address addr, uint256 amount) external onlyRole(WHITELIST_ROLE) {
+        whiteList[addr] = amount;
+        // If owner add addr to whitelist multiple time, whiteListPool will increase multiple time.
+        whiteListPool += amount;
     }
 
     /** Sets the design for open box. */
@@ -135,19 +171,6 @@ contract BoxNFT is
         onlyRole(DESIGNER_ROLE)
     {
         characterToken = INFTToken(contractAddress);
-    }
-
-    /** Disable for sale on marketplace */
-    function deactiveSale(uint256 tokenId) external notContract {
-        address to = msg.sender;
-        BoxNFTDetails.BoxNFTDetail storage boxDetail = tokenDetails[tokenId];
-        require(boxDetail.owner_by == to, "Token not owned");
-        require(boxDetail.is_opened == false, "Box already opened");
-        require(boxDetail.on_market == true, "Box already off chain");
-        boxDetail.on_market = false;
-        this.approve(to, tokenId);
-        transferFrom(address(this), to, tokenId);
-        emit DeactiveSale(to, tokenId, boxDetail.price);
     }
 
     function getBoxIdsByOwner(address owner)
@@ -182,11 +205,84 @@ contract BoxNFT is
         BoxNFTDetails.BoxNFTDetail[] memory boxs = new BoxNFTDetails.BoxNFTDetail[](ids.length);
         for (uint256 i = 0; i < ids.length; ++i) {
             BoxNFTDetails.BoxNFTDetail memory boxDetail = tokenDetails[ids[i]];
-            if (boxDetail.is_opened == false && boxDetail.on_market == false) {
+            if (boxDetail.is_opened == false) {
                 boxs[i] = boxDetail;
             }
         }
         return boxs;
+    }
+
+
+    /** 
+     *  Function mint NFTs Box from admin
+    */
+    function mintOrderForDev(
+        uint256 _count,
+        address _to,
+        bytes calldata _callbackData
+    ) external onlyRole(MINTER_ROLE) {
+        BoxNFTDetails.BoxNFTDetail[] memory _boxDetails = _mintOneOrder(
+            _count,
+            _to
+        );
+        emit MintOrderForDev(
+            _callbackData,
+            _to,
+            _boxDetails
+        );
+    }
+    
+    /** 
+     *  Function mint NFTs order from daap creator
+     */
+    function mintBoxFromDaapCreator(
+        uint256 _count,
+        address _to,
+        string calldata _callbackData
+    ) external onlyFromDaapCreator {
+        require(_count > 0, "No token to mint");
+        require(tokenIdCounter.current() + _count <= TOTAL_BOX, "Box sold out");
+        // Check limit.
+        address to = msg.sender;
+        require(boughtList[to] + _count <= boxLimit, "User limit buy reached");
+        require(buyable == true, "Mint token have not start yet");
+        BoxNFTDetails.BoxNFTDetail[] memory _boxDetails = _mintOneOrder(
+            _count,
+            _to
+        );
+        boughtList[_to] = boughtList[_to] + _count;
+        emit MintOrderFromDaapCreator(
+            _callbackData,
+            _to,
+            _boxDetails
+        );
+    }
+
+    /** Whitelist mint tokens.*/
+    function whitelistMint(uint256 count) external notContract {
+        require(count > 0, "No token to mint");
+        address to = msg.sender;
+        require(whiteList[to] >= count, "User not in whitelist or limit reached");
+        require(tokenIdCounter.current() + count <= TOTAL_BOX, "Box sold out");
+        
+        uint256 _boxPrice = boxNFTCreator.getBoxPrice();
+        address owner = address(this);
+        // Transfer token
+        coinToken.transferFrom(to, owner, _boxPrice * count);
+        whiteList[to] -= count;
+        for (uint256 i = 0; i < count; ++i) {
+            uint256 id = tokenIdCounter.current();
+            tokenIdCounter.increment();
+            BoxNFTDetails.BoxNFTDetail memory boxDetail;
+            boxDetail.id = id;
+            boxDetail.index = i;
+            boxDetail.price = _boxPrice;
+            boxDetail.owner_by = to;
+            tokenDetails[id] = boxDetail;
+            _safeMint(to, id);
+            emit TokenCreated(to, id, id);
+        }
+        whiteListBought += count;
     }
 
     // Owner mint without transfer TOKEN
@@ -194,14 +290,14 @@ contract BoxNFT is
         require(count > 0, "No token to mint");
         address to = msg.sender;
         require(tokenIdCounter.current() + count <= TOTAL_BOX, "Box sold out");
+        uint256 _boxPrice = boxNFTCreator.getBoxPrice();
         for (uint256 i = 0; i < count; ++i) {
             uint256 id = tokenIdCounter.current();
             tokenIdCounter.increment();
             BoxNFTDetails.BoxNFTDetail memory boxDetail;
             boxDetail.id = id;
             boxDetail.index = i;
-            boxDetail.price = 1000 * COIN_DECIMALS;
-            boxDetail.on_market = false;
+            boxDetail.price = _boxPrice;
             boxDetail.owner_by = to;
             tokenDetails[id] = boxDetail;
             _safeMint(to, id);
@@ -210,50 +306,43 @@ contract BoxNFT is
         
     }
 
-    /** Sale token */
-    function sale(uint256 tokenId, uint256 boxPriceKTN) external notContract {
-        address to = msg.sender;
-        require(ownerOf(tokenId) == to, "Token not owned");
-        BoxNFTDetails.BoxNFTDetail storage boxDetail = tokenDetails[tokenId];
-        require(boxDetail.is_opened == false, "Box already opened");
-        boxDetail.price = boxPriceKTN * COIN_DECIMALS;
-        boxDetail.on_market = true;
-        // Market hole token for sale
-        transferFrom(to, address(this), tokenId);
-        emit Sale(to, tokenId, boxDetail.price);
+    function _mintOneOrder(
+        uint256 _count,
+        address _to
+    ) internal returns(BoxNFTDetails.BoxNFTDetail[] memory) {
+        uint256 _boxPrice = boxNFTCreator.getBoxPrice();
+        BoxNFTDetails.BoxNFTDetail[] memory _returnOrder = new BoxNFTDetails.BoxNFTDetail[](_count);
+        for (uint256 i = 0; i < _returnOrder.length; ++i) {
+            uint256 id = tokenIdCounter.current();
+            tokenIdCounter.increment();
+            BoxNFTDetails.BoxNFTDetail memory boxDetail;
+            boxDetail.id = id;
+            boxDetail.index = i;
+            boxDetail.price = _boxPrice;
+            boxDetail.owner_by = _to;
+            tokenDetails[id] = boxDetail;
+            _safeMint(_to, id);
+            _returnOrder[i] = BoxNFTDetails.BoxNFTDetail(
+                id,
+                i,
+                _boxPrice,
+                false,
+                _to
+            );
+            
+            emit TokenCreated(_to, id, id);
+        }
+        return _returnOrder;
     }
 
-
-    function buy(uint256 tokenId, uint256 price) external notContract {
-        address to = msg.sender;
-        BoxNFTDetails.BoxNFTDetail memory boxDetail = tokenDetails[tokenId];
-        require(boxDetail.is_opened == false, "Box already opened");
-        require(boxDetail.on_market == true, "Box not on chain for marketplace");
-        require(price >= boxDetail.price, "Buy price is too low");
-        require(boxDetail.price <= coinToken.balanceOf(to), "User need hold enough Token to buy this box");
-        // Total fee
-        uint256 fee = marketFee(boxDetail.price);
-        // Fee for market
-        coinToken.transferFrom(to, address(this), fee);
-        // Fee for the owner
-        coinToken.transferFrom(to, boxDetail.owner_by, boxDetail.price - fee);
-
-        // Market hole token for sale
-        this.approve(to, tokenId);
-        transferFrom(address(this), to, tokenId);
-        emit Buy(to, tokenId, boxDetail.price, boxDetail.owner_by);
-    }
-  
     /** Open multiple Boxes NFT. */
     function openBoxes(uint256[] calldata tokenIds_) external notContract {
         address to = msg.sender;
         require(tokenIds_.length <= MAX_OPEN_BOX_UNIT, "Open over maximun boxs each time.");
-
         for (uint256 i = 0; i < tokenIds_.length; ++i) {
             BoxNFTDetails.BoxNFTDetail memory boxDetail = tokenDetails[tokenIds_[i]];
             require(boxDetail.owner_by == to, "Token not owned");
             require(boxDetail.is_opened == false, "Box already opened");
-            require(boxDetail.on_market == false, "Can not open box on the market");
         }
         for (uint256 i = 0; i < tokenIds_.length; ++i) {
             BoxNFTDetails.BoxNFTDetail storage boxDetail = tokenDetails[tokenIds_[i]];
@@ -271,7 +360,6 @@ contract BoxNFT is
             BoxNFTDetails.BoxNFTDetail memory boxDetail = tokenDetails[tokenIds_[i]];
             require(boxDetail.owner_by == from, "Token not owned");
             require(boxDetail.is_opened == false, "Box already opened");
-            require(boxDetail.on_market == false, "Can not send box on the market");
         }
         for (uint256 i = 0; i < tokenIds_.length; ++i) {
             safeTransferFrom(from, to, tokenIds_[i]);
@@ -292,15 +380,11 @@ contract BoxNFT is
         BoxNFTDetails.BoxNFTDetail storage boxDetail = tokenDetails[tokenId];
         require(boxDetail.is_opened == false, "Box already opened");
 
-        // Deactive box until owner active it again.
         if (from == address(this)) {
-            boxDetail.on_market = false;
             boxDetail.owner_by = to;
         }
 
         if (from != address(this) && to != address(this)) {
-            // Only transfer token not on the market
-            require(boxDetail.on_market == false, "Can not send box on the market");
             boxDetail.owner_by = to;
         }
 
