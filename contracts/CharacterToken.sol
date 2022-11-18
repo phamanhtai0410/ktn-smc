@@ -378,9 +378,9 @@ contract CharacterToken is
 
         for (uint256 i=0; i < _mintingOrders.length; i++) {
             require(
-                INftConfigurations(nftConfigutations).checkValidRarity(
+                INftConfigurations(nftConfigutations).checkValidMintingAttributes(
                     address(this),
-                    _mintingOrders[i].rarity
+                    _mintingOrders[i]
                 ),
                 "Invalid rarity"
             );

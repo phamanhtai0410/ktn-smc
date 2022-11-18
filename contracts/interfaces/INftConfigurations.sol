@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
+import "../libraries/CharacterTokenDetails.sol";
 
 interface INftConfigurations  {
     /**
@@ -44,10 +45,10 @@ interface INftConfigurations  {
      *  @notice Function check the rarity is valid or not in the current state of system
      *  @dev Function used for all contract call to for validations
      *  @param _nftCollection The address of the collection contract need to check
-     *  @param _rarity The rarity need to check
+     *  @param _mintingOrder The rarity need to check
      */
-    function checkValidRarity(
+    function checkValidMintingAttributes(
         address _nftCollection,
-        uint256 _rarity
+        CharacterTokenDetails.MintingOrder memory _mintingOrder
     ) external view returns(bool);
 }

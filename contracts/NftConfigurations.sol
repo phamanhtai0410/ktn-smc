@@ -3,6 +3,7 @@ pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
 import "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
+import "./libraries/CharacterTokenDetails.sol";
 
 contract NftConfigurations is
     AccessControlUpgradeable
@@ -10,6 +11,7 @@ contract NftConfigurations is
     // Add the library methods
     using EnumerableSet for EnumerableSet.UintSet;
     using EnumerableSet for EnumerableSet.AddressSet;
+    using CharacterTokenDetails for CharacterTokenDetails.MintingOrder;
 
     // Event
     event AddNewBoxInstant(address boxContract, uint256[] rarityProportions, uint8 defaultRarity);
@@ -119,15 +121,27 @@ contract NftConfigurations is
     }
 
     /**
-     *  @notice Function check the rarity is valid or not in the current state of system
+     *  @notice Function check the order attributes is valid or not in the current state of system
      *  @dev Function used for all contract call to for validations
      *  @param _nftCollection The address of the collection contract need to check
-     *  @param _rarity The rarity need to check
+     *  @param _mintingOrder The order need to check
      */
-    function checkValidRarit(
+    function checkValidMintingAttributes(
         address _nftCollection,
-        uint256 _rarity
-    ) external view returns(bool) {
-        return rarityList[_nftCollection].contains(_rarity);
+        CharacterTokenDetails.MintingOrder memory _mintingOrder
+    ) external view returns(bool) { 
+        bool isValidRarity = rarityList[_nftCollection].contains(_mintingOrder.rarity);
+        if (!isValidRarity) {
+            return false;
+        }
+        bool isValidMeshID = meshList[_nftCollection][_mintingOrder.rarity].contains(_mintingOrder.meshIndex);
+        if (!isValidMeshID) {
+            return false;
+        }
+        bool isValidMeshMaterial = meshMaterialList[_nftCollection][_mintingOrder.rarity][_mintingOrder.meshIndex].contains(_mintingOrder.meshMaterial);
+        if (!isValidMeshMaterial) {
+            return false;
+        }
+        return true;
     }
 }
