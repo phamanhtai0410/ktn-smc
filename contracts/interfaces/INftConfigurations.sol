@@ -29,6 +29,22 @@ interface INftConfigurations  {
     ) external;
 
     /**
+    *  @notice Function allows ADMIN to add new configurations for one completed NFT type
+     * (include rarity, mesh, price)
+     *  @dev Function will add new attributes to list attrs if is not existed
+     *  @param _nftCollection The address of current configed NFT
+     *  @param _rarity The rarity index of that wants to config
+     *  @param _meshIndex The meshIndex of current configurations
+     *  @param _price The price of the current configed mesh
+     */
+    function configMesh(
+        address _nftCollection,
+        uint256 _rarity,
+        uint256 _meshIndex,
+        uint256 _price
+    ) external;
+
+    /**
      *  @notice Fuction returns the cid of specificed NFT type with attributes: rarity. meshIndex, meshMaterial,...etc
      *  @dev Function return for Nft Colleciton contract
      *  @param _rarity The rarity needs to trigger

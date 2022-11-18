@@ -119,6 +119,30 @@ contract KatanaNftFactory is AccessControl {
         );
     }
 
+    /*
+        @dev
+        @param {address} _nftCollection
+        @param {uint256} _rarity
+        @param {uint256} _meshIndex
+        @param {uint256} _price
+        @param {uint256} _meshMaterial
+        @param {string} _cid
+
+    */
+    function configMesh(
+        address _nftCollection,
+        uint256 _rarity,
+        uint256 _meshIndex,
+        uint256 _price
+    ) external onlyRole(IMPLEMENTATION_ROLE) {
+        require(nftCollectionsList.contains(_nftCollection), "Collection: The collection doesn't exist");
+        nftConfigurations.configMesh(
+            _nftCollection,
+            _rarity,
+            _meshIndex,
+            _price
+        );
+    }
     function supportsInterface(bytes4 interfaceId) public view override(AccessControl) returns (bool) {
         return super.supportsInterface(interfaceId);
     }

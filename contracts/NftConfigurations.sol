@@ -126,6 +126,36 @@ contract NftConfigurations is
 
     }
 
+
+    /**
+     *  @notice Function allows ADMIN to add new configurations for one completed NFT type
+     * (include rarity, mesh, price)
+     *  @dev Function will add new attributes to list attrs if is not existed
+     *  @param _nftCollection The address of current configed NFT
+     *  @param _rarity The rarity index of that wants to config
+     *  @param _meshIndex The meshIndex of current configurations
+     *  @param _price The price of the current configed mesh
+     */
+    function configMesh(
+        address _nftCollection,
+        uint256 _rarity,
+        uint256 _meshIndex,
+        uint256 _price
+    ) external onlyRole(UPGRADER_ROLE) {
+        require(
+            nftCollectionsList.contains(_nftCollection),
+            "Invalid NFT collection address"
+        );
+        if (!rarityList[_nftCollection].contains(_rarity)) {
+            rarityList[_nftCollection].add(_rarity);
+        }
+        if (!meshList[_nftCollection][_rarity].contains(_meshIndex)) {
+            meshList[_nftCollection][_rarity].add(_meshIndex);
+        }
+        pricePerMesh[_nftCollection][_rarity][_meshIndex] = _price;
+
+    }
+
     /**
      *  @notice Fuction returns the cid of specificed NFT type with attributes: rarity. meshIndex, meshMaterial,...etc
      *  @dev Function return for Nft Colleciton contract
@@ -150,7 +180,7 @@ contract NftConfigurations is
     function checkValidMintingAttributes(
         address _nftCollection,
         CharacterTokenDetails.MintingOrder memory _mintingOrder
-    ) external view returns(bool) { 
+    ) external view returns(bool) {
         bool isValidRarity = rarityList[_nftCollection].contains(_mintingOrder.rarity);
         if (!isValidRarity) {
             return false;
