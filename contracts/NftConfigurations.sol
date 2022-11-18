@@ -35,11 +35,16 @@ contract NftConfigurations is
     mapping(address => mapping(uint256 => mapping(uint256 => EnumerableSet.UintSet))) private meshMaterialList;
 
     // Mapping Nft Type ID with cids
-    mapping(address => mapping(uint256 => mapping(uint256 => mapping(uint256 => string)))) public cid;
+    mapping(address => mapping(uint256 => mapping(uint256 => mapping(uint256 => string)))) private cid;
 
     // modifier to check from Factory or not
     modifier onlyFromFactory() {
         require(msg.sender == NFT_FACTORY, "Can only call from Factory contract");
+        _;
+    }
+
+    modifier onlyFromValidNftCollection() {
+        require(nftCollectionsList.contains(msg.sender), "Invalid NftCollection");
         _;
     }
 
@@ -101,8 +106,15 @@ contract NftConfigurations is
      *  @dev Function return for Nft Colleciton contract
      *  @param _rarity The rarity needs to trigger
      *  @param _meshIndex The mesh Index need to trigger
-     *  @param _meshMaterial 
+     *  @param _meshMaterial The mesh material of nft need to trigger
      */
+    function getCid(
+        uint256 _rarity,
+        uint256 _meshIndex,
+        uint256 _meshMaterial
+    ) external onlyFromValidNftCollection view returns(string memory) {
+        return cid[msg.sender][_rarity][_meshIndex][_meshMaterial];
+    }
 
     
 }
