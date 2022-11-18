@@ -2,17 +2,29 @@
 pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
-import "./interfaces/ICharacterToken.sol";
-import "./libraries/BoxNFTDetails.sol";
+import "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
+import "../interfaces/ICharacterToken.sol";
+import "../libraries/BoxNFTDetails.sol";
+
 
 contract BoxesConfigurations is
     AccessControlUpgradeable
 {
+    using EnumerableSet for EnumerableSet.AddressSet;
+
     // Event
     event AddNewBoxInstant(address boxContract, uint256[] rarityProportions, uint8 defaultRarity);
 
-
     bytes32 public constant UPGRADER_ROLE = keccak256("UPGRADER_ROLE");
+
+    // List of NFT collections
+    EnumerableSet.AddressSet private boxCollectionList;
+
+    // Box Factory Address
+    address public BOX_FACTORY;
+
+    // Box Creator Address
+    address public BOX_CREATOR;
 
     // Address of NFT collection
     ICharacterToken public NFT_COLLECTION;
@@ -20,14 +32,29 @@ contract BoxesConfigurations is
     // Store boxInstant's Instant
     mapping(address => BoxNFTDetails.BoxConfigurations) public boxInfos;
 
-    constructor (address _nftColelction) {
+    constructor (address _nftColelction, address _boxFactory, address _boxCreator) {
         NFT_COLLECTION = ICharacterToken(_nftColelction);
+        BOX_FACTORY = _boxFactory;
+        BOX_CREATOR = _boxCreator;
     }
 
     function initialize() public initializer {
         __AccessControl_init();
         _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
         _setupRole(UPGRADER_ROLE, msg.sender);
+    }
+
+    // modifier to check from Factory or not
+    modifier onlyFromFactory() {
+        require(msg.sender == BOX_FACTORY, "Can only call from Factory contract");
+        _;
+    }
+
+    /**
+    *  @notice Function allows Factory to add new deployed BOX.
+    */
+    function InsertNewCollectionAddress(address _boxNFT) external onlyFromFactory {
+        boxCollectionList.add(_boxNFT);
     }
 
     /**

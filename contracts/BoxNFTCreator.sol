@@ -39,9 +39,12 @@ contract BoxNFTCreator is
     // Signer for mint with signature
     address public signer;
     
+    // Configurations address
+    address public boxConfigurations;
+
     // NFT collection using
     IMysteryBoxNFT public boxCollection;
-
+    
     // Token using to pay for minting NFT
     IERC20 public payToken;
 
@@ -69,10 +72,10 @@ contract BoxNFTCreator is
     /**
      *      @dev Contructor
      */
-    constructor (address _signer, address _boxCollection, IERC20 _payToken) {
+    constructor (address _signer, address _boxConfig, IERC20 _payToken) {
         signer = _signer;
         payToken = _payToken;
-        boxCollection = IMysteryBoxNFT(_boxCollection);
+        boxConfigurations = _boxConfig;
     }
 
     /**

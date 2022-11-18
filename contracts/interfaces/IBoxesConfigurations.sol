@@ -9,4 +9,9 @@ interface IBoxesConfigurations {
     function getBoxInfos(
         address _boxAddress
     ) external view returns(BoxNFTDetails.BoxConfigurations memory);
+
+    /**
+     *  @notice Function allows Factory to add new deployed collection
+     */
+    function InsertNewCollectionAddress(address _nftCollection) external;
 }
