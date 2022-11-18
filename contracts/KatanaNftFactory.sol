@@ -30,18 +30,18 @@ contract KatanaNftFactory is AccessControl {
     address public dappCreatorAddress;
 
     // This contract config metadata for all collections
-    INftConfigurations public nftConfiguration;
+    INftConfigurations public nftConfigurations;
 
     // implementAddress
     address public implementationAddress;
 
-    constructor(address _dappCreatorAddress, INftConfigurations _nftConfiguration) {
+    constructor(address _dappCreatorAddress, INftConfigurations _nftConfigurations) {
         require(_dappCreatorAddress != address(0x0), "Address of creator must be required.");
-        require(address(_nftConfiguration) != address(0x0), "Address of configuration must be required.");
+        require(address(_nftConfigurations) != address(0x0), "Address of configuration must be required.");
 
         dappCreatorAddress = _dappCreatorAddress;
 
-        nftConfiguration = _nftConfiguration;
+        nftConfigurations = _nftConfigurations;
 
         implementationAddress = address(new CharacterToken());
 
@@ -53,10 +53,10 @@ contract KatanaNftFactory is AccessControl {
        @dev: Set new configuration
        @param {address} _address - This is address of new configuration
     */
-    function setConfiguration(INftConfigurations _nftConfiguration) external onlyRole(IMPLEMENTATION_ROLE) {
-        require(address(_nftConfiguration) != address(0x0), "Address of configuration must be required.");
-        nftConfigurationAddress = _nftConfiguration;
-        emit SetConfiguration(address(_nftConfiguration));
+    function setConfiguration(INftConfigurations _nftConfigurations) external onlyRole(IMPLEMENTATION_ROLE) {
+        require(address(_nftConfigurations) != address(0x0), "Address of configuration must be required.");
+        nftConfigurations = _nftConfigurations;
+        emit SetConfiguration(address(_nftConfigurations));
     }
 
     /*
@@ -74,9 +74,9 @@ contract KatanaNftFactory is AccessControl {
         CharacterToken(collection).initialize(
             _name,
             _symbol,
-            dappCreatorAddress
+            dappCreatorAddress,
+            address(nftConfigurations)
         );
-
 
         // Add new collection to configuration
         INftConfigurations.InsertNewCollectionAddress(collection);
@@ -89,6 +89,7 @@ contract KatanaNftFactory is AccessControl {
             dappCreatorAddress
         );
     }
+
     /*
         @dev
         @param {address} _nftCollection
@@ -108,7 +109,7 @@ contract KatanaNftFactory is AccessControl {
         string memory _cid
     ) external onlyRole(IMPLEMENTATION_ROLE) {
         require(nftCollectionsList.contains(_nftCollection), "Collection: The collection doesn't exist");
-        nftConfiguration.configOne(
+        nftConfigurations.configOne(
             _nftCollection,
             _rarity,
             _meshIndex,
@@ -147,6 +148,4 @@ contract KatanaNftFactory is AccessControl {
         CharacterToken(_characterToken).setMinterRole(_newMinter);
         emit SetNewMinterRole(_characterToken, _newMinter);
     }
-
-
 }

@@ -21,6 +21,9 @@ contract NftConfigurations is
     // NFT Factory Address
     address public NFT_FACTORY;
 
+    // Dapp Creator
+    address public DAPP_CREATOR;
+
     // List of NFT collections
     EnumerableSet.AddressSet private nftCollectionsList;
 
@@ -45,13 +48,20 @@ contract NftConfigurations is
         _;
     }
 
+    // Modifier just accept call from dappCreator
+    modifier onlyFromDappCreator() {
+        require(msg.sender == DAPP_CREATOR, "Can only call from Dapp Creator contract");
+        _;
+    }
+
     modifier onlyFromValidNftCollection() {
         require(nftCollectionsList.contains(msg.sender), "Invalid NftCollection");
         _;
     }
 
-    constructor (address _nftFactory) {
+    constructor (address _nftFactory, address _dappCreator) {
         NFT_FACTORY = _nftFactory;
+        DAPP_CREATOR = _dappCreator;
     }
 
     function initialize() public initializer {
@@ -65,6 +75,17 @@ contract NftConfigurations is
      */
     function InsertNewCollectionAddress(address _nftCollection) external onlyFromFactory {
         nftCollectionsList.add(_nftCollection);
+    }
+
+    /**
+     *  @notice Function allows Dapp Creator call to get price
+     */
+    function getPrice(
+        address _nftCollection,
+        uint256 _rarity,
+        uint256 _meshIndex
+    ) external onlyFromDappCreator view returns(uint256) {
+        return pricePerMesh[_nftCollection][_rarity][_meshIndex];
     }
 
     /**

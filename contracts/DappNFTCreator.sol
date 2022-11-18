@@ -7,6 +7,7 @@ import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "./interfaces/ICharacterToken.sol";
+import "./interfaces/INftConfigurations.sol";
 import "./libraries/CharacterTokenDetails.sol";
 
 
@@ -37,8 +38,8 @@ contract DaapNFTCreator is
     // Signer for mint with signature
     address public signer;
 
-    // Factory
-    address public nftFactoryAddress;
+    // Configurations address
+    address public nftConfigurations;
 
     // Token using to pay for minting NFT
     IERC20 public payToken;
@@ -62,18 +63,13 @@ contract DaapNFTCreator is
         _;
     }
 
-    modifier onlyFromFactory() {
-        require(msg.sender == nftFactoryAddress, "Only Factory contract allowed");
-        _;
-    }
-
     /**
      *      @dev Contructor
      */
-    constructor (address _signer, IERC20 _payToken, address _nftFactoryAddress) {
+    constructor (address _signer, IERC20 _payToken, address _nftConfigurations) {
         signer = _signer;
         payToken = _payToken;
-        nftFactoryAddress = _nftFactoryAddress;
+        nftConfigurations = _nftConfigurations;
     }
 
     /**
@@ -141,8 +137,9 @@ contract DaapNFTCreator is
         address _signer,
         address _nftCollection,
         uint256 _discount,
-        string[] memory _cids,
-        uint8[] memory _rarities,
+        uint256[] memory _rarities,
+        uint256[] memory _meshIndexes,
+        uint256[] memory _meshMaterials,
         Proof memory _proof
     ) private view returns (bool) 
     {
@@ -155,8 +152,9 @@ contract DaapNFTCreator is
             this,
             address(_nftCollection),
             _discount,
-            _cids,
             _rarities,
+            _meshIndexes,
+            _meshMaterials,
             _proof.deadline
         ));
         address signatory = ecrecover(digest, _proof.v, _proof.r, _proof.s);
@@ -176,30 +174,40 @@ contract DaapNFTCreator is
         string memory _callbackData
     ) external payable  notContract {
         require(_mintingInfos.length > 0, "Amount of minting NFTs must be greater than 0");
-        string[] memory _cids = new string[](_mintingInfos.length);
-        uint8[] memory _rarities = new uint8[](_mintingInfos.length);
+        uint256[] memory _rarities = new uint256[](_mintingInfos.length);
+        uint256[] memory _meshIndexes = new uint256[](_mintingInfos.length);
+        uint256[] memory _meshMaterials = new uint256[](_mintingInfos.length);
         for (uint256 i=0; i < _mintingInfos.length; i++) {
-            _cids[i] = _mintingInfos[i].cid;
             require(
-                _mintingInfos[i].rarity <= _nftCollection.getMaxRarityValue(),
-                "Invalid rarity"
+                INftConfigurations(nftConfigurations).checkValidMintingAttributes(
+                    address(_nftCollection),
+                    _mintingInfos[i]
+                ),
+                "Invalid minting infos"
             );
             _rarities[i] = _mintingInfos[i].rarity;
+            _meshIndexes[i] = _mintingInfos[i].meshIndex;
+            _meshMaterials[i] = _mintingInfos[i].meshMaterial;
         }
         require(
             verifySignature(
                 signer,
                 address(_nftCollection),
                 _discount,
-                _cids,
                 _rarities,
+                _meshIndexes,
+                _meshMaterials,
                 _proof
             ),
             "Invalid Signature"
         );
         uint256 _amount = 0;
         for (uint256 i=0; i < _mintingInfos.length; i++) {
-            _amount += nftPrice[address(_nftCollection)][_mintingInfos[i].rarity];
+            _amount += INftConfigurations(nftConfigurations).getPrice(
+                address(_nftCollection),
+                _mintingInfos[i].rarity,
+                _mintingInfos[i].meshIndex
+            );
         }
         require(payToken.balanceOf(msg.sender) > _amount - _discount, "User needs to hold enough token to buy this token");
         payToken.transferFrom(msg.sender, address(this), _amount - _discount);
