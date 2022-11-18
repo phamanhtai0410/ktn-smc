@@ -3,17 +3,18 @@ pragma solidity ^0.8.0;
 
 library CharacterTokenDetails {
     struct TokenDetail {
-        uint8 rarity;
+        MintingOrder mintingOrder;
         string tokenURI;
     }
 
     struct MintingOrder {
-        uint8 rarity;
-        string cid;
+        uint256 rarity;
+        uint256 meshIndex;
+        uint256 meshMaterial;
     }
 
     struct ReturnMintingOrder {
         uint256 tokenId;
-        uint8 rarity;
+        MintingOrder mintingOrder;
     }
 }

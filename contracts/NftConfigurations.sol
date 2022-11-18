@@ -116,5 +116,16 @@ contract NftConfigurations is
         return cid[msg.sender][_rarity][_meshIndex][_meshMaterial];
     }
 
-    
+    /**
+     *  @notice Function check the rarity is valid or not in the current state of system
+     *  @dev Function used for all contract call to for validations
+     *  @param _nftCollection The address of the collection contract need to check
+     *  @param _rarity The rarity need to check
+     */
+    function checkValidRarit(
+        address _nftCollection,
+        uint256 _rarity
+    ) external view returns(bool) {
+        return rarityList[_nftCollection].contains(_rarity);
+    }
 }

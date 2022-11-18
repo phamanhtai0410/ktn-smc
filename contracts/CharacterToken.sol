@@ -13,6 +13,7 @@ import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
 import "./interfaces/INFTToken.sol";
 import "./interfaces/IDaapNFTCreator.sol";
+import "./interfaces/INftConfigurations.sol";
 import "./libraries/CharacterTokenDetails.sol";
 
 
@@ -112,7 +113,8 @@ contract CharacterToken is
     function initialize(
         string memory _name,
         string memory _symbol,
-        address _daapCreator
+        address _daapCreator,
+        address _nftConfigurations
     ) public initializer {
         __ERC721_init(_name, _symbol);
         __AccessControl_init();
@@ -127,7 +129,8 @@ contract CharacterToken is
         _setupRole(OPEN_NFT_ROLE, msg.sender);
         _setupRole(WHITELIST_ROLE, msg.sender);
 
-        daapCreator = IDaapNFTCreator(_daapCreator);
+        daapCreator = _daapCreator;
+        nftConfigutations = _nftConfigurations;
         MAX_TOKENS_IN_ORDER = 10;
         MAX_TOKENS_IN_USING = 10;
         totalSupply = 100000000;
@@ -272,13 +275,13 @@ contract CharacterToken is
      *  Function mint NFTs order from admin
      */
     function mintOrderForDev(
-        uint8[] calldata _rarities,
+        CharacterTokenDetails.MintingOrder[] memory _mintingOrders,
         address _to,
         bytes calldata _callbackData
     ) external onlyRole(MINTER_ROLE) {
         
         CharacterTokenDetails.ReturnMintingOrder[] memory _returnOrder = _mintOneOrder(
-            _rarities,
+            _mintingOrders,
             _to
         );
 
@@ -293,13 +296,13 @@ contract CharacterToken is
      *  Function mint NFTs order from daap creator
      */
     function mintOrderFromDaapCreator(
-        uint8[] calldata _rarities,
+        CharacterTokenDetails.MintingOrder[] memory _mintingOrders,
         address _to,
         string calldata _callbackData
     ) external onlyFromDaapCreator {
         
         CharacterTokenDetails.ReturnMintingOrder[] memory _returnOrder = _mintOneOrder(
-            _rarities,
+            _mintingOrders,
             _to
         );
 
@@ -352,40 +355,47 @@ contract CharacterToken is
         uint256 _meshIndex,
         uint256 _meshMaterial
     ) internal {
-        
-        tokenDetails[_tokenId].tokenURI = string(abi.encodePacked("https://", cidPerRarity[_rarity], ".ipfs.w3s.link/"));
+        string memory _cid = INftConfigurations(nftConfigutations).getCid(
+            _rarity,
+            _meshIndex,
+            _meshMaterial
+        );
+        tokenDetails[_tokenId].tokenURI = string(abi.encodePacked("https://", _cid, ".ipfs.w3s.link/"));
     }
 
     /**
      *      @notice Internal function allow to mint an order of minting list of NFTs
      */
     function _mintOneOrder(
-        uint8[] calldata _rarities,
+        CharacterTokenDetails.MintingOrder[] memory _mintingOrders,
         address _to
     ) internal returns(CharacterTokenDetails.ReturnMintingOrder[] memory) {
-        require(_rarities.length > 0, "No token to mint");
-        require(_rarities.length <= MAX_TOKENS_IN_ORDER, "Maximum tokens in one mint reached");
+        require(_mintingOrders.length > 0, "No token to mint");
+        require(_mintingOrders.length <= MAX_TOKENS_IN_ORDER, "Maximum tokens in one mint reached");
         require(
-            tokenIdCounter.current() + _rarities.length <= getTotalSupply(),
+            tokenIdCounter.current() + _mintingOrders.length <= getTotalSupply(),
             "Total supply of NFT reached"
         );  
 
-        for (uint256 i=0; i < _rarities.length; i++) {
+        for (uint256 i=0; i < _mintingOrders.length; i++) {
             require(
-                _rarities[i] > 0 && _rarities[i] <= MAX_NFT_RARITY,
+                INftConfigurations(nftConfigutations).checkValidRarity(
+                    address(this),
+                    _mintingOrders[i].rarity
+                ),
                 "Invalid rarity"
             );
         }
 
-        CharacterTokenDetails.ReturnMintingOrder[] memory _returnOrder = new CharacterTokenDetails.ReturnMintingOrder[](_rarities.length);
-        for (uint256 i=0; i < _rarities.length; i++) {
+        CharacterTokenDetails.ReturnMintingOrder[] memory _returnOrder = new CharacterTokenDetails.ReturnMintingOrder[](_mintingOrders.length);
+        for (uint256 i=0; i < _mintingOrders.length; i++) {
             uint256 _tokenId = createToken(
                 _to,
-                _rarities[i]
+                _mintingOrders[i]
             );
             _returnOrder[i] = CharacterTokenDetails.ReturnMintingOrder(
                 _tokenId,
-                _rarities[i]
+                _mintingOrders[i]
             );
         }
         return _returnOrder;
@@ -396,12 +406,17 @@ contract CharacterToken is
      */
     function createToken(
         address _to,
-        uint8 _rarity
+        CharacterTokenDetails.MintingOrder memory _mintingOrder
     ) internal returns (uint256){
         // Mint NFT for user "_to"
         tokenIdCounter.increment();
         uint256 _id = tokenIdCounter.current();
-        _setTokenUri(_id, _rarity);
+        _setTokenUri(
+            _id,
+            _mintingOrder.rarity,
+            _mintingOrder.meshIndex,
+            _mintingOrder.meshMaterial
+        );
         _mint(_to, _id);
         
         // // Save data for "tokenIds"
@@ -409,7 +424,7 @@ contract CharacterToken is
 
         // Save data for "tokenDetails"
         CharacterTokenDetails.TokenDetail memory _tokenDetail;
-        _tokenDetail.rarity = _rarity;
+        _tokenDetail.mintingOrder = _mintingOrder;
         _tokenDetail.tokenURI = tokenURI(_id);
         tokenDetails[_id] = _tokenDetail;
 

@@ -38,5 +38,16 @@ interface INftConfigurations  {
         uint256 _rarity,
         uint256 _meshIndex,
         uint256 _meshMaterial
-    ) external;
+    ) external view returns(string memory);
+
+    /**
+     *  @notice Function check the rarity is valid or not in the current state of system
+     *  @dev Function used for all contract call to for validations
+     *  @param _nftCollection The address of the collection contract need to check
+     *  @param _rarity The rarity need to check
+     */
+    function checkValidRarity(
+        address _nftCollection,
+        uint256 _rarity
+    ) external view returns(bool);
 }
