@@ -10,8 +10,11 @@ import "@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
 import "./libraries/BoxNFTDetails.sol";
+import "./Utils.sol";
 import "./interfaces/INFTToken.sol";
 import "./interfaces/IBoxNFTCreator.sol";
+import "./interfaces/IBoxesConfigurations.sol";
+import "./interfaces/ICharacterToken.sol";
 
 
 contract MysteryBoxNFT is
@@ -24,11 +27,18 @@ contract MysteryBoxNFT is
     using BoxNFTDetails for BoxNFTDetails.BoxNFTDetail;
     using Counters for Counters.Counter;
 
+    struct CreateBoxRequest {
+        uint256 targetBlock;    // Use future block.
+        uint16 count;           // Amount of tokens to mint.
+    }
+
     event TokenCreated(address to, uint256 tokenId, uint256 details);
     event MintOrderForDev(bytes callbackData, address to, BoxNFTDetails.BoxNFTDetail[] returnMintingOrder);
     event MintOrderFromDaapCreator(string callbackData, address to, BoxNFTDetails.BoxNFTDetail[] returnMintingOrder);
     event OpenBox(address to, uint256[] tokenIds);
     event SendNft(address from, address to, uint256 tokenId);
+    event ProcessBoxOpeningRequests(address to);
+    event BoxOpeningRequested(address to, uint256 targetBlock);
 
     bytes32 public constant UPGRADER_ROLE = keccak256("UPGRADER_ROLE");
     bytes32 public constant DESIGNER_ROLE = keccak256("DESIGNER_ROLE");
@@ -36,15 +46,23 @@ contract MysteryBoxNFT is
     bytes32 public constant WHITELIST_ROLE = keccak256("WHITELIST_ROLE");
     bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
 
+    uint256 private constant maskLast8Bits = uint256(0xff);
+    uint256 private constant maskFirst248Bits = ~uint256(0xff);
+
     uint public constant COIN_DECIMALS = 10 ** 18;
 
     uint256 public TOTAL_BOX;
     uint256 public MAX_OPEN_BOX_UNIT;
     IERC20 public coinToken;
+
     // DaapCreator contract
     IBoxNFTCreator public boxNFTCreator;
 
-    INFTToken public characterToken;
+    // BoxesConfigurationsAddress
+    IBoxesConfigurations public boxesConfigurationsAddress;
+
+    ICharacterToken public characterToken;
+
     Counters.Counter public tokenIdCounter;
     
     // Limit each common user to by.
@@ -67,6 +85,9 @@ contract MysteryBoxNFT is
     // Mapping from token ID to token details.
     mapping(uint256 => BoxNFTDetails.BoxNFTDetail) public tokenDetails;
 
+    // Mapping from owner address to Box token requests.
+    mapping(address => CreateBoxRequest[]) public boxRequests;
+
     /**
         * @notice Checks if the msg.sender is a contract or a proxy
     */
@@ -81,8 +102,9 @@ contract MysteryBoxNFT is
         _;
     }
 
-    constructor (address _boxNFTCreator) {
-        boxNFTCreator = IBoxNFTCreator(_boxNFTCreator);            
+    constructor (address _boxNFTCreator, address _boxesConfigurationsAddress) {
+        boxNFTCreator = IBoxNFTCreator(_boxNFTCreator);
+        boxesConfigurationsAddress = IBoxesConfigurations(_boxesConfigurationsAddress);         
     }
 
     function initialize(
@@ -170,7 +192,7 @@ contract MysteryBoxNFT is
         external
         onlyRole(DESIGNER_ROLE)
     {
-        characterToken = INFTToken(contractAddress);
+        characterToken = ICharacterToken(contractAddress);
     }
 
     function getBoxIdsByOwner(address owner)
@@ -348,9 +370,143 @@ contract MysteryBoxNFT is
             BoxNFTDetails.BoxNFTDetail storage boxDetail = tokenDetails[tokenIds_[i]];
             boxDetail.is_opened = true;
         }
-        characterToken.openBoxes(tokenIds_);
+        // Add open Box request
+        addBoxOpenRequest(to, tokenIds_.length);
+
         emit OpenBox(to, tokenIds_);
-        
+    }
+
+    /**
+     *  @notice Function add Box opening request
+     */
+    function addBoxOpenRequest(
+        address to,
+        uint256 count
+    ) internal {
+        uint256 targetBlock = block.number + 5;
+        boxRequests[to].push(
+            CreateBoxRequest(
+                targetBlock,
+                uint16(count)
+            )
+        );
+        emit BoxOpeningRequested(to, targetBlock);
+    }
+
+    /**
+     *  @notice Function is used to get the amount of pending NFTs that needs to open from Box of one wallet at the moment
+     *  @param to Address of user need to check
+     */
+    function getPendingNfts(address to) external view returns (uint256) {
+        uint256 result;
+        CreateBoxRequest[] storage requests = boxRequests[to];
+        for (uint256 i = 0; i < requests.length; ++i) {
+            CreateBoxRequest storage request = requests[i];
+            if (block.number > request.targetBlock) {
+                result += request.count;
+            } else {
+                break;
+            }
+        }
+        return result;
+    }
+
+    /**
+     *  @notice Function is used to get total processable of NFTs that can be process
+     */
+    function getProcessableTokens(address to) external view returns (uint256) {
+        uint256 result;
+        CreateBoxRequest[] storage requests = boxRequests[to];
+        for (uint256 i = 0; i < requests.length; ++i) {
+            result += requests[i].count;
+        }
+        return result;
+    }
+
+    /**
+     *  @notice Function that call from FE to process Box Opening action
+     */
+    function processBoxOpeningRequests() external notContract {
+        address to = msg.sender;
+
+        CreateBoxRequest[] storage requests = boxRequests[to];
+        for (uint256 i = requests.length; i > 0; --i) {
+            // Trigger to each request
+            CreateBoxRequest storage request = requests[i - 1];
+
+            // Get Box Configurations of current box
+            BoxNFTDetails.BoxConfigurations memory _configurations = boxesConfigurationsAddress.getBoxInfos(address(this));
+
+            // Get data from request
+            uint256 targetBlock = request.targetBlock;
+            uint256 count = request.count;
+
+            // Check targetBlock reach or not
+            require(block.number > targetBlock, "Target block not arrived");
+
+            // Hash current executed block
+            uint256 seed = uint256(blockhash(targetBlock));
+
+            // Init with rarity = 0; rarity = 0 means random in all rarities
+            uint8 rarity = 0;
+
+            // Force rarity common if process over 256 blocks.
+            if (block.number - 256 > targetBlock) {
+                // Force to default rarity
+                rarity = _configurations.defaultRarity;
+            }
+
+            if (seed == 0) {
+                targetBlock = (block.number & maskFirst248Bits) + (targetBlock & maskLast8Bits);
+                if (targetBlock >= block.number) {
+                    targetBlock -= 256;
+                }
+                seed = uint256(blockhash(targetBlock));
+            }
+
+            // Execute minting action to NFT contract
+            executeOneBoxOpening(
+                to,
+                count,
+                rarity,
+                seed,
+                _configurations.rarityProportions
+            );
+
+            requests.pop();
+        }
+        emit ProcessBoxOpeningRequests(to);
+    }
+
+    /**
+     *  @notice Function's used to execute mint NFT in NFT collection contract
+     */
+    function executeOneBoxOpening(
+        address to,
+        uint256 count,
+        uint8 rarity,
+        uint256 seed,
+        uint256[] memory rarityProportions
+    ) internal {
+        uint256 nextSeed = seed;
+        for (uint256 i = 0; i < count; ++i) {
+            uint256 _currId = characterToken.lastId();
+
+            if (rarity == 0) {
+                uint256 _newRarity;
+                uint256 tokenSeed = uint256(keccak256(abi.encode(nextSeed, _currId)));
+                (nextSeed, _newRarity) = Utils.randomByWeights(tokenSeed, rarityProportions);
+                rarity = uint8(_newRarity);
+            }
+
+            _currId += 1;
+
+            BoxNFTDetails.BoxNFTDetail memory tokenDetail;
+            tokenDetail.id = _currId;
+            tokenDetails[_currId] = tokenDetail;
+
+            characterToken.mintOrderForDev(new uint8[](rarity), to, "0x01");
+        }
     }
 
     /** User can send tokens directly via d-app. */

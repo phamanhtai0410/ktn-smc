@@ -9,4 +9,9 @@ library BoxNFTDetails {
         bool is_opened;   // false: still not open, true: opened
         address owner_by; // Owner token before on chain for marketplace.
     }
+
+    struct BoxConfigurations {
+        uint256[] rarityProportions;
+        uint8 defaultRarity;
+    }
 }

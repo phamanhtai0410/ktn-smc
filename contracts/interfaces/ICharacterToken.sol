@@ -39,4 +39,14 @@ interface ICharacterToken is IERC721Upgradeable {
      *      @dev Function allows ADMIN to modify cid for existing rarity
      */
     function updateCidOfExistingRarity(uint8 _rarity, string memory _cid) external;
+
+    /** Function returns last tokenId at the moment */
+    function lastId() external view returns (uint256);
+
+    /** Mint token with rarities from dev purpose */
+    function mintOrderForDev(
+        uint8[] calldata _rarities,
+        address _to,
+        bytes calldata _callbackData
+    ) external;
 }

@@ -5,8 +5,6 @@ library CharacterTokenDetails {
     struct TokenDetail {
         uint8 rarity;
         string tokenURI;
-        bool isUsed;
-        uint8 nftType;
     }
 
     struct MintingOrder {

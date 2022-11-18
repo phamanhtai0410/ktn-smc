@@ -28,12 +28,6 @@ contract CharacterToken is
     using CharacterTokenDetails for CharacterTokenDetails.TokenDetail;
     using CharacterTokenDetails for CharacterTokenDetails.MintingOrder;
     using CharacterTokenDetails for CharacterTokenDetails.ReturnMintingOrder;
-
-    struct CreateBoxRequest {
-        uint256 targetBlock;    // Use future block.
-        uint16 count;           // Amount of tokens to mint.
-        uint8 rarity;           // 0: random rarity, 1 - 6: specified rarity.
-    }
     
     event TokenCreated(address to, uint256 tokenId, CharacterTokenDetails.TokenDetail details);
     event BurnToken(uint256[] ids);
@@ -49,7 +43,6 @@ contract CharacterToken is
     event SetNewMaxRarity(uint8 oldMaxRarity, uint8 newMaxRarity);
     event SetWhiteList(address to);
     event SwitchFreeTransferMode(bool oldMode, bool newMode);
-    event UpgradeExistingNftType(uint8 nftType, uint8 oldMaxRarityValue, uint8 upgradeMaxRarityValue);
 
     bytes32 public constant PAUSER_ROLE = keccak256("PAUSER_ROLE");
     bytes32 public constant OPEN_BOX_ROLE = keccak256("OPEN_BOX_ROLE");
@@ -67,7 +60,10 @@ contract CharacterToken is
     IERC721 public marketPlace;
 
     // DaapCreator contract
-    IDaapNFTCreator public daapCreator;
+    address public daapCreator;
+
+    // NFT Configurations
+    address public nftConfigutations;
 
     // Counter for tokenID
     Counters.Counter public tokenIdCounter;
@@ -87,20 +83,11 @@ contract CharacterToken is
     // Total Supply
     uint256 public totalSupply;
 
-    // Max value of NFT rarity
-    uint8 public MAX_NFT_RARITY;
-
     // Mapping address of user and its ability in whitelist or not
     mapping(address => bool) public whiteList;
 
     // Flag Free transfer NFT
     bool public FREE_TRANSFER;
-
-    // cid per rarity
-    mapping(uint8 => string) public cidPerRarity;
-
-    // Mapping from owner address to Box token requests.
-    mapping(address => CreateBoxRequest[]) public boxRequests;
 
     /**
      * @notice Checks if the msg.sender is a contract or a proxy
@@ -112,7 +99,7 @@ contract CharacterToken is
     }
 
     modifier onlyFromDaapCreator() {
-        require(msg.sender == address(daapCreator), "Not be called from Daap Creator");
+        require(msg.sender == daapCreator, "Not be called from Daap Creator");
         _;
     }
 
@@ -125,8 +112,6 @@ contract CharacterToken is
     function initialize(
         string memory _name,
         string memory _symbol,
-        uint8 _maxRarityValue,
-        string[] memory _cids,
         address _daapCreator
     ) public initializer {
         __ERC721_init(_name, _symbol);
@@ -142,17 +127,12 @@ contract CharacterToken is
         _setupRole(OPEN_NFT_ROLE, msg.sender);
         _setupRole(WHITELIST_ROLE, msg.sender);
 
-        MAX_NFT_RARITY = _maxRarityValue;
         daapCreator = IDaapNFTCreator(_daapCreator);
         MAX_TOKENS_IN_ORDER = 10;
         MAX_TOKENS_IN_USING = 10;
         totalSupply = 100000000;
         whiteList[msg.sender] = true;
         FREE_TRANSFER = false;
-
-        for (uint8 i=0; i < _cids.length; i++) {
-            cidPerRarity[i + 1] = _cids[i];
-        }
     }
 
     function onERC721Received(
@@ -187,7 +167,7 @@ contract CharacterToken is
     }
 
     function setDappCreator(address _daapCreator) external onlyRole(DEFAULT_ADMIN_ROLE) {
-        daapCreator = IDaapNFTCreator(_daapCreator);
+        daapCreator = _daapCreator;
     }
     /**
      *  @notice Function allow ADMIN set new wallet is MINTER
@@ -195,16 +175,6 @@ contract CharacterToken is
     function setMinterRole(address _newMinter) external onlyRole(DEFAULT_ADMIN_ROLE) {
         _setupRole(MINTER_ROLE, _newMinter);
         emit SetNewMinter(_newMinter);
-    }
-
-    /**
-     *  @notice Function allow ADMIN to set Max_Rarity of collection
-     */
-    function setNewMaxOfRarity(uint8 _newMaxRarity) external onlyRole(DEFAULT_ADMIN_ROLE) {
-        require(_newMaxRarity > MAX_NFT_RARITY, "Invalid new max of rarity");
-        uint8 oldMaxRarity = MAX_NFT_RARITY;
-        MAX_NFT_RARITY = _newMaxRarity;
-        emit SetNewMaxRarity(oldMaxRarity, _newMaxRarity);
     }
 
     /**
@@ -221,28 +191,6 @@ contract CharacterToken is
     function setMaxTokensInOneUsing(uint8 _maxTokenInOneUsing) external onlyRole(DEFAULT_ADMIN_ROLE) {
         MAX_TOKENS_IN_USING = _maxTokenInOneUsing;
         emit SetMaxTokensInOneUsing(_maxTokenInOneUsing);
-    }
-
-    /** Set marketplace for integrate */
-    function setMarketPlace(address contractAddress) external onlyRole(DESIGNER_ROLE) {
-        marketPlace = IERC721(contractAddress);
-        emit SetMarketplace(contractAddress);
-    }
-
-    /**
-     *  @notice Function allows ADMIN to add cids for each new rarities
-     */
-    function addCidsForNewRarities(string[] memory _cids) external onlyRole(DEFAULT_ADMIN_ROLE) {
-        for (uint8 i=0; i < _cids.length; i++) {
-            cidPerRarity[MAX_NFT_RARITY + i + 1] = _cids[i];
-        }
-    }
-
-    /**
-     *  @notice Function allow ADMIN to update cid of one existing rarity
-     */
-    function updateCidOfExistingRarity(uint8 _rarity, string memory _cid) external onlyRole(DEFAULT_ADMIN_ROLE) {
-        cidPerRarity[_rarity] = _cid;
     }
     
     function pause() public onlyRole(PAUSER_ROLE) {
@@ -320,13 +268,6 @@ contract CharacterToken is
         return totalSupply;
     }
 
-    /**
-     *  @notice Function return Max Rarity Value of each nftType
-     */
-    function getMaxRarityValue() external view returns (uint8) {
-        return MAX_NFT_RARITY;
-    }
-
     /** 
      *  Function mint NFTs order from admin
      */
@@ -396,8 +337,6 @@ contract CharacterToken is
         address to,
         uint256 tokenId
     ) internal override {
-        CharacterTokenDetails.TokenDetail storage _tokenDetail = tokenDetails[tokenId];
-        require(_tokenDetail.isUsed == false, "This token already used");
         if (FREE_TRANSFER == false) {
             require(
                 whiteList[to] == true || whiteList[from],
@@ -407,7 +346,13 @@ contract CharacterToken is
         ERC721Upgradeable._transfer(from, to, tokenId);
     }
 
-    function _setTokenUri(uint256 _tokenId, uint8 _rarity) internal {
+    function _setTokenUri(
+        uint256 _tokenId,
+        uint256 _rarity,
+        uint256 _meshIndex,
+        uint256 _meshMaterial
+    ) internal {
+        
         tokenDetails[_tokenId].tokenURI = string(abi.encodePacked("https://", cidPerRarity[_rarity], ".ipfs.w3s.link/"));
     }
 
@@ -466,7 +411,6 @@ contract CharacterToken is
         CharacterTokenDetails.TokenDetail memory _tokenDetail;
         _tokenDetail.rarity = _rarity;
         _tokenDetail.tokenURI = tokenURI(_id);
-        _tokenDetail.isUsed = false;
         tokenDetails[_id] = _tokenDetail;
 
         emit TokenCreated(_to, _id, _tokenDetail);
@@ -504,12 +448,6 @@ contract CharacterToken is
             delete tokenDetails[id];
         } else {
             // Transfer or mint.
-
-            // Get infos from tokenDetails
-            CharacterTokenDetails.TokenDetail storage _tokenDetail = tokenDetails[id];
-            // Check valid of in used or not after
-            require(_tokenDetail.isUsed == false, "Token already used");
-
             // Push new tokenID into list of user #"to": tokenIds
             uint256[] storage ids = tokenIds[to];
             ids.push(id);

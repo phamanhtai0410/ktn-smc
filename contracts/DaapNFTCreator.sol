@@ -43,9 +43,6 @@ contract DaapNFTCreator is
     // Token using to pay for minting NFT
     IERC20 public payToken;
 
-    // Price of each nft type with each rarity token
-    mapping(address => mapping(uint8 => uint256)) public nftPrice;
-
     /**
      *      @dev Define events that contract will emit
      */
@@ -92,34 +89,6 @@ contract DaapNFTCreator is
     }
 
     /**
-     *      @notice Function allows admin to add new collection
-     */
-    function addNewCollection(
-        address _charaterToken,
-        uint256[] memory _prices
-    ) external onlyFromFactory {
-        uint8 _maxRarity = ICharacterToken(_charaterToken).getMaxRarityValue();
-        require(_prices.length == _maxRarity, "Invalid length of prices array");
-        for (uint8 i=0; i < _maxRarity; i++) {
-            nftPrice[_charaterToken][i + 1] = _prices[i];
-        }
-        emit AddNewCollection(_charaterToken, _prices);
-    }
-
-    /**
-     *  @notice Set price for each new rarity type
-     */
-    function upgradeNewNftRarity(
-        ICharacterToken _nftCollection,
-        uint256[] memory _prices
-    ) external onlyFromFactory {
-        uint8 _currentMaxRarity = _nftCollection.getMaxRarityValue();
-        for (uint8 i=0; i <_prices.length; i++) {
-            nftPrice[address(_nftCollection)][_currentMaxRarity + i +  1] = _prices[i];
-        }
-    }
-
-    /**
      *      @dev Function allows ADMIN to withdraw token in contract
      */
     function withdraw(uint256 _amount) external onlyRole(DEFAULT_ADMIN_ROLE) {
@@ -152,20 +121,6 @@ contract DaapNFTCreator is
         address oldSigner = signer;
         signer = _newSigner;
         emit SetNewSigner(oldSigner, _newSigner);
-    }
-
-    /**
-     *  @notice Update price for a nft type in one rarity level
-     */
-    function updatePrice(
-        ICharacterToken _nftCollection,
-        uint8 _rarity,
-        uint256 _newPrice
-    ) external onlyFromFactory {
-        uint8 _currentMaxRarity = _nftCollection.getMaxRarityValue();
-        require(_rarity <= _currentMaxRarity, "Invalid NFT rarity");
-        nftPrice[address(_nftCollection)][_rarity] = _newPrice;
-        emit UpdatePrice(address(_nftCollection), _rarity, _newPrice);
     }
 
     /**

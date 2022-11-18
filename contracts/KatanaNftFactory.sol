@@ -5,12 +5,15 @@ pragma solidity ^0.8.2;
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
 import { Clones } from "@openzeppelin/contracts/proxy/Clones.sol";
+import "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 import "./CharacterToken.sol";
 import "./DaapNFTCreator.sol";
 
 
 contract KatanaNftFactory is AccessControl {
 
+    using EnumerableSet for EnumerableSet.AddressSet;
+    
     event CreateNftCollection(
         address nftAddress,
         uint8 maxRarityValue,
@@ -24,11 +27,8 @@ contract KatanaNftFactory is AccessControl {
 
     bytes32 public constant IMPLEMENTATION_ROLE = keccak256("IMPLEMENTATION_ROLE");
 
-    // Katana Collection Address list
-    address[] public nftCollectionsAddress;
-
-    // Checker isInListCollections
-    mapping(address => bool) public isInListCollections;
+    // List of NFT collections
+    EnumerableSet.AddressSet private nftCollectionsList;
 
     // Wrapper Creator address: using for calling from dapp
     address public dappCreatorAddress;
@@ -43,7 +43,6 @@ contract KatanaNftFactory is AccessControl {
         _setupRole(IMPLEMENTATION_ROLE, msg.sender);
         _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
     }
-
 
     /*
     *   Create instance of NftCollection
@@ -79,8 +78,7 @@ contract KatanaNftFactory is AccessControl {
         // set Minter Role for Daap Creator
         CharacterToken(collection).setMinterRole(dappCreatorAddress);
 
-        nftCollectionsAddress.push(collection);
-        isInListCollections[collection] = true;
+        nftCollectionsList.add(collection);
         
         emit CreateNftCollection(
             address(collection),
@@ -93,17 +91,12 @@ contract KatanaNftFactory is AccessControl {
         return super.supportsInterface(interfaceId);
     }
 
-    // Getters
-    function getAllCollections() external view onlyRole(IMPLEMENTATION_ROLE) returns(address[] memory) {
-        return nftCollectionsAddress;
-    }
-
     function getCurrentDappCreatorAddress() external view onlyRole(IMPLEMENTATION_ROLE) returns(address) {
         return dappCreatorAddress;
     }
 
     function isValidNftCollection(address _nftCollection) external view returns(bool) {
-        return isInListCollections[_nftCollection];
+        return nftCollectionsList.contains(_nftCollection);
     }
 
     // Setters
@@ -113,7 +106,8 @@ contract KatanaNftFactory is AccessControl {
     }
 
     /**
-     *  function Set new minter Role for a collection
+     *  @notice Function Set new minter Role for a collection
+     *  @dev Call to NFT collection to set MINTER_ROLE
      */
     function setNewMinter(
         address _characterToken,
