@@ -12,7 +12,6 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
 import "./interfaces/INFTToken.sol";
-import "./interfaces/IDaapNFTCreator.sol";
 import "./interfaces/INftConfigurations.sol";
 import "./libraries/CharacterTokenDetails.sol";
 
@@ -29,7 +28,7 @@ contract CharacterToken is
     using CharacterTokenDetails for CharacterTokenDetails.TokenDetail;
     using CharacterTokenDetails for CharacterTokenDetails.MintingOrder;
     using CharacterTokenDetails for CharacterTokenDetails.ReturnMintingOrder;
-    
+
     event TokenCreated(address to, uint256 tokenId, CharacterTokenDetails.TokenDetail details);
     event BurnToken(uint256[] ids);
     event SetNewMinter(address newMinter);
@@ -146,7 +145,7 @@ contract CharacterToken is
     ) public virtual override returns (bytes4) {
         return this.onERC721Received.selector;
     }
-    
+
     /**
      *      @dev Function allow ADMIN to set user in whitelist
      */
@@ -195,7 +194,7 @@ contract CharacterToken is
         MAX_TOKENS_IN_USING = _maxTokenInOneUsing;
         emit SetMaxTokensInOneUsing(_maxTokenInOneUsing);
     }
-    
+
     function pause() public onlyRole(PAUSER_ROLE) {
         _pause();
     }
@@ -219,7 +218,7 @@ contract CharacterToken is
         return super.supportsInterface(interfaceId);
     }
 
-    /** 
+    /**
      *  @notice Burns a list of Characters.
      */
     function burn(uint256[] memory ids) override external onlyRole(BURNER_ROLE) {
@@ -229,7 +228,7 @@ contract CharacterToken is
         emit BurnToken(ids);
     }
 
-    /** 
+    /**
      *  @notice Gets token details for the specified owner.
      */
     function getTokenDetailsByOwner(address to)
@@ -245,7 +244,7 @@ contract CharacterToken is
         return result;
     }
 
-    /** 
+    /**
      *  @notice Gets token ids for the specified owner.
      */
     function getTokenIdsByOwner(address to)
@@ -258,7 +257,7 @@ contract CharacterToken is
     }
 
     /**
-     *      @notice Function allow to get token details by token ID 
+     *      @notice Function allow to get token details by token ID
      */
     function getTokenDetailsByID(uint256 _tokenId) external  view returns (CharacterTokenDetails.TokenDetail memory) {
         return tokenDetails[_tokenId];
@@ -271,7 +270,7 @@ contract CharacterToken is
         return totalSupply;
     }
 
-    /** 
+    /**
      *  Function mint NFTs order from admin
      */
     function mintOrderForDev(
@@ -279,7 +278,7 @@ contract CharacterToken is
         address _to,
         bytes calldata _callbackData
     ) external onlyRole(MINTER_ROLE) {
-        
+
         CharacterTokenDetails.ReturnMintingOrder[] memory _returnOrder = _mintOneOrder(
             _mintingOrders,
             _to
@@ -292,7 +291,7 @@ contract CharacterToken is
         );
     }
 
-    /** 
+    /**
      *  Function mint NFTs order from daap creator
      */
     function mintOrderFromDaapCreator(
@@ -300,7 +299,7 @@ contract CharacterToken is
         address _to,
         string calldata _callbackData
     ) external onlyFromDaapCreator {
-        
+
         CharacterTokenDetails.ReturnMintingOrder[] memory _returnOrder = _mintOneOrder(
             _mintingOrders,
             _to
@@ -313,12 +312,12 @@ contract CharacterToken is
         );
     }
 
-    /** 
-     *      Function return tokenURI for specific NFT 
+    /**
+     *      Function return tokenURI for specific NFT
      *      @param _tokenId ID of NFT
      *      @return tokenURI of token with ID = _tokenId
      */
-    function tokenURI(uint256 _tokenId) override public view returns (string memory) { 
+    function tokenURI(uint256 _tokenId) override public view returns (string memory) {
         return(tokenDetails[_tokenId].tokenURI);
     }
 
@@ -333,7 +332,7 @@ contract CharacterToken is
     /**
      *      @notice Function that override "_transfer" function default of ERC721 upgradeable
      *      @dev Check token using or not
-     *      @dev Can not be transfer after using 
+     *      @dev Can not be transfer after using
      */
     function _transfer(
         address from,
@@ -375,7 +374,7 @@ contract CharacterToken is
         require(
             tokenIdCounter.current() + _mintingOrders.length <= getTotalSupply(),
             "Total supply of NFT reached"
-        );  
+        );
 
         for (uint256 i=0; i < _mintingOrders.length; i++) {
             require(
@@ -401,7 +400,7 @@ contract CharacterToken is
         return _returnOrder;
     }
 
-    /** 
+    /**
      *  @notice Creates a token only for normal minting action
      */
     function createToken(
@@ -418,7 +417,7 @@ contract CharacterToken is
             _mintingOrder.meshMaterial
         );
         _mint(_to, _id);
-        
+
         // // Save data for "tokenIds"
         // tokenIds[_to].push(_id);
 
@@ -444,7 +443,7 @@ contract CharacterToken is
             // Mint.
         } else {
             // Transfer or burn.
-            
+
             // Pop tokenID out of list of user #"from": tokenIds
             uint256[] storage ids = tokenIds[from];
             uint256 index;
@@ -455,7 +454,7 @@ contract CharacterToken is
                 }
             }
             ids[index] = ids[ids.length - 1];
-            
+
             ids.pop();
         }
         if (to == address(0)) {
@@ -468,7 +467,7 @@ contract CharacterToken is
             ids.push(id);
         }
     }
-    
+
     /**
      * @notice Checks if address is a contract
      * @dev It prevents contract from being targetted

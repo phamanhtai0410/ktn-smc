@@ -6,9 +6,9 @@ interface INftConfigurations  {
      *  @notice Function allows Factory to add new deployed collection
      */
     function InsertNewCollectionAddress(address _nftCollection) external;
-    
+
      /**
-     *  @notice Function allows ADMIN to add new configurations for one completed NFT type 
+     *  @notice Function allows ADMIN to add new configurations for one completed NFT type
      * (include rarity, mesh, mesh material, price, cid)
      *  @dev Function will add new attributes to list attrs if is not existed
      *  @param _nftCollection The address of current configed NFT
@@ -18,7 +18,7 @@ interface INftConfigurations  {
      *  @param _meshMaterial The index of material (color,..etc)
      *  @param _cid The cid from ipfs for each type of NFT
      */
-    function configNewOne(
+    function configOne(
         address _nftCollection,
         uint256 _rarity,
         uint256 _meshIndex,

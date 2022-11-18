@@ -30,7 +30,7 @@ contract NftConfigurations is
 
     // Price of one mesh index
     mapping(address => mapping(uint256 => mapping(uint256 => uint256))) public pricePerMesh;
-    
+
     // List active mesh material index each meshIndex in one rarity
     mapping(address => mapping(uint256 => mapping(uint256 => EnumerableSet.UintSet))) private meshMaterialList;
 
@@ -66,7 +66,7 @@ contract NftConfigurations is
     }
 
     /**
-     *  @notice Function allows ADMIN to add new configurations for one completed NFT type 
+     *  @notice Function allows ADMIN to add new configurations for one completed NFT type
      * (include rarity, mesh, mesh material, price, cid)
      *  @dev Function will add new attributes to list attrs if is not existed
      *  @param _nftCollection The address of current configed NFT
@@ -76,7 +76,7 @@ contract NftConfigurations is
      *  @param _meshMaterial The index of material (color,..etc)
      *  @param _cid The cid from ipfs for each type of NFT
      */
-    function configNewOne(
+    function configOne(
         address _nftCollection,
         uint256 _rarity,
         uint256 _meshIndex,
@@ -93,12 +93,14 @@ contract NftConfigurations is
         }
         if (!meshList[_nftCollection][_rarity].contains(_meshIndex)) {
             meshList[_nftCollection][_rarity].add(_meshIndex);
-            pricePerMesh[_nftCollection][_rarity][_meshIndex] = _price;
         }
+        pricePerMesh[_nftCollection][_rarity][_meshIndex] = _price;
+
         if (!meshMaterialList[_nftCollection][_rarity][_meshIndex].contains(_meshMaterial)) {
             meshMaterialList[_nftCollection][_rarity][_meshIndex].add(_meshMaterial);
-            cid[_nftCollection][_rarity][_meshIndex][_meshMaterial] = _cid;
         }
+        cid[_nftCollection][_rarity][_meshIndex][_meshMaterial] = _cid;
+
     }
 
     /**

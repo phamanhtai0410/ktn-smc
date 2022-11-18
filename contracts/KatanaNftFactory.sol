@@ -1,29 +1,25 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.2;
 
-//import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
-import { Clones } from "@openzeppelin/contracts/proxy/Clones.sol";
+import {Clones} from "@openzeppelin/contracts/proxy/Clones.sol";
 import "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 import "./CharacterToken.sol";
-import "./DaapNFTCreator.sol";
-
+import './interfaces/INftConfigurations.sol';
 
 contract KatanaNftFactory is AccessControl {
 
     using EnumerableSet for EnumerableSet.AddressSet;
-    
+
     event CreateNftCollection(
         address nftAddress,
-        uint8 maxRarityValue,
         address dappCreatorAddress
     );
     event SetDappCreator(address newDappCreator);
+    event SetConfiguration(address newConfiguration);
+
     event SetNewMinterRole(address nftCollection, address newMinter);
-    event AddNewNftRariies(address nftColelction, uint256[] addingPrices, uint8 oldMaxRarity, uint8 newMaxRarity);
-    event UpdateNewPrice(address nftCollection, uint8 rarity, uint256 newPrice);
-    event UpdateCidOfExistingRarity(address nftCollection, uint8 rarity, string newCid);
 
     bytes32 public constant IMPLEMENTATION_ROLE = keccak256("IMPLEMENTATION_ROLE");
 
@@ -33,15 +29,34 @@ contract KatanaNftFactory is AccessControl {
     // Wrapper Creator address: using for calling from dapp
     address public dappCreatorAddress;
 
+    // This contract config metadata for all collections
+    INftConfigurations public nftConfiguration;
+
     // implementAddress
     address public implementationAddress;
 
-    constructor(address _dappCreatorAddress) {
+    constructor(address _dappCreatorAddress, INftConfigurations _nftConfiguration) {
+        require(_dappCreatorAddress != address(0x0), "Address of creator must be required.");
+        require(address(_nftConfiguration) != address(0x0), "Address of configuration must be required.");
+
         dappCreatorAddress = _dappCreatorAddress;
+
+        nftConfiguration = _nftConfiguration;
+
         implementationAddress = address(new CharacterToken());
 
         _setupRole(IMPLEMENTATION_ROLE, msg.sender);
         _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
+    }
+
+    /*
+       @dev: Set new configuration
+       @param {address} _address - This is address of new configuration
+    */
+    function setConfiguration(INftConfigurations _nftConfiguration) external onlyRole(IMPLEMENTATION_ROLE) {
+        require(address(_nftConfiguration) != address(0x0), "Address of configuration must be required.");
+        nftConfigurationAddress = _nftConfiguration;
+        emit SetConfiguration(address(_nftConfiguration));
     }
 
     /*
@@ -50,13 +65,8 @@ contract KatanaNftFactory is AccessControl {
     */
     function createNftCollection(
         string memory _name,
-        string memory _symbol,
-        uint8 _maxRarityValue,
-        string[] memory _cids,
-        uint256[] memory _prices
+        string memory _symbol
     ) external onlyRole(IMPLEMENTATION_ROLE) {
-        require(uint8(_cids.length) == _maxRarityValue, "Invalid cids legnth");
-        require(uint8(_prices.length) == _maxRarityValue, "Invalid prices legnth");
 
         address collection = Clones.clone(implementationAddress);
 
@@ -64,26 +74,47 @@ contract KatanaNftFactory is AccessControl {
         CharacterToken(collection).initialize(
             _name,
             _symbol,
-            _maxRarityValue,
-            _cids,
             dappCreatorAddress
         );
-        
-        // Add new collection to DappCreator
-        DaapNFTCreator(dappCreatorAddress).addNewCollection(
-            collection,
-            _prices
-        );
 
-        // set Minter Role for Daap Creator
-        CharacterToken(collection).setMinterRole(dappCreatorAddress);
+
+        // Add new collection to configuration
+        INftConfigurations.InsertNewCollectionAddress(collection);
+
 
         nftCollectionsList.add(collection);
-        
+
         emit CreateNftCollection(
-            address(collection),
-            _maxRarityValue,
+            collection,
             dappCreatorAddress
+        );
+    }
+    /*
+        @dev
+        @param {address} _nftCollection
+        @param {uint256} _rarity
+        @param {uint256} _meshIndex
+        @param {uint256} _price
+        @param {uint256} _meshMaterial
+        @param {string} _cid
+
+    */
+    function configOne(
+        address _nftCollection,
+        uint256 _rarity,
+        uint256 _meshIndex,
+        uint256 _price,
+        uint256 _meshMaterial,
+        string memory _cid
+    ) external onlyRole(IMPLEMENTATION_ROLE) {
+        require(nftCollectionsList.contains(_nftCollection), "Collection: The collection doesn't exist");
+        nftConfiguration.configOne(
+            _nftCollection,
+            _rarity,
+            _meshIndex,
+            _price,
+            _meshMaterial,
+            _cid
         );
     }
 
@@ -91,11 +122,11 @@ contract KatanaNftFactory is AccessControl {
         return super.supportsInterface(interfaceId);
     }
 
-    function getCurrentDappCreatorAddress() external view onlyRole(IMPLEMENTATION_ROLE) returns(address) {
+    function getCurrentDappCreatorAddress() external view onlyRole(IMPLEMENTATION_ROLE) returns (address) {
         return dappCreatorAddress;
     }
 
-    function isValidNftCollection(address _nftCollection) external view returns(bool) {
+    function isValidNftCollection(address _nftCollection) external view returns (bool) {
         return nftCollectionsList.contains(_nftCollection);
     }
 
@@ -117,55 +148,5 @@ contract KatanaNftFactory is AccessControl {
         emit SetNewMinterRole(_characterToken, _newMinter);
     }
 
-    /**
-     *  Function allows Factory as ADMIN of all NFT collection to upgrade new rarity for existing nft collection
-     */
-    function AddNewNftRarities(
-        ICharacterToken _nftCollection,
-        uint256[] memory _prices,
-        string[] memory _cids
-    ) external onlyRole(IMPLEMENTATION_ROLE) {
-        uint8 _currMaxRarity = _nftCollection.getMaxRarityValue();
-        
-        // Add prices for new rarities 
-        DaapNFTCreator(dappCreatorAddress).upgradeNewNftRarity(
-            _nftCollection,
-            _prices
-        );
 
-        // Add new cids for new rarities
-        _nftCollection.addCidsForNewRarities(_cids);
-
-        // Set new max of rarities
-        _nftCollection.setNewMaxOfRarity(_currMaxRarity + uint8(_prices.length));
-        emit AddNewNftRariies(address(_nftCollection), _prices, _currMaxRarity, _currMaxRarity + uint8(_prices.length));
-    }
-
-    /**
-     *  Function allow Factory to change price of one existing NFT rarity
-     */
-    function updatePrice(
-        ICharacterToken _nftCollection,
-        uint8 _rarity,
-        uint256 _newPrice
-    ) external onlyRole(IMPLEMENTATION_ROLE) {
-        require(isInListCollections[address(_nftCollection)], "Invalid NFT collection");
-        require(_nftCollection.getMaxRarityValue() >= _rarity, "Invalid rarity value");
-        DaapNFTCreator(dappCreatorAddress).updatePrice(_nftCollection, _rarity, _newPrice);
-        emit UpdateNewPrice(address(_nftCollection), _rarity, _newPrice);
-    }
-    
-    /**
-     *  Function allow Factory to change cid of one existing NFT rarity
-     */
-    function updateCidOfRarity(
-        ICharacterToken _nftCollection,
-        uint8 _rarity,
-        string memory _newCid
-    ) external onlyRole(IMPLEMENTATION_ROLE) {
-        require(isInListCollections[address(_nftCollection)], "Invalid NFT collection");
-        require(_nftCollection.getMaxRarityValue() >= _rarity, "Invalid rarity value");
-        _nftCollection.updateCidOfExistingRarity(_rarity, _newCid);
-        emit UpdateCidOfExistingRarity(address(_nftCollection), _rarity, _newCid);
-    }
 }
