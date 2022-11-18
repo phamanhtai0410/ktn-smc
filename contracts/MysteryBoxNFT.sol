@@ -32,7 +32,7 @@ contract MysteryBoxNFT is
         uint16 count;           // Amount of tokens to mint.
     }
 
-    event TokenCreated(address to, uint256 tokenId, uint256 details);
+    event TokenCreated(address to, uint256 tokenId, BoxNFTDetails.BoxNFTDetail details);
     event MintOrderForDev(bytes callbackData, address to, BoxNFTDetails.BoxNFTDetail[] returnMintingOrder);
     event MintOrderFromDaapCreator(string callbackData, address to, BoxNFTDetails.BoxNFTDetail[] returnMintingOrder);
     event OpenBox(address to, uint256[] tokenIds);
@@ -108,18 +108,19 @@ contract MysteryBoxNFT is
     }
 
     function initialize(
-        IERC20 coinToken_
+        string memory _name,
+        string memory _symbol,
+        IERC20 _coinToken
     ) public initializer {
-        __ERC721_init("KATANA MYSTERY BOX NFT", "KTNBOX");
+        __ERC721_init(_name, _symbol);
         __AccessControl_init();
         __UUPSUpgradeable_init();
-        coinToken = coinToken_;
-
         _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
         _setupRole(UPGRADER_ROLE, msg.sender);
         _setupRole(DESIGNER_ROLE, msg.sender);
         _setupRole(WHITELIST_ROLE, msg.sender);
         
+        coinToken = _coinToken;
         TOTAL_BOX = 10000;
         MAX_OPEN_BOX_UNIT = 5;
         // Limit box each user can mint
@@ -302,7 +303,7 @@ contract MysteryBoxNFT is
             boxDetail.owner_by = to;
             tokenDetails[id] = boxDetail;
             _safeMint(to, id);
-            emit TokenCreated(to, id, id);
+            emit TokenCreated(to, id, boxDetail);
         }
         whiteListBought += count;
     }
@@ -323,7 +324,7 @@ contract MysteryBoxNFT is
             boxDetail.owner_by = to;
             tokenDetails[id] = boxDetail;
             _safeMint(to, id);
-            emit TokenCreated(to, id, id);
+            emit TokenCreated(to, id, boxDetail);
         }
         
     }
@@ -352,7 +353,7 @@ contract MysteryBoxNFT is
                 _to
             );
             
-            emit TokenCreated(_to, id, id);
+            emit TokenCreated(_to, id, boxDetail);
         }
         return _returnOrder;
     }

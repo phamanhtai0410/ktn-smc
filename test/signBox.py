@@ -2,14 +2,14 @@ from web3 import Web3
 from pydash import get
 
 
-_privateKey = "98102796d0dfe116f5af6e9a3c10dc38d316f6c98b3ded8d008b962c7d126460"
-_user_address = "0xF25AbDb08ff0e0e5561198A53F1325dcfBE92428"
+_privateKey = "693292bf46155b4fbdc0926db88c2228ac8b434207ce289309d8fef1f9457cf3"
+_user_address = "0x183Ff214179cd2B1c06A937D663F192340edd159"
 _contract_address = "0x111160bd05e5215edA15a4151DC07a380E7ACd61" # box creator
 _collection_address = "0xA1BD1fF005380b5db73CC5e0BC68A384C4a9EB0c" # box
 
 _data = {
-    "discount": 54185000000000000000,
-    "deadline": 1668510685,
+    "discount": 684000000000000000000,
+    "deadline": 1668760908,
     "amount": 1
 }
 
