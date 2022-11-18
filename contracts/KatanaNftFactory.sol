@@ -18,6 +18,8 @@ contract KatanaNftFactory is AccessControl {
     );
     event SetDappCreator(address newDappCreator);
     event SetConfiguration(address newConfiguration);
+    event ConfigOne(address _nftCollection, uint256 _rarity, uint256 _meshIndex, uint256 _price, uint256 _meshMaterial, string _cid);
+    event ConfigMesh(address _nftCollection, uint256 _rarity, uint256 _meshIndex, uint256 _price);
 
     event SetNewMinterRole(address nftCollection, address newMinter);
 
@@ -117,6 +119,14 @@ contract KatanaNftFactory is AccessControl {
             _meshMaterial,
             _cid
         );
+        emit ConfigOne(
+            _nftCollection,
+            _rarity,
+            _meshIndex,
+            _price,
+            _meshMaterial,
+            _cid
+        );
     }
 
     /*
@@ -142,7 +152,14 @@ contract KatanaNftFactory is AccessControl {
             _meshIndex,
             _price
         );
+        emit ConfigMesh(
+            _nftCollection,
+            _rarity,
+            _meshIndex,
+            _price
+        );
     }
+
     function supportsInterface(bytes4 interfaceId) public view override(AccessControl) returns (bool) {
         return super.supportsInterface(interfaceId);
     }
