@@ -12,6 +12,4 @@ interface IDappNFTCreator {
      *  @notice Set price for upgrade existing nft type
      */
     function upgradeExisitingNftType(uint8 _exisitingNftType, uint8 _upgradeMaxRarity) external;
-
-    function addNewCollection()
 }

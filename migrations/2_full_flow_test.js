@@ -12,6 +12,7 @@ var xlsx = require('node-xlsx');
 var CharacterToken = artifacts.require("CharacterToken");
 var DaapNFTCreator = artifacts.require("DaapNFTCreator");
 var KatanaNftFactory = artifacts.require("KatanaNftFactory");
+var NftConfigurations = artifacts.require("NftConfigurations");
 var BoxesConfigurations = artifacts.require("BoxesConfigurations");
 var MysteryBoxNFT = artifacts.require('MysteryBoxNFT');
 var BoxNFTCreator = artifacts.require('BoxNFTCreator');
@@ -36,7 +37,8 @@ module.exports = async function (deployer, network, accounts) {
      */
     await deployer.deploy(
         KatanaNftFactory,
-        "0x0000000000000000000000000000000000000000"
+        "0x0000000000000000000000000000000000000000",
+        "0x0000000000000000000000000000000000000000",
     );
     var _factory = await KatanaNftFactory.deployed();
     wf("iFactory", _factory.address);
@@ -61,47 +63,63 @@ module.exports = async function (deployer, network, accounts) {
     );
 
     /**
-     *      4. Create new Collection
+     *      4. Deploy NftConfigurations
+     */
+    await deployer.deploy(
+        NftConfigurations,
+        _factory.address,
+        _creator.address
+    );
+    var _nftConfig = await NftConfigurations.deployed();
+    wf("iNftConfig", _nftConfig.address);
+
+    /**
+     *      5. Re-config NftConfigurations to NftFactory
+     */
+    await _factory.setConfiguration(
+        _nftConfig.address
+    );
+
+    /**
+     *      6. Initialize DappCreator
+     */
+    await _creator.initialize();
+
+    /**
+     *      7. Initialize NftConfigurations
+     */
+    await _nftConfig.initialize();
+
+    /**
+     *      8. Create new Collection
      */
     await _factory.createNftCollection(
         "Testing NFT",
-        "TN",
-        2,
-        [
-            "test",
-            "test2"
-        ],
-        [
-            "1000000000",
-            "1000000"
-        ]
+        "TN"
     );
 
     /**
-     *      4. Get collection address
+     *      9. Get collection address
      */
-    var _collectionAddress = await _factory.getAllCollections();
-    console.log("4. List collections : ", _collectionAddress[0]);
+    var _collectionAddress = await _factory.getCollectionAddress(0);
+    console.log("9. collection[0] : ", _collectionAddress);
 
-    /**
-     *      5. Deploy BoxConfigurations
-     */
-    await deployer.deploy(
-        BoxesConfigurations,
-        _collectionAddress[0]
-    );
-    var _boxConfig = await BoxesConfigurations.deployed();
-    wf("iBoxConfig", _boxConfig.address);
+    // /**
+    //  *      5. Deploy BoxConfigurations
+    //  */
+    // await deployer.deploy(
+    //     BoxesConfigurations,
+    //     _collectionAddress
+    // );
+    // var _boxConfig = await BoxesConfigurations.deployed();
+    // wf("iBoxConfig", _boxConfig.address);
 
-    /**
-     *      6. Initialize BoxesConfigurations
-     */
-    await _boxConfig.initialize();
+    // /**
+    //  *      6. Initialize BoxesConfigurations
+    //  */
+    // await _boxConfig.initialize();
 
-    /**
-     *      7. Initialize DappCreator
-     */
-    await _creator.initialize();
+    
 
     /**
      *      8. 

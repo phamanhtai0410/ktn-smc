@@ -81,7 +81,7 @@ contract KatanaNftFactory is AccessControl {
         );
 
         // Add new collection to configuration
-        INftConfigurations.InsertNewCollectionAddress(collection);
+        nftConfigurations.InsertNewCollectionAddress(collection);
 
 
         nftCollectionsList.add(collection);
@@ -166,6 +166,10 @@ contract KatanaNftFactory is AccessControl {
 
     function getCurrentDappCreatorAddress() external view onlyRole(IMPLEMENTATION_ROLE) returns (address) {
         return dappCreatorAddress;
+    }
+
+    function getCollectionAddress(uint256 index) external view returns(address) {
+        return nftCollectionsList.at(index);
     }
 
     function isValidNftCollection(address _nftCollection) external view returns (bool) {
