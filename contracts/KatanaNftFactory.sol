@@ -38,8 +38,6 @@ contract KatanaNftFactory is AccessControl {
     address public implementationAddress;
 
     constructor(address _dappCreatorAddress, INftConfigurations _nftConfigurations) {
-        require(_dappCreatorAddress != address(0x0), "Address of creator must be required.");
-        require(address(_nftConfigurations) != address(0x0), "Address of configuration must be required.");
 
         dappCreatorAddress = _dappCreatorAddress;
 
