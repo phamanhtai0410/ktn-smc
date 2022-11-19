@@ -49,8 +49,7 @@ module.exports = async function (deployer, network, accounts) {
     await deployer.deploy(
         DaapNFTCreator,
         "0xF25AbDb08ff0e0e5561198A53F1325dcfBE92428",
-        _iUSDT,
-        _factory.address
+        _iUSDT
     );
     var _creator = await DaapNFTCreator.deployed();
     wf("iCreator", _creator.address);
@@ -83,7 +82,7 @@ module.exports = async function (deployer, network, accounts) {
     /**
      *      6. Initialize DappCreator
      */
-    await _creator.initialize();
+    await _creator.initialize(_nftConfig.address);
 
     /**
      *      7. Initialize NftConfigurations

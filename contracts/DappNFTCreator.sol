@@ -66,22 +66,23 @@ contract DaapNFTCreator is
     /**
      *      @dev Contructor
      */
-    constructor (address _signer, IERC20 _payToken, address _nftConfigurations) {
+    constructor (address _signer, IERC20 _payToken) {
         signer = _signer;
         payToken = _payToken;
-        nftConfigurations = _nftConfigurations;
     }
 
     /**
      *      @dev Initialize function
      */
-    function initialize() public initializer {
+    function initialize(address _nftConfigurations) public initializer {
         __AccessControl_init();
         __Pausable_init();
 
         _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
         _setupRole(PAUSER_ROLE, msg.sender);
         _setupRole(UPGRADER_ROLE, msg.sender);
+
+        nftConfigurations = _nftConfigurations;
     }
 
     /**
