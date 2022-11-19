@@ -3,7 +3,7 @@ pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
 import "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
-import "./libraries/CharacterTokenDetails.sol";
+import "../libraries/CharacterTokenDetails.sol";
 
 contract NftConfigurations is
     AccessControlUpgradeable

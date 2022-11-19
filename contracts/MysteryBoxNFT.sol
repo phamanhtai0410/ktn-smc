@@ -97,7 +97,7 @@ contract MysteryBoxNFT is
         _;
     }
 
-    modifier onlyFromDaapCreator() {
+    modifier onlyFromBoxCreator() {
         require(msg.sender == address(boxNFTCreator), "Not be called from Box NFT Creator");
         _;
     }
@@ -160,6 +160,13 @@ contract MysteryBoxNFT is
     }
 
 
+    function _setTokenUri(
+        uint256 _tokenId
+    ) internal {
+        string memory _cid = boxesConfigurationsAddress.getCid();
+        tokenDetails[_tokenId].tokenURI = string(abi.encodePacked("https://", _cid, ".ipfs.w3s.link/"));
+    }
+
     /** Set total box minted. */
     function setTotalBox(uint256 totalBox_) external onlyRole(DESIGNER_ROLE) {
         TOTAL_BOX = totalBox_;
@@ -180,6 +187,15 @@ contract MysteryBoxNFT is
         boxNFTCreator = IBoxNFTCreator(boxCreator_);
     }
     
+    /**
+     *      Function return tokenURI for specific NFT
+     *      @param _tokenId ID of NFT
+     *      @return tokenURI of token with ID = _tokenId
+     */
+    function tokenURI(uint256 _tokenId) override public view returns (string memory) {
+        return(tokenDetails[_tokenId].tokenURI);
+    }
+
     /** Set whitelist addresses and amount.
     If set after addr whitelistMint tokens, amount will be reset to input amount. */
     function setWhitelist(address addr, uint256 amount) external onlyRole(WHITELIST_ROLE) {
@@ -194,6 +210,14 @@ contract MysteryBoxNFT is
         onlyRole(DESIGNER_ROLE)
     {
         characterToken = ICharacterToken(contractAddress);
+    }
+
+    /** Set Configuration For Box. */
+    function setBoxConfiguration(address _boxesConfigurationsAddress)
+        external
+        onlyRole(UPGRADER_ROLE)
+    {
+        boxesConfigurationsAddress = IBoxesConfigurations(_boxesConfigurationsAddress);
     }
 
     function getBoxIdsByOwner(address owner)
@@ -262,7 +286,7 @@ contract MysteryBoxNFT is
         uint256 _count,
         address _to,
         string calldata _callbackData
-    ) external onlyFromDaapCreator {
+    ) external onlyFromBoxCreator {
         require(_count > 0, "No token to mint");
         require(tokenIdCounter.current() + _count <= TOTAL_BOX, "Box sold out");
         // Check limit.
@@ -302,6 +326,7 @@ contract MysteryBoxNFT is
             boxDetail.price = _boxPrice;
             boxDetail.owner_by = to;
             tokenDetails[id] = boxDetail;
+            _setTokenUri(id);
             _safeMint(to, id);
             emit TokenCreated(to, id, boxDetail);
         }
@@ -323,6 +348,7 @@ contract MysteryBoxNFT is
             boxDetail.price = _boxPrice;
             boxDetail.owner_by = to;
             tokenDetails[id] = boxDetail;
+            _setTokenUri(id);
             _safeMint(to, id);
             emit TokenCreated(to, id, boxDetail);
         }
@@ -344,13 +370,15 @@ contract MysteryBoxNFT is
             boxDetail.price = _boxPrice;
             boxDetail.owner_by = _to;
             tokenDetails[id] = boxDetail;
+            _setTokenUri(id);
             _safeMint(_to, id);
             _returnOrder[i] = BoxNFTDetails.BoxNFTDetail(
                 id,
                 i,
                 _boxPrice,
                 false,
-                _to
+                _to,
+                tokenURI(id)
             );
             
             emit TokenCreated(_to, id, boxDetail);

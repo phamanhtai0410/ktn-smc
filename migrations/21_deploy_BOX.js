@@ -6,11 +6,17 @@ var xlsx = require('node-xlsx');
  *      0.1. Load config from .xlsx file
  */
 // var config_obj = xlsx.parse(__dirname + '/configurations.xlsx'); // parses a configurations file
-var config_obj = xlsx.parse(fs.readFileSync(__dirname + '/configurations.xlsx')); // parses a buffer
-console.log(config_obj)
+// var config_obj = xlsx.parse(fs.readFileSync(__dirname + '/configurations.xlsx')); // parses a buffer
+// console.log(config_obj)
 
-var MysteryBoxNFT = artifacts.require("MysteryBoxNFT");
-var DaapNFTCreator = artifacts.require("DaapNFTCreator");
+var CharacterToken = artifacts.require("CharacterToken");
+// var DaapNFTCreator = artifacts.require("DaapNFTCreator");
+// var KatanaNftFactory = artifacts.require("KatanaNftFactory");
+// var NftConfigurations = artifacts.require("NftConfigurations");
+var BoxesConfigurations = artifacts.require("BoxesConfigurations");
+var MysteryBoxNFT = artifacts.require('MysteryBoxNFT');
+var BoxNFTCreator = artifacts.require('BoxNFTCreator');
+var KTN = artifacts.require("KTN");
 
 function wf(name, address) {
     fs.appendFileSync('address.txt', name + "=" + address);
@@ -23,69 +29,99 @@ module.exports = async function (deployer, network, accounts) {
     console.log("deployer = ", account);
     require('dotenv').config();
 
-    /**
-     *      1.1. Deploy MysteryBoxNFT
-     */
-    var _boxCreator = "0x0000000000000000000000000000000000000000";
-    await deployer.deploy(
-        MysteryBoxNFT,
-        _boxCreator
-    );
-    var _boxNFTInstant = await MysteryBoxNFT.deployed();
-    wf("iMysteryBoxNFT", _boxNFTInstant.address);
-
-    /**
-     *      1.2. Initialize MysteryBoxNFT
-     */
-    await _boxNFTInstant.initialize(
-        "0x24ac4ccfb1d4d1e748a01b099e4b1a52662a9233" // ktn token
-    );
+    var _devWallet = process.env.iDevWallet;
+    var _iUSDT = process.env.iUSDT;
     
     /**
-     *      3.1. Deploy Dapp Creator
+     *      1. Deploy Factory
      */
-    var _signer = "0xF25AbDb08ff0e0e5561198A53F1325dcfBE92428";
-    var _nftCollection = _boxNFTInstant.address;
-    var _payToken = _KTN_instant.address;
     await deployer.deploy(
-        DaapNFTCreator,
-        _signer,
-        _nftCollection,
-        _payToken
+        KatanaBoxFactory,
+        "0x0000000000000000000000000000000000000000",
+        "0x0000000000000000000000000000000000000000",
     );
-    var _boxNFTCreatorInstant = await DaapNFTCreator.deployed();
-    wf("iDaapNFTCreator", _boxNFTCreatorInstant.address);
+    var _factory = await KatanaNftFactory.deployed();
+    wf("iKatanaBoxFactory", _factory.address);
 
     /**
-     *      3.2. Initialize Daap Creator
+     *      2. Deploy Box Creator
      */
-    await _boxNFTCreatorInstant.initialize();
-
-    /**
-     *      4.1. Set Minter for NFT
-     */
-    var _listMinter = [
+    await deployer.deploy(
+        BoxNFTCreator,
         "0xF25AbDb08ff0e0e5561198A53F1325dcfBE92428",
-        _boxNFTCreatorInstant.address
-    ];
-    _listMinter.forEach(async(e) => {
-        await _boxNFTInstant.setMinterRole(e);
-    });
-
-    /**
-     *      4.2. Set daap creator
-     */
-    await _boxNFTInstant.setDappCreator(_boxNFTCreatorInstant.address);
-
-    /**
-     *      4.3. Set UPGRADER for NFT contract in DaapCreator
-     */
-
-    await _boxNFTCreatorInstant.grantRole(
-        await _boxNFTInstant.UPGRADER_ROLE(),
-        account
+        _iUSDT,
+        // _factory.address
     );
+    var _creator = await DaapNFTCreator.deployed();
+    wf("iCreator", _creator.address);
+
+    /**
+     *      3. Re-config dapp creator for factory
+     */
+    await _factory.setDappCreatorAddress(
+        _creator.address
+    );
+
+    /**
+     *      4. Deploy NftConfigurations
+     */
+    await deployer.deploy(
+        NftConfigurations,
+        _factory.address,
+        _creator.address
+    );
+    var _nftConfig = await NftConfigurations.deployed();
+    wf("iNftConfig", _nftConfig.address);
+
+    /**
+     *      5. Re-config NftConfigurations to NftFactory
+     */
+    await _factory.setConfiguration(
+        _nftConfig.address
+    );
+
+    /**
+     *      6. Initialize DappCreator
+     */
+    await _creator.initialize();
+
+    /**
+     *      7. Initialize NftConfigurations
+     */
+    await _nftConfig.initialize();
+
+    /**
+     *      8. Create new Collection
+     */
+    await _factory.createNftCollection(
+        "Testing NFT",
+        "TN"
+    );
+
+    /**
+     *      9. Get collection address
+     */
+    var _collectionAddress = await _factory.getCollectionAddress(0);
+    console.log("9. collection[0] : ", _collectionAddress);
+
+    // /**
+    //  *      5. Deploy BoxConfigurations
+    //  */
+    // await deployer.deploy(
+    //     BoxesConfigurations,
+    //     _collectionAddress
+    // );
+    // var _boxConfig = await BoxesConfigurations.deployed();
+    // wf("iBoxConfig", _boxConfig.address);
+
+    // /**
+    //  *      6. Initialize BoxesConfigurations
+    //  */
+    // await _boxConfig.initialize();
+
+    
+
+    /**
+     *      8. 
+     */
 }
-
-
-// 0x44F16eB60AB796AE229efC8f295137F9433BcFa4

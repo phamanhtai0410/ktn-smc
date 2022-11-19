@@ -14,4 +14,10 @@ interface IBoxesConfigurations {
      *  @notice Function allows Factory to add new deployed collection
      */
     function InsertNewCollectionAddress(address _nftCollection) external;
+
+    /**
+     *  @notice Fuction returns the cid of specificed BOX type
+     *  @dev Function return for Nft Colleciton contract
+     */
+    function getCid() external view returns(string memory);
 }
