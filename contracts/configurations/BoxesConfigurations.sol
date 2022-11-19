@@ -23,8 +23,8 @@ contract BoxesConfigurations is
     // Box Factory Address
     address public BOX_FACTORY;
 
-    // Box Creator Address
-    address public BOX_CREATOR;
+    // Mapping Box Type with cids (NFT => (Box => Cid))
+    mapping(address => mapping(address => string)) private cid;
 
     // Address of NFT collection
     ICharacterToken public NFT_COLLECTION;
@@ -32,10 +32,9 @@ contract BoxesConfigurations is
     // Store boxInstant's Instant
     mapping(address => BoxNFTDetails.BoxConfigurations) public boxInfos;
 
-    constructor (address _nftColelction, address _boxFactory, address _boxCreator) {
+    constructor (address _boxFactory, address _nftColelction) {
         NFT_COLLECTION = ICharacterToken(_nftColelction);
         BOX_FACTORY = _boxFactory;
-        BOX_CREATOR = _boxCreator;
     }
 
     function initialize() public initializer {
@@ -47,6 +46,11 @@ contract BoxesConfigurations is
     // modifier to check from Factory or not
     modifier onlyFromFactory() {
         require(msg.sender == BOX_FACTORY, "Can only call from Factory contract");
+        _;
+    }
+
+    modifier onlyFromValidBoxCollection() {
+        require(boxCollectionList.contains(msg.sender), "Invalid NftCollection");
         _;
     }
 
@@ -74,6 +78,18 @@ contract BoxesConfigurations is
         emit AddNewBoxInstant(_boxInstantContract, _proportions, _defaultRarity);
     }
 
+    function configOne(
+        address _nftCollection,
+        address _boxCollection,
+        string memory _cid
+    ) external onlyRole(UPGRADER_ROLE) {
+        require(
+            boxCollectionList.contains(_boxCollection),
+            "Invalid BOX collection address"
+        );
+        cid[_nftCollection][_boxCollection] = _cid;
+    }
+
     /**
      *  @notice Function returns the proportions of each rarity of the specificed box Instant and boxType- index of box
      * @param _boxAddress The address of box Instant that wants to check
@@ -82,5 +98,13 @@ contract BoxesConfigurations is
         address _boxAddress
     ) public view returns(BoxNFTDetails.BoxConfigurations memory){
         return boxInfos[_boxAddress];
+    }
+
+    /**
+     *  @notice Fuction returns the cid of specificed NFT type 
+     *  @dev Function return for Box Colleciton contract
+     */
+    function getCid() external onlyFromValidBoxCollection view returns(string memory) {
+        return cid[address(NFT_COLLECTION)][msg.sender];
     }
 }

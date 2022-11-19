@@ -6,6 +6,7 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
 import { Clones } from "@openzeppelin/contracts/proxy/Clones.sol";
 import "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "../MysteryBoxNFT.sol";
 import "../BoxNFTCreator.sol";
 import "../interfaces/IBoxesConfigurations.sol";
@@ -40,13 +41,13 @@ contract KatanaBoxFactory is AccessControl {
     IBoxesConfigurations public boxConfigurations;
 
 
-    constructor(address _dappCreatorAddress, IBoxesConfigurations _boxConfig) {
-        require(_dappCreatorAddress != address(0x0), "Address of creator must be required.");
-        require(address(_boxConfig) != address(0x0), "Address of configuration must be required.");
-
+    constructor(
+        address _dappCreatorAddress, 
+        IBoxesConfigurations _boxConfig
+    ) {
         dappCreatorAddress = _dappCreatorAddress;
         boxConfigurations = _boxConfig;
-        implementationAddress = address(new MysteryBoxNFT(address(0), address(0)));
+        implementationAddress = address(new MysteryBoxNFT(_dappCreatorAddress, address(_boxConfig)));
 
         _setupRole(IMPLEMENTATION_ROLE, msg.sender);
         _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
@@ -77,10 +78,7 @@ contract KatanaBoxFactory is AccessControl {
             _symbol,
             _payToken
         );
-        // set Minter Role for Daap Creator
-        MysteryBoxNFT(collection).grantRole(MysteryBoxNFT(collection).MINTER_ROLE(),dappCreatorAddress);
         nftCollectionsList.add(collection);
-        
          // Add new collection to configuration
         boxConfigurations.InsertNewCollectionAddress(collection);
 
@@ -144,4 +142,11 @@ contract KatanaBoxFactory is AccessControl {
         // emit UpdateNewPrice(address(_nftCollection), _newPrice);
     }
 
+    function updateRoleBox(
+        bytes32 _role, 
+        address _account,
+        address  _boxAddress
+    ) external onlyRole(IMPLEMENTATION_ROLE) {
+        MysteryBoxNFT(_boxAddress).grantRole(_role, _account);
+    }
 }

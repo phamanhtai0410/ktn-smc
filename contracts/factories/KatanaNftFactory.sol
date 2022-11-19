@@ -5,8 +5,9 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
 import {Clones} from "@openzeppelin/contracts/proxy/Clones.sol";
 import "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
-import "./CharacterToken.sol";
-import './interfaces/INftConfigurations.sol';
+import "../CharacterToken.sol";
+import '../interfaces/INftConfigurations.sol';
+
 
 contract KatanaNftFactory is AccessControl {
 

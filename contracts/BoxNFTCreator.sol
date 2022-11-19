@@ -42,9 +42,6 @@ contract BoxNFTCreator is
     // Configurations address
     address public boxConfigurations;
 
-    // NFT collection using
-    IMysteryBoxNFT public boxCollection;
-    
     // Token using to pay for minting NFT
     IERC20 public payToken;
 
@@ -72,16 +69,16 @@ contract BoxNFTCreator is
     /**
      *      @dev Contructor
      */
-    constructor (address _signer, address _boxConfig, IERC20 _payToken) {
+    constructor (address _signer, IERC20 _payToken) {
         signer = _signer;
         payToken = _payToken;
-        boxConfigurations = _boxConfig;
+        
     }
 
     /**
      *      @dev Initialize function
      */
-    function initialize() public initializer {
+    function initialize(address _boxConfig) public initializer {
         __AccessControl_init();
         __Pausable_init();
 
@@ -90,7 +87,8 @@ contract BoxNFTCreator is
         _setupRole(UPGRADER_ROLE, msg.sender);
 
         boxPrice = 100 * 10 ** 18;
-
+        boxConfigurations = _boxConfig;
+        
         _transferOwnership(msg.sender);
     }
 
@@ -152,6 +150,7 @@ contract BoxNFTCreator is
      *      @notice Function verify signature from daap sent out
      */
     function verifySignature(
+        address _boxCollection,
         address _signer,
         uint256 _discount,
         uint256 _amount,
@@ -165,7 +164,7 @@ contract BoxNFTCreator is
             getChainID(),
             msg.sender,
             address(this),
-            address(boxCollection),
+            _boxCollection,
             _discount,
             _amount,
             _proof.deadline
@@ -190,6 +189,7 @@ contract BoxNFTCreator is
      *
      */
     function makeMintingAction(
+        IMysteryBoxNFT _boxCollection,
         uint256 _amount,
         uint256 _discount,
         Proof memory _proof,
@@ -198,6 +198,7 @@ contract BoxNFTCreator is
         require(_amount > 0, "Amount of minting NFTs must be greater than 0");
         require(
             verifySignature(
+                address(_boxCollection),
                 signer,
                 _discount,
                 _amount,
@@ -208,7 +209,7 @@ contract BoxNFTCreator is
         uint256 _price = _amount * boxPrice;
         require(payToken.balanceOf(msg.sender) > _price - _discount, "User needs to hold enough token to buy this token");
         payToken.transferFrom(msg.sender, address(this), _price - _discount);
-        boxCollection.mintBoxFromDaapCreator(
+        _boxCollection.mintBoxFromDaapCreator(
             _amount,
             msg.sender,
             _callbackData
