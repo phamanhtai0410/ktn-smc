@@ -323,7 +323,7 @@ contract MysteryBoxNFT is
             BoxNFTDetails.BoxNFTDetail memory boxDetail;
             boxDetail.id = id;
             boxDetail.index = i;
-            boxDetail.price = _boxPrice;
+            // boxDetail.price = _boxPrice;
             boxDetail.owner_by = to;
             tokenDetails[id] = boxDetail;
             _setTokenUri(id);
@@ -345,7 +345,7 @@ contract MysteryBoxNFT is
             BoxNFTDetails.BoxNFTDetail memory boxDetail;
             boxDetail.id = id;
             boxDetail.index = i;
-            boxDetail.price = _boxPrice;
+            // boxDetail.price = _boxPrice;
             boxDetail.owner_by = to;
             tokenDetails[id] = boxDetail;
             _setTokenUri(id);
@@ -367,7 +367,7 @@ contract MysteryBoxNFT is
             BoxNFTDetails.BoxNFTDetail memory boxDetail;
             boxDetail.id = id;
             boxDetail.index = i;
-            boxDetail.price = _boxPrice;
+            // boxDetail.price = _boxPrice;
             boxDetail.owner_by = _to;
             tokenDetails[id] = boxDetail;
             _setTokenUri(id);
@@ -375,7 +375,7 @@ contract MysteryBoxNFT is
             _returnOrder[i] = BoxNFTDetails.BoxNFTDetail(
                 id,
                 i,
-                _boxPrice,
+                // _boxPrice,
                 false,
                 _to,
                 tokenURI(id)
@@ -464,7 +464,7 @@ contract MysteryBoxNFT is
             CreateBoxRequest storage request = requests[i - 1];
 
             // Get Box Configurations of current box
-            BoxNFTDetails.BoxConfigurations memory _configurations = boxesConfigurationsAddress.getBoxInfos(address(this));
+            // BoxNFTDetails.BoxConfigurations memory _configurations = boxesConfigurationsAddress.getBoxInfos(address(this));
 
             // Get data from request
             uint256 targetBlock = request.targetBlock;
@@ -482,7 +482,7 @@ contract MysteryBoxNFT is
             // Force rarity common if process over 256 blocks.
             if (block.number - 256 > targetBlock) {
                 // Force to default rarity
-                rarity = _configurations.defaultRarity;
+                // rarity = _configurations.defaultRarity;
             }
 
             if (seed == 0) {

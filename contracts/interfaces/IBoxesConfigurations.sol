@@ -6,9 +6,9 @@ interface IBoxesConfigurations {
     /**
      *  @notice Function is used to get configurations informations of one box instant
      */
-    function getBoxInfos(
-        address _boxAddress
-    ) external view returns(BoxNFTDetails.BoxConfigurations memory);
+    // function getBoxInfos(
+    //     address _boxAddress
+    // ) external view returns(BoxNFTDetails.BoxConfigurations memory);
 
     /**
      *  @notice Function allows Factory to add new deployed collection

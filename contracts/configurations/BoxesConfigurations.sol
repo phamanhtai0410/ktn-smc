@@ -11,6 +11,19 @@ contract BoxesConfigurations is
     AccessControlUpgradeable
 {
     using EnumerableSet for EnumerableSet.AddressSet;
+    using EnumerableSet for EnumerableSet.UintSet;
+    using BoxNFTDetails for BoxNFTDetails.BoxConfigurations;
+
+    struct Attributes {
+        uint256 rarity;
+        uint256 meshIndex;
+        uint256 meshMaterialIndex;
+    }
+
+    struct DropRatesReturn {
+        Attributes attributes;
+        uint256 dropRate;
+    }
 
     // Event
     event AddNewBoxInstant(address boxContract, uint256[] rarityProportions, uint8 defaultRarity);
@@ -29,16 +42,8 @@ contract BoxesConfigurations is
     // Address of Box Creator
     address public BOX_CREATOR;
 
-    // Mapping Box Type with cids (NFT => (Box => Cid))
-    mapping(address => mapping(address => string)) private cid;
-
-    // Store boxInstant's Instant
-    mapping(address => mapping(address => BoxNFTDetails.BoxConfigurations)) public boxInfos;
-    
-    // Box price
-    mapping(address => mapping(address => uint256)) public boxPrices;
-
-
+    // Box's Informations: mapping box address => BoxConfigurations 
+    mapping(address => BoxNFTDetails.BoxConfigurations) private boxInfos;
 
     constructor (address _boxFactory, address _nftColelction, address _boxCreator) {
         NFT_COLLECTION = ICharacterToken(_nftColelction);
@@ -76,50 +81,90 @@ contract BoxesConfigurations is
     }
 
     /**
-     * @notice Adds new Box Instant.
-     * @dev Function is invoked by UPGRADER to add new Box Instant type of current NFT Collection
-     * @param _boxInstantContract The address of the new deployed Box Instant
-     * @param _proportions The proportions of drop NFT each rarity
-     **/
-    function addNewBoxInstant(
-        address _boxInstantContract,
-        uint256[] memory _proportions,
-        uint8 _defaultRarity
-    ) external onlyRole(UPGRADER_ROLE) {
-        require(NFT_COLLECTION.getMaxRarityValue() == uint8(_proportions.length), "Invalid the length of proportions of each rarity");
-        boxInfos[_boxInstantContract].rarityProportions = _proportions;
-        boxInfos[_boxInstantContract].defaultRarity = _defaultRarity;
-        emit AddNewBoxInstant(_boxInstantContract, _proportions, _defaultRarity);
+     *  @notice Funtions that allow to config proportions of each elements in box
+     *  @param _boxAddress The address of the triggered box
+     *  @param _rarity The rarity
+     *  @param _meshIndex The mesh ID
+     *  @param _meshMaterial The mesh material ID
+     *  @param _proportion The rate of dropping
+     */
+    function configDroppedRate(
+        address _boxAddress,
+        uint256 _rarity,
+        uint256 _meshIndex,
+        uint256 _meshMaterial,
+        uint256 _proportion
+    ) external onlyFromFactory {
+        boxInfos[_boxAddress].dropRates[_rarity][_meshIndex][_meshMaterial] = _proportion;
+        if (!boxInfos[_boxAddress].rarityList.contains(_rarity)) {
+            boxInfos[_boxAddress].rarityList.add(_rarity);
+        }
+        if (!boxInfos[_boxAddress].meshIndexList.contains(_meshIndex)) {
+            boxInfos[_boxAddress].meshIndexList.add(_meshIndex);
+        }
+        if (!boxInfos[_boxAddress].meshMaterialList.contains(_meshMaterial)) {
+            boxInfos[_boxAddress].meshMaterialList.add(_meshMaterial);
+        }
     }
 
+    
+    /**
+     *  @notice Function allows to config cid nnd price for each Box from Box Factory
+     *  @param _boxCollection The address of box contract instant
+     *  @param _cid The cid that wants to config to the box
+     *  @param _price The price that wants to config to box
+     *  @param _defaultRarity The default of rarity that wants to config
+     */
     function configOne(
         address _boxCollection,
         string memory _cid,
-        uint256 _price
+        uint256 _price,
+        uint256 _defaultRarity
     ) external onlyFromFactory {
         require(
             boxCollectionList.contains(_boxCollection),
             "Invalid BOX collection address"
         );
-        cid[address(NFT_COLLECTION)][_boxCollection] = _cid;
-        boxPrices[address(NFT_COLLECTION)][_boxCollection] = _price;
+        boxInfos[_boxCollection].cid = _cid;
+        boxInfos[_boxCollection].price = _price;
+        boxInfos[_boxCollection].defaultRarity = _defaultRarity;
     }
 
     /**
      *  @notice Function returns the proportions of each rarity of the specificed box Instant and boxType- index of box
-     * @param _boxAddress The address of box Instant that wants to check
+     *  @param _boxAddress The address of box Instant that wants to check
      */
     function getBoxInfos(
         address _boxAddress
-    ) public view returns(BoxNFTDetails.BoxConfigurations memory){
-        return boxInfos[address(NFT_COLLECTION)][_boxAddress];
+    ) public view returns(string memory, uint256, uint256){
+        return (
+            boxInfos[_boxAddress].cid,
+            boxInfos[_boxAddress].defaultRarity,
+            boxInfos[_boxAddress].price
+        );
     }
+
+    /**
+     *  @notice Function allows to get table of dropRates
+     */
+    // function getDropRates(address _boxAddress) external view returns(uint256) {
+    //     for (uint256 i=0; i < boxInfos[_boxAddress].rarityList.length(); i++) {
+    //         for (uint256 j=0; j < boxInfos[_boxAddress].meshIndexList.length(); j++) {
+    //             for (uint256 k=0; k < boxInfos[_boxAddress].meshMaterialList.length(); k++) {
+    //                 Attributes memory _attrs;
+    //                 _attrs = boxInfos[_boxAddress].rarityList.at(i)
+    //                 boxInfos[_boxAddress].meshIndexList.at(i)
+    //                 boxInfos[_boxAddress].rarityList.at(i)
+    //             }
+    //         }
+    //     }
+    // }
 
     /**
      *  @notice Fuction returns the cid of specificed NFT type 
      *  @dev Function return for Box Colleciton contract
      */
     function getCid() external onlyFromValidBoxCollection view returns(string memory) {
-        return cid[address(NFT_COLLECTION)][msg.sender];
+        return boxInfos[msg.sender].cid;
     }
 }
