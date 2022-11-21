@@ -126,7 +126,6 @@ contract NftConfigurations is
 
     }
 
-
     /**
      *  @notice Function allows ADMIN to add new configurations for one completed NFT type
      * (include rarity, mesh, price)
@@ -141,7 +140,7 @@ contract NftConfigurations is
         uint256 _rarity,
         uint256 _meshIndex,
         uint256 _price
-    ) external onlyRole(UPGRADER_ROLE) {
+    ) external onlyFromFactory {
         require(
             nftCollectionsList.contains(_nftCollection),
             "Invalid NFT collection address"

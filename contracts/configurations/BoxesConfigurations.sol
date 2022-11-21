@@ -23,18 +23,27 @@ contract BoxesConfigurations is
     // Box Factory Address
     address public BOX_FACTORY;
 
-    // Mapping Box Type with cids (NFT => (Box => Cid))
-    mapping(address => mapping(address => string)) private cid;
-
     // Address of NFT collection
     ICharacterToken public NFT_COLLECTION;
 
-    // Store boxInstant's Instant
-    mapping(address => BoxNFTDetails.BoxConfigurations) public boxInfos;
+    // Address of Box Creator
+    address public BOX_CREATOR;
 
-    constructor (address _boxFactory, address _nftColelction) {
+    // Mapping Box Type with cids (NFT => (Box => Cid))
+    mapping(address => mapping(address => string)) private cid;
+
+    // Store boxInstant's Instant
+    mapping(address => mapping(address => BoxNFTDetails.BoxConfigurations)) public boxInfos;
+    
+    // Box price
+    mapping(address => mapping(address => uint256)) public boxPrices;
+
+
+
+    constructor (address _boxFactory, address _nftColelction, address _boxCreator) {
         NFT_COLLECTION = ICharacterToken(_nftColelction);
         BOX_FACTORY = _boxFactory;
+        BOX_CREATOR = _boxCreator;
     }
 
     function initialize() public initializer {
@@ -50,7 +59,12 @@ contract BoxesConfigurations is
     }
 
     modifier onlyFromValidBoxCollection() {
-        require(boxCollectionList.contains(msg.sender), "Invalid NftCollection");
+        require(boxCollectionList.contains(msg.sender), "Can only call from valid box contract");
+        _;
+    }
+
+    modifier onlyFromBoxCreator() {
+        require(msg.sender == BOX_CREATOR, "Can only call from Box Creator");
         _;
     }
 
@@ -79,15 +93,16 @@ contract BoxesConfigurations is
     }
 
     function configOne(
-        address _nftCollection,
         address _boxCollection,
-        string memory _cid
-    ) external onlyRole(UPGRADER_ROLE) {
+        string memory _cid,
+        uint256 _price
+    ) external onlyFromFactory {
         require(
             boxCollectionList.contains(_boxCollection),
             "Invalid BOX collection address"
         );
-        cid[_nftCollection][_boxCollection] = _cid;
+        cid[address(NFT_COLLECTION)][_boxCollection] = _cid;
+        boxPrices[address(NFT_COLLECTION)][_boxCollection] = _price;
     }
 
     /**
@@ -97,7 +112,7 @@ contract BoxesConfigurations is
     function getBoxInfos(
         address _boxAddress
     ) public view returns(BoxNFTDetails.BoxConfigurations memory){
-        return boxInfos[_boxAddress];
+        return boxInfos[address(NFT_COLLECTION)][_boxAddress];
     }
 
     /**
