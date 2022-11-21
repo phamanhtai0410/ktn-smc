@@ -147,18 +147,32 @@ contract BoxesConfigurations is
     /**
      *  @notice Function allows to get table of dropRates
      */
-    // function getDropRates(address _boxAddress) external view returns(uint256) {
-    //     for (uint256 i=0; i < boxInfos[_boxAddress].rarityList.length(); i++) {
-    //         for (uint256 j=0; j < boxInfos[_boxAddress].meshIndexList.length(); j++) {
-    //             for (uint256 k=0; k < boxInfos[_boxAddress].meshMaterialList.length(); k++) {
-    //                 Attributes memory _attrs;
-    //                 _attrs = boxInfos[_boxAddress].rarityList.at(i)
-    //                 boxInfos[_boxAddress].meshIndexList.at(i)
-    //                 boxInfos[_boxAddress].rarityList.at(i)
-    //             }
-    //         }
-    //     }
-    // }
+    function getDropRates(address _boxAddress) external onlyFromFactory view returns(DropRatesReturn[] memory) {
+        DropRatesReturn[] memory dropRateReturns;
+        uint256 index;
+        for (uint256 i=0; i < boxInfos[_boxAddress].rarityList.length(); i++) {
+            for (uint256 j=0; j < boxInfos[_boxAddress].meshIndexList.length(); j++) {
+                for (uint256 k=0; k < boxInfos[_boxAddress].meshMaterialList.length(); k++) {
+                    Attributes memory _attrs;
+                    _attrs.rarity = boxInfos[_boxAddress].rarityList.at(i);
+                    _attrs.meshIndex = boxInfos[_boxAddress].meshIndexList.at(i);
+                    _attrs.meshMaterialIndex = boxInfos[_boxAddress].rarityList.at(i);
+                    dropRateReturns[index].attributes = _attrs;
+                    dropRateReturns[index].dropRate = boxInfos[
+                        _boxAddress
+                    ].dropRates[
+                        _attrs.rarity
+                    ][
+                        _attrs.meshIndex
+                    ][
+                        _attrs.meshMaterialIndex
+                    ];
+                    index+=1;
+                }
+            }
+        }
+        return dropRateReturns;
+    }
 
     /**
      *  @notice Fuction returns the cid of specificed NFT type 
