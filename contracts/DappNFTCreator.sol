@@ -150,7 +150,7 @@ contract DaapNFTCreator is
         bytes32 digest = keccak256(abi.encode(
             getChainID(),
             msg.sender,
-            this,
+            address(this),
             address(_nftCollection),
             _discount,
             _rarities,

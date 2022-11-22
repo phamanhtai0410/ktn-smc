@@ -13,17 +13,8 @@ contract BoxesConfigurations is
     using EnumerableSet for EnumerableSet.AddressSet;
     using EnumerableSet for EnumerableSet.UintSet;
     using BoxNFTDetails for BoxNFTDetails.BoxConfigurations;
-
-    struct Attributes {
-        uint256 rarity;
-        uint256 meshIndex;
-        uint256 meshMaterialIndex;
-    }
-
-    struct DropRatesReturn {
-        Attributes attributes;
-        uint256 dropRate;
-    }
+    using BoxNFTDetails for BoxNFTDetails.Attributes;
+    using BoxNFTDetails for BoxNFTDetails.DropRatesReturn;
 
     // Event
     event AddNewBoxInstant(address boxContract, uint256[] rarityProportions, uint8 defaultRarity);
@@ -113,13 +104,13 @@ contract BoxesConfigurations is
      *  @param _boxCollection The address of box contract instant
      *  @param _cid The cid that wants to config to the box
      *  @param _price The price that wants to config to box
-     *  @param _defaultRarity The default of rarity that wants to config
+     *  @param _defaultIndex The default of rarity that wants to config
      */
     function configOne(
         address _boxCollection,
         string memory _cid,
         uint256 _price,
-        uint256 _defaultRarity
+        uint256 _defaultIndex
     ) external onlyFromFactory {
         require(
             boxCollectionList.contains(_boxCollection),
@@ -127,7 +118,7 @@ contract BoxesConfigurations is
         );
         boxInfos[_boxCollection].cid = _cid;
         boxInfos[_boxCollection].price = _price;
-        boxInfos[_boxCollection].defaultRarity = _defaultRarity;
+        boxInfos[_boxCollection].defaultIndex = _defaultIndex;
     }
 
     /**
@@ -139,7 +130,7 @@ contract BoxesConfigurations is
     ) public view returns(string memory, uint256, uint256){
         return (
             boxInfos[_boxAddress].cid,
-            boxInfos[_boxAddress].defaultRarity,
+            boxInfos[_boxAddress].defaultIndex,
             boxInfos[_boxAddress].price
         );
     }
@@ -147,13 +138,13 @@ contract BoxesConfigurations is
     /**
      *  @notice Function allows to get table of dropRates
      */
-    function getDropRates(address _boxAddress) external onlyFromFactory view returns(DropRatesReturn[] memory) {
-        DropRatesReturn[] memory dropRateReturns;
+    function getDropRates(address _boxAddress) external view returns(BoxNFTDetails.DropRatesReturn[] memory) {
+        BoxNFTDetails.DropRatesReturn[] memory dropRateReturns;
         uint256 index;
         for (uint256 i=0; i < boxInfos[_boxAddress].rarityList.length(); i++) {
             for (uint256 j=0; j < boxInfos[_boxAddress].meshIndexList.length(); j++) {
                 for (uint256 k=0; k < boxInfos[_boxAddress].meshMaterialList.length(); k++) {
-                    Attributes memory _attrs;
+                    BoxNFTDetails.Attributes memory _attrs;
                     _attrs.rarity = boxInfos[_boxAddress].rarityList.at(i);
                     _attrs.meshIndex = boxInfos[_boxAddress].meshIndexList.at(i);
                     _attrs.meshMaterialIndex = boxInfos[_boxAddress].rarityList.at(i);

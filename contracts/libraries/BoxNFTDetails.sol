@@ -16,11 +16,22 @@ library BoxNFTDetails {
 
     struct BoxConfigurations {
         string cid;
-        uint256 defaultRarity;
+        uint256 defaultIndex;
         uint256 price;
         mapping(uint256 => mapping(uint256 => mapping(uint256 => uint256))) dropRates;
         EnumerableSet.UintSet rarityList;
         EnumerableSet.UintSet meshIndexList;
         EnumerableSet.UintSet meshMaterialList;
+    }
+
+    struct Attributes {
+        uint256 rarity;
+        uint256 meshIndex;
+        uint256 meshMaterialIndex;
+    }
+
+    struct DropRatesReturn {
+        Attributes attributes;
+        uint256 dropRate;
     }
 }

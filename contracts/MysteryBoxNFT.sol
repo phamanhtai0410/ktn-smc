@@ -10,6 +10,7 @@ import "@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
 import "./libraries/BoxNFTDetails.sol";
+import "./libraries/CharacterTokenDetails.sol";
 import "./Utils.sol";
 import "./interfaces/INFTToken.sol";
 import "./interfaces/IBoxNFTCreator.sol";
@@ -26,6 +27,7 @@ contract MysteryBoxNFT is
     {
     using BoxNFTDetails for BoxNFTDetails.BoxNFTDetail;
     using Counters for Counters.Counter;
+    using CharacterTokenDetails for CharacterTokenDetails.MintingOrder;
 
     struct CreateBoxRequest {
         uint256 targetBlock;    // Use future block.
@@ -464,7 +466,9 @@ contract MysteryBoxNFT is
             CreateBoxRequest storage request = requests[i - 1];
 
             // Get Box Configurations of current box
-            // BoxNFTDetails.BoxConfigurations memory _configurations = boxesConfigurationsAddress.getBoxInfos(address(this));
+            (string memory _cid, uint256 _defaultIndex, uint256 _price) = IBoxesConfigurations(
+                boxesConfigurationsAddress
+            ).getBoxInfos(address(this));
 
             // Get data from request
             uint256 targetBlock = request.targetBlock;
@@ -477,12 +481,12 @@ contract MysteryBoxNFT is
             uint256 seed = uint256(blockhash(targetBlock));
 
             // Init with rarity = 0; rarity = 0 means random in all rarities
-            uint8 rarity = 0;
+            uint256 index = 0;
 
             // Force rarity common if process over 256 blocks.
             if (block.number - 256 > targetBlock) {
                 // Force to default rarity
-                // rarity = _configurations.defaultRarity;
+                index = _defaultIndex;
             }
 
             if (seed == 0) {
@@ -497,9 +501,8 @@ contract MysteryBoxNFT is
             executeOneBoxOpening(
                 to,
                 count,
-                rarity,
-                seed,
-                _configurations.rarityProportions
+                index,
+                seed
             );
 
             requests.pop();
@@ -513,19 +516,21 @@ contract MysteryBoxNFT is
     function executeOneBoxOpening(
         address to,
         uint256 count,
-        uint8 rarity,
-        uint256 seed,
-        uint256[] memory rarityProportions
+        uint256 index,
+        uint256 seed
     ) internal {
         uint256 nextSeed = seed;
         for (uint256 i = 0; i < count; ++i) {
             uint256 _currId = characterToken.lastId();
 
-            if (rarity == 0) {
-                uint256 _newRarity;
+            // Get DropRates
+            uint256[] memory _dropRates;
+
+            if (index == 0) {
+                uint256 _newIndex;
                 uint256 tokenSeed = uint256(keccak256(abi.encode(nextSeed, _currId)));
-                (nextSeed, _newRarity) = Utils.randomByWeights(tokenSeed, rarityProportions);
-                rarity = uint8(_newRarity);
+                (nextSeed, _newIndex) = Utils.randomByWeights(tokenSeed, _dropRates);
+                index = _newIndex;
             }
 
             _currId += 1;
@@ -534,7 +539,24 @@ contract MysteryBoxNFT is
             tokenDetail.id = _currId;
             tokenDetails[_currId] = tokenDetail;
 
-            characterToken.mintOrderForDev(new uint8[](rarity), to, "0x01");
+            BoxNFTDetails.DropRatesReturn[] memory _dropRateReturns = IBoxesConfigurations(
+                boxesConfigurationsAddress
+            ).getDropRates(address(this));
+
+            CharacterTokenDetails.MintingOrder[] memory _mintingOrders;
+            uint256 _rarity = _dropRateReturns[index].attributes.rarity;
+            uint256 _meshIndex = _dropRateReturns[index].attributes.meshIndex;
+            uint256 _meshMaterial = _dropRateReturns[index].attributes.meshMaterialIndex;
+            _mintingOrders[0] = CharacterTokenDetails.MintingOrder(
+                _rarity,
+                _meshIndex,
+                _meshMaterial
+            );
+            characterToken.mintOrderForDev(
+                _mintingOrders,
+                to, 
+                "0x01"
+            );
         }
     }
 

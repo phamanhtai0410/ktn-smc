@@ -6,9 +6,9 @@ interface IBoxesConfigurations {
     /**
      *  @notice Function is used to get configurations informations of one box instant
      */
-    // function getBoxInfos(
-    //     address _boxAddress
-    // ) external view returns(BoxNFTDetails.BoxConfigurations memory);
+    function getBoxInfos(
+        address _boxAddress
+    ) external view returns(string memory, uint256, uint256);
 
     /**
      *  @notice Function allows Factory to add new deployed collection
@@ -20,4 +20,6 @@ interface IBoxesConfigurations {
      *  @dev Function return for Nft Colleciton contract
      */
     function getCid() external view returns(string memory);
+
+    function getDropRates(address _boxAddress) external view returns(BoxNFTDetails.DropRatesReturn[] memory);
 }
