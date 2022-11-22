@@ -55,16 +55,6 @@ contract KatanaBoxFactory is AccessControl {
     }
 
     /*
-       @dev: Set new configuration
-       @param {address} _address - This is address of new configuration
-    */
-    function setConfiguration(IBoxesConfigurations _boxConfig) external onlyRole(IMPLEMENTATION_ROLE) {
-        require(address(_boxConfig) != address(0x0), "Address of configuration must be required.");
-        boxConfigurations = _boxConfig;
-        emit SetConfiguration(address(_boxConfig));
-    }
-
-    /*
     *   Create instance of BoxMystery
     */
     function createBoxMystery(
@@ -112,10 +102,27 @@ contract KatanaBoxFactory is AccessControl {
         return boxConfigurations.getBoxInfos(_boxAddress);
     }
 
+    /**
+     *  @notice Function allows to get box address in Box Address List
+     */
+    function getBoxAddresAt(uint256 _index) external view returns(address) {
+        return boxList.at(_index);
+    }
+
     // Setters
     function setDappCreatorAddress(address _dappCreatorAddress) external onlyRole(IMPLEMENTATION_ROLE) {
         dappCreatorAddress = _dappCreatorAddress;
         emit SetDappCreator(_dappCreatorAddress);
+    }
+
+    /*
+       @dev: Set new configuration
+       @param {address} _address - This is address of new configuration
+    */
+    function setConfiguration(IBoxesConfigurations _boxConfig) external onlyRole(IMPLEMENTATION_ROLE) {
+        require(address(_boxConfig) != address(0x0), "Address of configuration must be required.");
+        boxConfigurations = _boxConfig;
+        emit SetConfiguration(address(_boxConfig));
     }
 
     /**
