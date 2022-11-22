@@ -103,24 +103,8 @@ module.exports = async function (deployer, network, accounts) {
     var _collectionAddress = await _factory.getCollectionAddress(0);
     console.log("9. collection[0] : ", _collectionAddress);
 
-    // /**
-    //  *      5. Deploy BoxConfigurations
-    //  */
-    // await deployer.deploy(
-    //     BoxesConfigurations,
-    //     _collectionAddress
-    // );
-    // var _boxConfig = await BoxesConfigurations.deployed();
-    // wf("iBoxConfig", _boxConfig.address);
-
-    // /**
-    //  *      6. Initialize BoxesConfigurations
-    //  */
-    // await _boxConfig.initialize();
-
-    
-
     /**
-     *      8. 
+     *      10. Grant role UPGRADER for Factory in Config
      */
+    
 }

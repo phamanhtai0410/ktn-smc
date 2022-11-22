@@ -123,7 +123,6 @@ contract NftConfigurations is
             meshMaterialList[_nftCollection][_rarity][_meshIndex].add(_meshMaterial);
         }
         cid[_nftCollection][_rarity][_meshIndex][_meshMaterial] = _cid;
-
     }
 
     /**

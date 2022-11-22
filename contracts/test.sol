@@ -30,7 +30,7 @@ contract Test {
         uint256 deadline;
     }
 
-    function getChainID() private view returns (uint256) {
+    function getChainID() public view returns (uint256) {
         uint256 id;
         assembly {
             id := chainid()

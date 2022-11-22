@@ -6,12 +6,12 @@ _privateKey = "98102796d0dfe116f5af6e9a3c10dc38d316f6c98b3ded8d008b962c7d126460"
 
 _user_address = "0x29E754233F6A50ee5AE3ee6A0217aD907dc3386B"
 
-_contract_address = "0x938926Bb46bCb51A0Bf43F73f99500f6b9c217a4"
+_contract_address = "0x6328eAE56ef2b7719Ea3187e3b6D66Fc06Da3D02"
 
-_nft_collection_address = "0xbc78541a00f02ab11b0d8a6f038630840a9f80b3"
+_nft_collection_address = "0x1170693b03Ec83f9d295D55da39f6e2A549D5e0E"
 
 _data = {
-    "discount": 10 ** 18,
+    "discount": 10 ** 16,
     "rarities": [
         0
     ],
@@ -21,7 +21,7 @@ _data = {
     "meshMaterialIndexes": [
         0
     ],
-    "deadline": 1669043433
+    "deadline": 1669148853
 }
 
 def generate_signature():
