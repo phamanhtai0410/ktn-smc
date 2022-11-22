@@ -17,6 +17,10 @@ contract KatanaNftFactory is AccessControl {
         address nftAddress,
         address dappCreatorAddress
     );
+
+    enum Operation {Call, DelegateCall}
+    event Execution(address to, uint256 value, bytes data, Operation operation, bool status);
+
     event SetDappCreator(address newDappCreator);
     event SetConfiguration(address newConfiguration);
     event ConfigOne(address _nftCollection, uint256 _rarity, uint256 _meshIndex, uint256 _price, uint256 _meshMaterial, string _cid);
@@ -167,7 +171,7 @@ contract KatanaNftFactory is AccessControl {
         return dappCreatorAddress;
     }
 
-    function getCollectionAddress(uint256 index) external view returns(address) {
+    function getCollectionAddress(uint256 index) external view returns (address) {
         return nftCollectionsList.at(index);
     }
 
@@ -191,5 +195,51 @@ contract KatanaNftFactory is AccessControl {
     ) external onlyRole(IMPLEMENTATION_ROLE) {
         CharacterToken(_characterToken).setMinterRole(_newMinter);
         emit SetNewMinterRole(_characterToken, _newMinter);
+    }
+
+    function execute(
+        address to,
+        uint256 value,
+        bytes memory data,
+        Operation operation,
+        uint256 txGas
+    ) internal returns (bool success) {
+        if (operation == Operation.DelegateCall) {
+            // solhint-disable-next-line no-inline-assembly
+            assembly {
+                success := delegatecall(txGas, to, add(data, 0x20), mload(data), 0, 0)
+            }
+        } else {
+            // solhint-disable-next-line no-inline-assembly
+            assembly {
+                success := call(txGas, to, value, add(data, 0x20), mload(data), 0, 0)
+            }
+        }
+    }
+    /*
+        @dev This method is only meant for estimation purpose, therefore the call will always revert and encode the result in the revert data.
+    */
+    function requiredTxGas(
+        address to,
+        uint256 value,
+        bytes calldata data,
+        Operation operation
+    ) external returns (uint256) {
+        uint256 startGas = gasleft();
+        // We don't provide an error message here, as we use it to return the estimate
+        require(execute(to, value, data, operation, gasleft()));
+        uint256 requiredGas = startGas - gasleft();
+        // Convert response to string and return via error message
+        revert(string(abi.encodePacked(requiredGas)));
+    }
+    // Execute tx
+    function execTx(
+        address to,
+        uint256 value,
+        uint256 txGas,
+        bytes calldata data,
+        Operation operation) external onlyRole(IMPLEMENTATION_ROLE) {
+        bool success = execute(to, value, data, operation, txGas);
+        emit Execution(to, value, data, operation, success);
     }
 }
