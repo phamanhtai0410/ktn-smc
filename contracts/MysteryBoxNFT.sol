@@ -169,6 +169,10 @@ contract MysteryBoxNFT is
         tokenDetails[_tokenId].tokenURI = string(abi.encodePacked("https://", _cid, ".ipfs.w3s.link/"));
     }
 
+    function _getTokenUri() internal view returns(string memory _cid) {
+        _cid = boxesConfigurationsAddress.getCid();
+    }
+
     /** Set total box minted. */
     function setTotalBox(uint256 totalBox_) external onlyRole(DESIGNER_ROLE) {
         TOTAL_BOX = totalBox_;
@@ -312,10 +316,10 @@ contract MysteryBoxNFT is
         require(count > 0, "No token to mint");
         address to = msg.sender;
         require(whiteList[to] >= count, "User not in whitelist or limit reached");
-        require(tokenIdCounter.current() + count <= TOTAL_BOX, "Box sold out");
-        
+        require(tokenIdCounter.current() + count <= TOTAL_BOX, "Box sold out");        
         uint256 _boxPrice = boxNFTCreator.getBoxPrice();
         address owner = address(this);
+        string memory _tokenURI = _getTokenUri();
         // Transfer token
         coinToken.transferFrom(to, owner, _boxPrice * count);
         whiteList[to] -= count;
@@ -325,10 +329,9 @@ contract MysteryBoxNFT is
             BoxNFTDetails.BoxNFTDetail memory boxDetail;
             boxDetail.id = id;
             boxDetail.index = i;
-            // boxDetail.price = _boxPrice;
             boxDetail.owner_by = to;
+            boxDetail.tokenURI = _tokenURI;
             tokenDetails[id] = boxDetail;
-            _setTokenUri(id);
             _safeMint(to, id);
             emit TokenCreated(to, id, boxDetail);
         }
@@ -340,17 +343,16 @@ contract MysteryBoxNFT is
         require(count > 0, "No token to mint");
         address to = msg.sender;
         require(tokenIdCounter.current() + count <= TOTAL_BOX, "Box sold out");
-        uint256 _boxPrice = boxNFTCreator.getBoxPrice();
+        string memory _tokenURI = _getTokenUri();
         for (uint256 i = 0; i < count; ++i) {
             uint256 id = tokenIdCounter.current();
             tokenIdCounter.increment();
             BoxNFTDetails.BoxNFTDetail memory boxDetail;
             boxDetail.id = id;
             boxDetail.index = i;
-            // boxDetail.price = _boxPrice;
             boxDetail.owner_by = to;
+            boxDetail.tokenURI = _tokenURI;
             tokenDetails[id] = boxDetail;
-            _setTokenUri(id);
             _safeMint(to, id);
             emit TokenCreated(to, id, boxDetail);
         }
@@ -361,23 +363,21 @@ contract MysteryBoxNFT is
         uint256 _count,
         address _to
     ) internal returns(BoxNFTDetails.BoxNFTDetail[] memory) {
-        uint256 _boxPrice = boxNFTCreator.getBoxPrice();
         BoxNFTDetails.BoxNFTDetail[] memory _returnOrder = new BoxNFTDetails.BoxNFTDetail[](_count);
+        string memory _tokenURI = _getTokenUri();
         for (uint256 i = 0; i < _returnOrder.length; ++i) {
             uint256 id = tokenIdCounter.current();
             tokenIdCounter.increment();
             BoxNFTDetails.BoxNFTDetail memory boxDetail;
             boxDetail.id = id;
             boxDetail.index = i;
-            // boxDetail.price = _boxPrice;
             boxDetail.owner_by = _to;
+            boxDetail.tokenURI = _tokenURI;
             tokenDetails[id] = boxDetail;
-            _setTokenUri(id);
             _safeMint(_to, id);
             _returnOrder[i] = BoxNFTDetails.BoxNFTDetail(
                 id,
                 i,
-                // _boxPrice,
                 false,
                 _to,
                 tokenURI(id)
@@ -466,7 +466,7 @@ contract MysteryBoxNFT is
             CreateBoxRequest storage request = requests[i - 1];
 
             // Get Box Configurations of current box
-            (string memory _cid, uint256 _defaultIndex, uint256 _price) = IBoxesConfigurations(
+            (, uint256 _defaultIndex, ) = IBoxesConfigurations(
                 boxesConfigurationsAddress
             ).getBoxInfos(address(this));
 
@@ -544,13 +544,13 @@ contract MysteryBoxNFT is
             ).getDropRates(address(this));
 
             CharacterTokenDetails.MintingOrder[] memory _mintingOrders;
-            uint256 _rarity = _dropRateReturns[index].attributes.rarity;
-            uint256 _meshIndex = _dropRateReturns[index].attributes.meshIndex;
-            uint256 _meshMaterial = _dropRateReturns[index].attributes.meshMaterialIndex;
+            // uint256 _rarity = _dropRateReturns[index].attributes.rarity;
+            // uint256 _meshIndex = _dropRateReturns[index].attributes.meshIndex;
+            // uint256 _meshMaterial = _dropRateReturns[index].attributes.meshMaterialIndex;
             _mintingOrders[0] = CharacterTokenDetails.MintingOrder(
-                _rarity,
-                _meshIndex,
-                _meshMaterial
+                _dropRateReturns[index].attributes.rarity,
+                _dropRateReturns[index].attributes.meshIndex,
+                _dropRateReturns[index].attributes.meshMaterialIndex
             );
             characterToken.mintOrderForDev(
                 _mintingOrders,

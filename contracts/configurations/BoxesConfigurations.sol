@@ -119,6 +119,7 @@ contract BoxesConfigurations is
         boxInfos[_boxCollection].cid = _cid;
         boxInfos[_boxCollection].price = _price;
         boxInfos[_boxCollection].defaultIndex = _defaultIndex;
+        
     }
 
     /**

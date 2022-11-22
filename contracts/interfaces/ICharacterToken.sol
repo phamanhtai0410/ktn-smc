@@ -45,7 +45,7 @@ interface ICharacterToken is IERC721Upgradeable {
 
     /** Mint token with rarities from dev purpose */
     function mintOrderForDev(
-        uint8[] calldata _rarities,
+        CharacterTokenDetails.MintingOrder[] calldata _mintingOrders,
         address _to,
         bytes calldata _callbackData
     ) external;
