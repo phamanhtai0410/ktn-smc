@@ -5,5 +5,5 @@ interface IBoxNFTCreator  {
     /**
      *      @dev Function get boxPrice
      */
-    function getBoxPrice() external view returns (uint256);
+    function getBoxPrice(address _boxAddress) external view returns (uint256);
 }

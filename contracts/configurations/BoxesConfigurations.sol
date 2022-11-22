@@ -140,7 +140,9 @@ contract BoxesConfigurations is
      *  @notice Function allows to get table of dropRates
      */
     function getDropRates(address _boxAddress) external view returns(BoxNFTDetails.DropRatesReturn[] memory) {
-        BoxNFTDetails.DropRatesReturn[] memory dropRateReturns;
+        BoxNFTDetails.DropRatesReturn[] memory dropRateReturns = new BoxNFTDetails.DropRatesReturn[](
+            boxInfos[_boxAddress].rarityList.length() * boxInfos[_boxAddress].meshIndexList.length() * boxInfos[_boxAddress].meshMaterialList.length()
+        );
         uint256 index;
         for (uint256 i=0; i < boxInfos[_boxAddress].rarityList.length(); i++) {
             for (uint256 j=0; j < boxInfos[_boxAddress].meshIndexList.length(); j++) {
