@@ -21,7 +21,8 @@ contract KatanaBoxFactory is AccessControl {
     );
     event SetDappCreator(address newDappCreator);
     event SetNewMinterRole(address boxCollection, address newMinter);
-    event UpdateNewPrice(address boxCollection, uint256 newPrice);
+    event UpdateNewBoxConfig(address boxCollection, string cid, uint256 price, uint256 defaultIndex);
+    event UpdateNewDropRate(address boxAddress, uint256 rarity, uint256 meshIndex, uint256 meshMaterial, uint256 proportion);
     event UpdateBuyableMint(address boxCollection, bool buyable);
     event SetConfiguration(address newConfiguration);
 
@@ -29,7 +30,7 @@ contract KatanaBoxFactory is AccessControl {
     
     
     // List of NFT collections
-    EnumerableSet.AddressSet private nftCollectionsList;
+    EnumerableSet.AddressSet private boxList;
 
     // Wrapper Creator address: using for calling from dapp
     address public dappCreatorAddress;
@@ -72,13 +73,16 @@ contract KatanaBoxFactory is AccessControl {
         IERC20 _payToken
     ) external onlyRole(IMPLEMENTATION_ROLE) {
         address collection = Clones.clone(implementationAddress);
+
         // Initialize
         MysteryBoxNFT(collection).initialize(
             _name,
             _symbol,
             _payToken
         );
-        nftCollectionsList.add(collection);
+
+        boxList.add(collection);
+
          // Add new collection to configuration
         boxConfigurations.InsertNewCollectionAddress(collection);
 
@@ -96,8 +100,16 @@ contract KatanaBoxFactory is AccessControl {
         return dappCreatorAddress;
     }
 
-    function isValidNftCollection(address _nftCollection) external view returns(bool) {
-        return nftCollectionsList.contains(_nftCollection);
+    function isValidBoxAddress(address _boxAddress) external view returns(bool) {
+        return boxList.contains(_boxAddress);
+    }
+
+    /// @notice Function allows to get Informations of one box
+    /// @dev Call to Box Configurations to get infos
+    /// @param _boxAddress a parameter just show which contract need to get infos about
+    /// @return Documents the return variables of the informations of one box instant
+    function getBoxInfos(address _boxAddress) external view returns(string memory, uint256 , uint256) {
+        return boxConfigurations.getBoxInfos(_boxAddress);
     }
 
     // Setters
@@ -119,17 +131,56 @@ contract KatanaBoxFactory is AccessControl {
     }
 
     /**
-     *  Function allow Factory to change price of one existing NFT.
+     *  Function allow Factory to change config of one existing Box.
      */
-    function updatePrice(
-        IMysteryBoxNFT _nftCollection,
-        uint256 _newPrice
+    function configOne(
+        IMysteryBoxNFT _boxAddress,
+        string memory _cid,
+        uint256 _price,
+        uint256 _defaultIndex
     ) external onlyRole(IMPLEMENTATION_ROLE) {
-        // require(isInListCollections[address(_nftCollection)], "Invalid NFT collection");
-        BoxNFTCreator(dappCreatorAddress).updatePrice(_newPrice);
-        emit UpdateNewPrice(address(_nftCollection), _newPrice);
+        require(boxList.contains(address(_boxAddress)), "Invalid Box Contract");
+        boxConfigurations.configOne(
+            address(_boxAddress),
+            _cid,
+            _price,
+            _defaultIndex
+        );
+        emit UpdateNewBoxConfig(address(
+            _boxAddress),
+            _cid,
+            _price,
+            _defaultIndex
+        );
     }
     
+    /**
+     *  @notice Function allows Factory to config one dropRate of a box
+     */
+    function configDropRate(
+        address _boxAddress,
+        uint256 _rarity,
+        uint256 _meshIndex,
+        uint256 _meshMaterial,
+        uint256 _proportion 
+    ) external onlyRole(IMPLEMENTATION_ROLE) {
+        require(boxList.contains(_boxAddress), "Invalid Box Contract");
+        boxConfigurations.configDroppedRate(
+            _boxAddress,
+            _rarity,
+            _meshIndex,
+            _meshMaterial,
+            _proportion
+        );
+        emit UpdateNewDropRate(
+            _boxAddress,
+            _rarity,
+            _meshIndex,
+            _meshMaterial,
+            _proportion
+        );
+    }
+
     /**
      *  Function allow Factory to change flag buyable of one contract BoxMystery.
      */

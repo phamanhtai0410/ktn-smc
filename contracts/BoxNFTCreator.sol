@@ -8,6 +8,7 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "./interfaces/IMysteryBoxNFT.sol";
 import "./interfaces/IBoxNFTCreator.sol";
+import "./interfaces/IBoxesConfigurations.sol";
 import "./libraries/BoxNFTDetails.sol";
 
 
@@ -44,9 +45,6 @@ contract BoxNFTCreator is
 
     // Token using to pay for minting NFT
     IERC20 public payToken;
-
-    // Price of each box.
-    uint256 public boxPrice;
 
     /**
      *      @dev Define events that contract will emit
@@ -86,7 +84,6 @@ contract BoxNFTCreator is
         _setupRole(PAUSER_ROLE, msg.sender);
         _setupRole(UPGRADER_ROLE, msg.sender);
 
-        boxPrice = 100 * 10 ** 18;
         boxConfigurations = _boxConfig;
         
         _transferOwnership(msg.sender);
@@ -128,14 +125,6 @@ contract BoxNFTCreator is
     }
 
     /**
-     *  @notice Update price for box
-     */
-    function updatePrice(uint256 _newPrice) external onlyRole(UPGRADER_ROLE) {
-        boxPrice = _newPrice;
-        emit UpdatePrice(_newPrice);
-    }
-
-    /**
      *  @notice Function return chainID of current implemented chain
      */
     function getChainID() private view returns (uint256) {
@@ -174,17 +163,6 @@ contract BoxNFTCreator is
     }
 
     /**
-     *  @notice Function get boxPirce.
-     *
-     */
-    function getBoxPrice()
-        external override view
-        returns (uint256)
-    {
-        return boxPrice;
-    }
-
-    /**
      *  @notice Function allow call external from daap to make miting action
      *
      */
@@ -206,7 +184,8 @@ contract BoxNFTCreator is
             ),
             "Invalid Signature"
         );
-        uint256 _price = _amount * boxPrice;
+        ( , , uint256 _p) = IBoxesConfigurations(boxConfigurations).getBoxInfos(address(_boxCollection));
+        uint256 _price = _p * _amount;
         require(payToken.balanceOf(msg.sender) > _price - _discount, "User needs to hold enough token to buy this token");
         payToken.transferFrom(msg.sender, address(this), _price - _discount);
         _boxCollection.mintBoxFromDaapCreator(

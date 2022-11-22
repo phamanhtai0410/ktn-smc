@@ -523,8 +523,15 @@ contract MysteryBoxNFT is
         for (uint256 i = 0; i < count; ++i) {
             uint256 _currId = characterToken.lastId();
 
+            BoxNFTDetails.DropRatesReturn[] memory _dropRateReturns = IBoxesConfigurations(
+                boxesConfigurationsAddress
+            ).getDropRates(address(this));
+
             // Get DropRates
-            uint256[] memory _dropRates;
+            uint256[] memory _dropRates = new uint256[](_dropRateReturns.length);
+            for (uint256 j=0; j < _dropRateReturns.length; j++) {
+                _dropRates[j] = _dropRateReturns[j].dropRate;
+            }
 
             if (index == 0) {
                 uint256 _newIndex;
@@ -539,14 +546,7 @@ contract MysteryBoxNFT is
             tokenDetail.id = _currId;
             tokenDetails[_currId] = tokenDetail;
 
-            BoxNFTDetails.DropRatesReturn[] memory _dropRateReturns = IBoxesConfigurations(
-                boxesConfigurationsAddress
-            ).getDropRates(address(this));
-
             CharacterTokenDetails.MintingOrder[] memory _mintingOrders;
-            // uint256 _rarity = _dropRateReturns[index].attributes.rarity;
-            // uint256 _meshIndex = _dropRateReturns[index].attributes.meshIndex;
-            // uint256 _meshMaterial = _dropRateReturns[index].attributes.meshMaterialIndex;
             _mintingOrders[0] = CharacterTokenDetails.MintingOrder(
                 _dropRateReturns[index].attributes.rarity,
                 _dropRateReturns[index].attributes.meshIndex,
