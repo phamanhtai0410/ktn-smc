@@ -106,5 +106,9 @@ module.exports = async function (deployer, network, accounts) {
     /**
      *      10. Grant role UPGRADER for Factory in Config
      */
-    
+    await _nftConfig.grantRole(
+        "0x189ab7a9244df0848122154315af71fe140f3db0fe014031783b0946b8c9d2e3",
+        _factory.address
+    );
+
 }
