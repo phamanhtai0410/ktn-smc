@@ -117,7 +117,8 @@ contract MysteryBoxNFT is
     function initialize(
         string memory _name,
         string memory _symbol,
-        IERC20 _coinToken
+        IERC20 _coinToken,
+        address _characterToken
     ) public initializer {
         __ERC721_init(_name, _symbol);
         __AccessControl_init();
@@ -128,6 +129,7 @@ contract MysteryBoxNFT is
         _setupRole(WHITELIST_ROLE, msg.sender);
         
         coinToken = _coinToken;
+        characterToken = ICharacterToken(_characterToken);
         TOTAL_BOX = 10000;
         MAX_OPEN_BOX_UNIT = 5;
         // Limit box each user can mint
@@ -215,12 +217,12 @@ contract MysteryBoxNFT is
         whiteListPool += amount;
     }
 
-    /** Sets the design for open box. */
-    function setCharacterToken(address contractAddress)
+    /** Sets NftCollection when open box. */
+    function setCharacterToken(address _characterToken)
         external
         onlyRole(DESIGNER_ROLE)
     {
-        characterToken = ICharacterToken(contractAddress);
+        characterToken = ICharacterToken(_characterToken);
     }
 
     /** Set Configuration For Box. */

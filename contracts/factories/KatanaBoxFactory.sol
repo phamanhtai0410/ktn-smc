@@ -15,9 +15,9 @@ contract KatanaBoxFactory is AccessControl {
 
     using EnumerableSet for EnumerableSet.AddressSet;
     
-    event CreateNftCollection(
-        address nftAddress,
-        address dappCreatorAddress
+    event CreateBoxCollection(
+        address boxAddress,
+        address boxCreatorAddress
     );
     event SetDappCreator(address newDappCreator);
     event SetNewMinterRole(address boxCollection, address newMinter);
@@ -29,11 +29,11 @@ contract KatanaBoxFactory is AccessControl {
     bytes32 public constant IMPLEMENTATION_ROLE = keccak256("IMPLEMENTATION_ROLE");
     
     
-    // List of NFT collections
+    // List of BOX collections
     EnumerableSet.AddressSet private boxList;
 
     // Wrapper Creator address: using for calling from dapp
-    address public dappCreatorAddress;
+    address public boxCreatorAddress;
 
     // implementAddress
     address public implementationAddress;
@@ -43,12 +43,12 @@ contract KatanaBoxFactory is AccessControl {
 
 
     constructor(
-        address _dappCreatorAddress, 
+        address _boxCreatorAddress, 
         IBoxesConfigurations _boxConfig
     ) {
-        dappCreatorAddress = _dappCreatorAddress;
+        boxCreatorAddress = _boxCreatorAddress;
         boxConfigurations = _boxConfig;
-        implementationAddress = address(new MysteryBoxNFT(_dappCreatorAddress, address(_boxConfig)));
+        implementationAddress = address(new MysteryBoxNFT(_boxCreatorAddress, address(_boxConfig)));
 
         _setupRole(IMPLEMENTATION_ROLE, msg.sender);
         _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
@@ -60,7 +60,8 @@ contract KatanaBoxFactory is AccessControl {
     function createBoxMystery(
         string memory _name,
         string memory _symbol,
-        IERC20 _payToken
+        IERC20 _payToken,
+        address _characterToken
     ) external onlyRole(IMPLEMENTATION_ROLE) {
         address collection = Clones.clone(implementationAddress);
 
@@ -68,17 +69,17 @@ contract KatanaBoxFactory is AccessControl {
         MysteryBoxNFT(collection).initialize(
             _name,
             _symbol,
-            _payToken
+            _payToken,
+            _characterToken
         );
-
         boxList.add(collection);
 
          // Add new collection to configuration
         boxConfigurations.InsertNewCollectionAddress(collection);
 
-        emit CreateNftCollection(
+        emit CreateBoxCollection(
             address(collection),
-            dappCreatorAddress
+            boxCreatorAddress
         );
     }
 
@@ -87,7 +88,7 @@ contract KatanaBoxFactory is AccessControl {
     }
 
     function getCurrentDappCreatorAddress() external view onlyRole(IMPLEMENTATION_ROLE) returns(address) {
-        return dappCreatorAddress;
+        return boxCreatorAddress;
     }
 
     function isValidBoxAddress(address _boxAddress) external view returns(bool) {
@@ -110,9 +111,9 @@ contract KatanaBoxFactory is AccessControl {
     }
 
     // Setters
-    function setDappCreatorAddress(address _dappCreatorAddress) external onlyRole(IMPLEMENTATION_ROLE) {
-        dappCreatorAddress = _dappCreatorAddress;
-        emit SetDappCreator(_dappCreatorAddress);
+    function setDappCreatorAddress(address _boxCreatorAddress) external onlyRole(IMPLEMENTATION_ROLE) {
+        boxCreatorAddress = _boxCreatorAddress;
+        emit SetDappCreator(_boxCreatorAddress);
     }
 
     /*
@@ -189,15 +190,43 @@ contract KatanaBoxFactory is AccessControl {
     }
 
     /**
+     *  Function allow Factory to change CharacterToken of one contract BoxMystery.
+     */
+    function setNftCollectionForBoxCollection(
+        address _boxCollection,
+        address _characterToken
+    ) external onlyRole(IMPLEMENTATION_ROLE) {
+        MysteryBoxNFT(_boxCollection).setCharacterToken(_characterToken);
+    }
+
+    /**
+     *  Function allow Factory to change BoxesConfigurations of one contract BoxMystery.
+     */
+    function setBoxConfigurationForBoxCollection(
+        address _boxCollection,
+        address _boxesConfigurations
+    ) external onlyRole(IMPLEMENTATION_ROLE) {
+        MysteryBoxNFT(_boxCollection).setBoxConfiguration(_boxesConfigurations);
+    }
+
+    /**
+     *  Function allow Factory to change BoxNFTCreator of one contract BoxMystery.
+     */
+    function setBoxNFTCreatorForBoxCollection(
+        address _boxCollection,
+        address _boxNFTCreator
+    ) external onlyRole(IMPLEMENTATION_ROLE) {
+        MysteryBoxNFT(_boxCollection).setBoxCreator(_boxNFTCreator);
+    }
+
+    /**
      *  Function allow Factory to change flag buyable of one contract BoxMystery.
      */
     function updateBuyable(
-        IMysteryBoxNFT _nftCollection,
+        IMysteryBoxNFT _boxCollection,
         bool _isBuyable
     ) external onlyRole(IMPLEMENTATION_ROLE) {
-        // require(isInListCollections[address(_nftCollection)], "Invalid NFT collection");
-        MysteryBoxNFT(address(_nftCollection)).setBuyable(_isBuyable);
-        // emit UpdateNewPrice(address(_nftCollection), _newPrice);
+        MysteryBoxNFT(address(_boxCollection)).setBuyable(_isBuyable);
     }
 
     function updateRoleBox(
