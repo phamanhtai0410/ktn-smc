@@ -33,7 +33,7 @@ contract BoxesConfigurations is
     // Address of Box Creator
     address public BOX_CREATOR;
 
-    // Box's Informations: mapping box address => BoxConfigurations 
+    // Box's Informations: mapping box address => BoxConfigurations
     mapping(address => BoxNFTDetails.BoxConfigurations) private boxInfos;
 
     constructor (address _boxFactory, address _nftColelction, address _boxCreator) {
@@ -98,7 +98,7 @@ contract BoxesConfigurations is
         }
     }
 
-    
+
     /**
      *  @notice Function allows to config cid nnd price for each Box from Box Factory
      *  @param _boxCollection The address of box contract instant
@@ -119,7 +119,7 @@ contract BoxesConfigurations is
         boxInfos[_boxCollection].cid = _cid;
         boxInfos[_boxCollection].price = _price;
         boxInfos[_boxCollection].defaultIndex = _defaultIndex;
-        
+
     }
 
     /**
@@ -146,11 +146,14 @@ contract BoxesConfigurations is
         uint256 index;
         for (uint256 i=0; i < boxInfos[_boxAddress].rarityList.length(); i++) {
             for (uint256 j=0; j < boxInfos[_boxAddress].meshIndexList.length(); j++) {
+
                 for (uint256 k=0; k < boxInfos[_boxAddress].meshMaterialList.length(); k++) {
                     BoxNFTDetails.Attributes memory _attrs;
+
                     _attrs.rarity = boxInfos[_boxAddress].rarityList.at(i);
-                    _attrs.meshIndex = boxInfos[_boxAddress].meshIndexList.at(i);
-                    _attrs.meshMaterialIndex = boxInfos[_boxAddress].rarityList.at(i);
+                    _attrs.meshIndex = boxInfos[_boxAddress].meshIndexList.at(j);
+                    _attrs.meshMaterialIndex = boxInfos[_boxAddress].meshMaterialList.at(k);
+
                     dropRateReturns[index].attributes = _attrs;
                     dropRateReturns[index].dropRate = boxInfos[
                         _boxAddress
@@ -169,7 +172,7 @@ contract BoxesConfigurations is
     }
 
     /**
-     *  @notice Fuction returns the cid of specificed NFT type 
+     *  @notice Fuction returns the cid of specificed NFT type
      *  @dev Function return for Box Colleciton contract
      */
     function getCid() external onlyFromValidBoxCollection view returns(string memory) {
