@@ -36,8 +36,8 @@ contract BoxesConfigurations is
     // Box's Informations: mapping box address => BoxConfigurations
     mapping(address => BoxNFTDetails.BoxConfigurations) private boxInfos;
 
-    constructor (address _boxFactory, address _nftColelction, address _boxCreator) {
-        NFT_COLLECTION = ICharacterToken(_nftColelction);
+    constructor (address _boxFactory, address _nftCollection, address _boxCreator) {
+        NFT_COLLECTION = ICharacterToken(_nftCollection);
         BOX_FACTORY = _boxFactory;
         BOX_CREATOR = _boxCreator;
     }
