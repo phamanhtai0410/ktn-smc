@@ -27,8 +27,8 @@ contract BoxesConfigurations is
     // Box Factory Address
     address public BOX_FACTORY;
 
-    // Address of NFT collection
-    ICharacterToken public NFT_COLLECTION;
+    // Address of NFT collection per box address
+    mapping(address => address) public NFT_COLLECTION;
 
     // Address of Box Creator
     address public BOX_CREATOR;
@@ -36,8 +36,7 @@ contract BoxesConfigurations is
     // Box's Informations: mapping box address => BoxConfigurations
     mapping(address => BoxNFTDetails.BoxConfigurations) private boxInfos;
 
-    constructor (address _boxFactory, address _nftCollection, address _boxCreator) {
-        NFT_COLLECTION = ICharacterToken(_nftCollection);
+    constructor (address _boxFactory, address _boxCreator) {
         BOX_FACTORY = _boxFactory;
         BOX_CREATOR = _boxCreator;
     }
@@ -67,8 +66,9 @@ contract BoxesConfigurations is
     /**
     *  @notice Function allows Factory to add new deployed BOX.
     */
-    function InsertNewCollectionAddress(address _boxNFT) external onlyFromFactory {
-        boxCollectionList.add(_boxNFT);
+    function InsertNewCollectionAddress(address _nftCollection, address _boxContract) external onlyFromFactory {
+        boxCollectionList.add(_boxContract);
+        NFT_COLLECTION[_boxContract] = _nftCollection;
     }
 
     /**
@@ -182,7 +182,7 @@ contract BoxesConfigurations is
     /**
      *  @notice Function get NFT_COLLECTION
      */
-    function getNftCollection() external view returns(address) {
-        return address(NFT_COLLECTION);
+    function getNftCollection(address _boxAddress) external view returns(address) {
+        return NFT_COLLECTION[_boxAddress];
     }
 }

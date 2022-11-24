@@ -9,25 +9,6 @@
         "inputs": [
             {
                 "indexed": false,
-                "internalType": "uint8",
-                "name": "maxNftType",
-                "type": "uint8"
-            },
-            {
-                "indexed": false,
-                "internalType": "uint8[]",
-                "name": "maxRarityList",
-                "type": "uint8[]"
-            }
-        ],
-        "name": "AddNewNftType",
-        "type": "event"
-    },
-    {
-        "anonymous": false,
-        "inputs": [
-            {
-                "indexed": false,
                 "internalType": "address",
                 "name": "previousAdmin",
                 "type": "address"
@@ -110,12 +91,18 @@
         "inputs": [
             {
                 "indexed": false,
-                "internalType": "uint256[]",
-                "name": "ids",
-                "type": "uint256[]"
+                "internalType": "address",
+                "name": "to",
+                "type": "address"
+            },
+            {
+                "indexed": false,
+                "internalType": "uint256",
+                "name": "targetBlock",
+                "type": "uint256"
             }
         ],
-        "name": "BurnToken",
+        "name": "BoxOpeningRequested",
         "type": "event"
     },
     {
@@ -150,34 +137,32 @@
                 "components": [
                     {
                         "internalType": "uint256",
-                        "name": "tokenId",
+                        "name": "id",
                         "type": "uint256"
                     },
                     {
-                        "components": [
-                            {
-                                "internalType": "uint256",
-                                "name": "rarity",
-                                "type": "uint256"
-                            },
-                            {
-                                "internalType": "uint256",
-                                "name": "meshIndex",
-                                "type": "uint256"
-                            },
-                            {
-                                "internalType": "uint256",
-                                "name": "meshMaterial",
-                                "type": "uint256"
-                            }
-                        ],
-                        "internalType": "struct CharacterTokenDetails.MintingOrder",
-                        "name": "mintingOrder",
-                        "type": "tuple"
+                        "internalType": "uint256",
+                        "name": "index",
+                        "type": "uint256"
+                    },
+                    {
+                        "internalType": "bool",
+                        "name": "is_opened",
+                        "type": "bool"
+                    },
+                    {
+                        "internalType": "address",
+                        "name": "owner_by",
+                        "type": "address"
+                    },
+                    {
+                        "internalType": "string",
+                        "name": "tokenURI",
+                        "type": "string"
                     }
                 ],
                 "indexed": false,
-                "internalType": "struct CharacterTokenDetails.ReturnMintingOrder[]",
+                "internalType": "struct BoxNFTDetails.BoxNFTDetail[]",
                 "name": "returnMintingOrder",
                 "type": "tuple[]"
             }
@@ -204,39 +189,56 @@
                 "components": [
                     {
                         "internalType": "uint256",
-                        "name": "tokenId",
+                        "name": "id",
                         "type": "uint256"
                     },
                     {
-                        "components": [
-                            {
-                                "internalType": "uint256",
-                                "name": "rarity",
-                                "type": "uint256"
-                            },
-                            {
-                                "internalType": "uint256",
-                                "name": "meshIndex",
-                                "type": "uint256"
-                            },
-                            {
-                                "internalType": "uint256",
-                                "name": "meshMaterial",
-                                "type": "uint256"
-                            }
-                        ],
-                        "internalType": "struct CharacterTokenDetails.MintingOrder",
-                        "name": "mintingOrder",
-                        "type": "tuple"
+                        "internalType": "uint256",
+                        "name": "index",
+                        "type": "uint256"
+                    },
+                    {
+                        "internalType": "bool",
+                        "name": "is_opened",
+                        "type": "bool"
+                    },
+                    {
+                        "internalType": "address",
+                        "name": "owner_by",
+                        "type": "address"
+                    },
+                    {
+                        "internalType": "string",
+                        "name": "tokenURI",
+                        "type": "string"
                     }
                 ],
                 "indexed": false,
-                "internalType": "struct CharacterTokenDetails.ReturnMintingOrder[]",
+                "internalType": "struct BoxNFTDetails.BoxNFTDetail[]",
                 "name": "returnMintingOrder",
                 "type": "tuple[]"
             }
         ],
         "name": "MintOrderFromDaapCreator",
+        "type": "event"
+    },
+    {
+        "anonymous": false,
+        "inputs": [
+            {
+                "indexed": false,
+                "internalType": "address",
+                "name": "to",
+                "type": "address"
+            },
+            {
+                "indexed": false,
+                "internalType": "uint256[]",
+                "name": "tokenIds",
+                "type": "uint256[]"
+            }
+        ],
+        "name": "OpenBox",
         "type": "event"
     },
     {
@@ -264,11 +266,11 @@
             {
                 "indexed": false,
                 "internalType": "address",
-                "name": "account",
+                "name": "to",
                 "type": "address"
             }
         ],
-        "name": "Paused",
+        "name": "ProcessBoxOpeningRequests",
         "type": "event"
     },
     {
@@ -352,114 +354,23 @@
             {
                 "indexed": false,
                 "internalType": "address",
-                "name": "itemAddress",
+                "name": "from",
                 "type": "address"
-            }
-        ],
-        "name": "SetCharacterItem",
-        "type": "event"
-    },
-    {
-        "anonymous": false,
-        "inputs": [
-            {
-                "indexed": false,
-                "internalType": "address",
-                "name": "marketplaceAddress",
-                "type": "address"
-            }
-        ],
-        "name": "SetMarketplace",
-        "type": "event"
-    },
-    {
-        "anonymous": false,
-        "inputs": [
-            {
-                "indexed": false,
-                "internalType": "uint8",
-                "name": "maxTokensInOneOrder",
-                "type": "uint8"
-            }
-        ],
-        "name": "SetMaxTokensInOneOrder",
-        "type": "event"
-    },
-    {
-        "anonymous": false,
-        "inputs": [
-            {
-                "indexed": false,
-                "internalType": "uint8",
-                "name": "maxTokenInOneUsing",
-                "type": "uint8"
-            }
-        ],
-        "name": "SetMaxTokensInOneUsing",
-        "type": "event"
-    },
-    {
-        "anonymous": false,
-        "inputs": [
-            {
-                "indexed": false,
-                "internalType": "uint8",
-                "name": "oldMaxRarity",
-                "type": "uint8"
             },
-            {
-                "indexed": false,
-                "internalType": "uint8",
-                "name": "newMaxRarity",
-                "type": "uint8"
-            }
-        ],
-        "name": "SetNewMaxRarity",
-        "type": "event"
-    },
-    {
-        "anonymous": false,
-        "inputs": [
-            {
-                "indexed": false,
-                "internalType": "address",
-                "name": "newMinter",
-                "type": "address"
-            }
-        ],
-        "name": "SetNewMinter",
-        "type": "event"
-    },
-    {
-        "anonymous": false,
-        "inputs": [
             {
                 "indexed": false,
                 "internalType": "address",
                 "name": "to",
                 "type": "address"
-            }
-        ],
-        "name": "SetWhiteList",
-        "type": "event"
-    },
-    {
-        "anonymous": false,
-        "inputs": [
-            {
-                "indexed": false,
-                "internalType": "bool",
-                "name": "oldMode",
-                "type": "bool"
             },
             {
                 "indexed": false,
-                "internalType": "bool",
-                "name": "newMode",
-                "type": "bool"
+                "internalType": "uint256",
+                "name": "tokenId",
+                "type": "uint256"
             }
         ],
-        "name": "SwitchFreeTransferMode",
+        "name": "SendNft",
         "type": "event"
     },
     {
@@ -480,26 +391,24 @@
             {
                 "components": [
                     {
-                        "components": [
-                            {
-                                "internalType": "uint256",
-                                "name": "rarity",
-                                "type": "uint256"
-                            },
-                            {
-                                "internalType": "uint256",
-                                "name": "meshIndex",
-                                "type": "uint256"
-                            },
-                            {
-                                "internalType": "uint256",
-                                "name": "meshMaterial",
-                                "type": "uint256"
-                            }
-                        ],
-                        "internalType": "struct CharacterTokenDetails.MintingOrder",
-                        "name": "mintingOrder",
-                        "type": "tuple"
+                        "internalType": "uint256",
+                        "name": "id",
+                        "type": "uint256"
+                    },
+                    {
+                        "internalType": "uint256",
+                        "name": "index",
+                        "type": "uint256"
+                    },
+                    {
+                        "internalType": "bool",
+                        "name": "is_opened",
+                        "type": "bool"
+                    },
+                    {
+                        "internalType": "address",
+                        "name": "owner_by",
+                        "type": "address"
                     },
                     {
                         "internalType": "string",
@@ -508,7 +417,7 @@
                     }
                 ],
                 "indexed": false,
-                "internalType": "struct CharacterTokenDetails.TokenDetail",
+                "internalType": "struct BoxNFTDetails.BoxNFTDetail",
                 "name": "details",
                 "type": "tuple"
             }
@@ -545,38 +454,6 @@
         "anonymous": false,
         "inputs": [
             {
-                "indexed": false,
-                "internalType": "address",
-                "name": "account",
-                "type": "address"
-            }
-        ],
-        "name": "Unpaused",
-        "type": "event"
-    },
-    {
-        "anonymous": false,
-        "inputs": [
-            {
-                "indexed": false,
-                "internalType": "bool",
-                "name": "oldState",
-                "type": "bool"
-            },
-            {
-                "indexed": false,
-                "internalType": "bool",
-                "name": "newState",
-                "type": "bool"
-            }
-        ],
-        "name": "UpdateDiableMinting",
-        "type": "event"
-    },
-    {
-        "anonymous": false,
-        "inputs": [
-            {
                 "indexed": true,
                 "internalType": "address",
                 "name": "implementation",
@@ -587,25 +464,6 @@
         "type": "event"
     },
     {
-        "anonymous": false,
-        "inputs": [
-            {
-                "indexed": false,
-                "internalType": "address",
-                "name": "to",
-                "type": "address"
-            },
-            {
-                "indexed": false,
-                "internalType": "uint256[]",
-                "name": "usedTokenIds",
-                "type": "uint256[]"
-            }
-        ],
-        "name": "UseNFTs",
-        "type": "event"
-    },
-    {
         "inputs": [],
         "name": "BURNER_ROLE",
         "outputs": [
@@ -613,6 +471,19 @@
                 "internalType": "bytes32",
                 "name": "",
                 "type": "bytes32"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [],
+        "name": "COIN_DECIMALS",
+        "outputs": [
+            {
+                "internalType": "uint256",
+                "name": "",
+                "type": "uint256"
             }
         ],
         "stateMutability": "view",
@@ -646,51 +517,12 @@
     },
     {
         "inputs": [],
-        "name": "DISABLE_MINTING",
+        "name": "MAX_OPEN_BOX_UNIT",
         "outputs": [
             {
-                "internalType": "bool",
+                "internalType": "uint256",
                 "name": "",
-                "type": "bool"
-            }
-        ],
-        "stateMutability": "view",
-        "type": "function"
-    },
-    {
-        "inputs": [],
-        "name": "FREE_TRANSFER",
-        "outputs": [
-            {
-                "internalType": "bool",
-                "name": "",
-                "type": "bool"
-            }
-        ],
-        "stateMutability": "view",
-        "type": "function"
-    },
-    {
-        "inputs": [],
-        "name": "MAX_TOKENS_IN_ORDER",
-        "outputs": [
-            {
-                "internalType": "uint8",
-                "name": "",
-                "type": "uint8"
-            }
-        ],
-        "stateMutability": "view",
-        "type": "function"
-    },
-    {
-        "inputs": [],
-        "name": "MAX_TOKENS_IN_USING",
-        "outputs": [
-            {
-                "internalType": "uint8",
-                "name": "",
-                "type": "uint8"
+                "type": "uint256"
             }
         ],
         "stateMutability": "view",
@@ -711,38 +543,12 @@
     },
     {
         "inputs": [],
-        "name": "OPEN_BOX_ROLE",
+        "name": "TOTAL_BOX",
         "outputs": [
             {
-                "internalType": "bytes32",
+                "internalType": "uint256",
                 "name": "",
-                "type": "bytes32"
-            }
-        ],
-        "stateMutability": "view",
-        "type": "function"
-    },
-    {
-        "inputs": [],
-        "name": "OPEN_NFT_ROLE",
-        "outputs": [
-            {
-                "internalType": "bytes32",
-                "name": "",
-                "type": "bytes32"
-            }
-        ],
-        "stateMutability": "view",
-        "type": "function"
-    },
-    {
-        "inputs": [],
-        "name": "PAUSER_ROLE",
-        "outputs": [
-            {
-                "internalType": "bytes32",
-                "name": "",
-                "type": "bytes32"
+                "type": "uint256"
             }
         ],
         "stateMutability": "view",
@@ -814,6 +620,67 @@
     {
         "inputs": [
             {
+                "internalType": "address",
+                "name": "",
+                "type": "address"
+            }
+        ],
+        "name": "boughtList",
+        "outputs": [
+            {
+                "internalType": "uint256",
+                "name": "",
+                "type": "uint256"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [],
+        "name": "boxLimit",
+        "outputs": [
+            {
+                "internalType": "uint256",
+                "name": "",
+                "type": "uint256"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "address",
+                "name": "",
+                "type": "address"
+            },
+            {
+                "internalType": "uint256",
+                "name": "",
+                "type": "uint256"
+            }
+        ],
+        "name": "boxRequests",
+        "outputs": [
+            {
+                "internalType": "uint256",
+                "name": "targetBlock",
+                "type": "uint256"
+            },
+            {
+                "internalType": "uint16",
+                "name": "count",
+                "type": "uint16"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
                 "internalType": "uint256[]",
                 "name": "ids",
                 "type": "uint256[]"
@@ -822,6 +689,32 @@
         "name": "burn",
         "outputs": [],
         "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [],
+        "name": "buyable",
+        "outputs": [
+            {
+                "internalType": "bool",
+                "name": "",
+                "type": "bool"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [],
+        "name": "coinToken",
+        "outputs": [
+            {
+                "internalType": "contract IERC20",
+                "name": "",
+                "type": "address"
+            }
+        ],
+        "stateMutability": "view",
         "type": "function"
     },
     {
@@ -846,55 +739,34 @@
     {
         "inputs": [
             {
-                "internalType": "bytes32",
-                "name": "role",
-                "type": "bytes32"
+                "internalType": "address",
+                "name": "owner",
+                "type": "address"
             }
         ],
-        "name": "getRoleAdmin",
-        "outputs": [
-            {
-                "internalType": "bytes32",
-                "name": "",
-                "type": "bytes32"
-            }
-        ],
-        "stateMutability": "view",
-        "type": "function"
-    },
-    {
-        "inputs": [
-            {
-                "internalType": "uint256",
-                "name": "_tokenId",
-                "type": "uint256"
-            }
-        ],
-        "name": "getTokenDetailsByID",
+        "name": "getBoxByOwner",
         "outputs": [
             {
                 "components": [
                     {
-                        "components": [
-                            {
-                                "internalType": "uint256",
-                                "name": "rarity",
-                                "type": "uint256"
-                            },
-                            {
-                                "internalType": "uint256",
-                                "name": "meshIndex",
-                                "type": "uint256"
-                            },
-                            {
-                                "internalType": "uint256",
-                                "name": "meshMaterial",
-                                "type": "uint256"
-                            }
-                        ],
-                        "internalType": "struct CharacterTokenDetails.MintingOrder",
-                        "name": "mintingOrder",
-                        "type": "tuple"
+                        "internalType": "uint256",
+                        "name": "id",
+                        "type": "uint256"
+                    },
+                    {
+                        "internalType": "uint256",
+                        "name": "index",
+                        "type": "uint256"
+                    },
+                    {
+                        "internalType": "bool",
+                        "name": "is_opened",
+                        "type": "bool"
+                    },
+                    {
+                        "internalType": "address",
+                        "name": "owner_by",
+                        "type": "address"
                     },
                     {
                         "internalType": "string",
@@ -902,9 +774,9 @@
                         "type": "string"
                     }
                 ],
-                "internalType": "struct CharacterTokenDetails.TokenDetail",
+                "internalType": "struct BoxNFTDetails.BoxNFTDetail[]",
                 "name": "",
-                "type": "tuple"
+                "type": "tuple[]"
             }
         ],
         "stateMutability": "view",
@@ -914,35 +786,52 @@
         "inputs": [
             {
                 "internalType": "address",
-                "name": "to",
+                "name": "owner",
                 "type": "address"
             }
         ],
-        "name": "getTokenDetailsByOwner",
+        "name": "getBoxIdsByOwner",
+        "outputs": [
+            {
+                "internalType": "uint256[]",
+                "name": "",
+                "type": "uint256[]"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "address",
+                "name": "owner",
+                "type": "address"
+            }
+        ],
+        "name": "getOpenableBoxByOwner",
         "outputs": [
             {
                 "components": [
                     {
-                        "components": [
-                            {
-                                "internalType": "uint256",
-                                "name": "rarity",
-                                "type": "uint256"
-                            },
-                            {
-                                "internalType": "uint256",
-                                "name": "meshIndex",
-                                "type": "uint256"
-                            },
-                            {
-                                "internalType": "uint256",
-                                "name": "meshMaterial",
-                                "type": "uint256"
-                            }
-                        ],
-                        "internalType": "struct CharacterTokenDetails.MintingOrder",
-                        "name": "mintingOrder",
-                        "type": "tuple"
+                        "internalType": "uint256",
+                        "name": "id",
+                        "type": "uint256"
+                    },
+                    {
+                        "internalType": "uint256",
+                        "name": "index",
+                        "type": "uint256"
+                    },
+                    {
+                        "internalType": "bool",
+                        "name": "is_opened",
+                        "type": "bool"
+                    },
+                    {
+                        "internalType": "address",
+                        "name": "owner_by",
+                        "type": "address"
                     },
                     {
                         "internalType": "string",
@@ -950,7 +839,7 @@
                         "type": "string"
                     }
                 ],
-                "internalType": "struct CharacterTokenDetails.TokenDetail[]",
+                "internalType": "struct BoxNFTDetails.BoxNFTDetail[]",
                 "name": "",
                 "type": "tuple[]"
             }
@@ -966,12 +855,50 @@
                 "type": "address"
             }
         ],
-        "name": "getTokenIdsByOwner",
+        "name": "getPendingNfts",
         "outputs": [
             {
-                "internalType": "uint256[]",
+                "internalType": "uint256",
                 "name": "",
-                "type": "uint256[]"
+                "type": "uint256"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "address",
+                "name": "to",
+                "type": "address"
+            }
+        ],
+        "name": "getProcessableTokens",
+        "outputs": [
+            {
+                "internalType": "uint256",
+                "name": "",
+                "type": "uint256"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "bytes32",
+                "name": "role",
+                "type": "bytes32"
+            }
+        ],
+        "name": "getRoleAdmin",
+        "outputs": [
+            {
+                "internalType": "bytes32",
+                "name": "",
+                "type": "bytes32"
             }
         ],
         "stateMutability": "view",
@@ -1030,6 +957,11 @@
                 "internalType": "string",
                 "name": "_symbol",
                 "type": "string"
+            },
+            {
+                "internalType": "contract IERC20",
+                "name": "_coinToken",
+                "type": "address"
             }
         ],
         "name": "initialize",
@@ -1062,54 +994,34 @@
         "type": "function"
     },
     {
-        "inputs": [],
-        "name": "lastId",
-        "outputs": [
+        "inputs": [
             {
                 "internalType": "uint256",
-                "name": "",
+                "name": "_count",
                 "type": "uint256"
-            }
-        ],
-        "stateMutability": "view",
-        "type": "function"
-    },
-    {
-        "inputs": [],
-        "name": "marketPlace",
-        "outputs": [
+            },
             {
-                "internalType": "contract IERC721",
-                "name": "",
+                "internalType": "address",
+                "name": "_to",
                 "type": "address"
+            },
+            {
+                "internalType": "string",
+                "name": "_callbackData",
+                "type": "string"
             }
         ],
-        "stateMutability": "view",
+        "name": "mintBoxFromDaapCreator",
+        "outputs": [],
+        "stateMutability": "nonpayable",
         "type": "function"
     },
     {
         "inputs": [
             {
-                "components": [
-                    {
-                        "internalType": "uint256",
-                        "name": "rarity",
-                        "type": "uint256"
-                    },
-                    {
-                        "internalType": "uint256",
-                        "name": "meshIndex",
-                        "type": "uint256"
-                    },
-                    {
-                        "internalType": "uint256",
-                        "name": "meshMaterial",
-                        "type": "uint256"
-                    }
-                ],
-                "internalType": "struct CharacterTokenDetails.MintingOrder[]",
-                "name": "_mintingOrders",
-                "type": "tuple[]"
+                "internalType": "uint256",
+                "name": "_count",
+                "type": "uint256"
             },
             {
                 "internalType": "address",
@@ -1123,46 +1035,6 @@
             }
         ],
         "name": "mintOrderForDev",
-        "outputs": [],
-        "stateMutability": "nonpayable",
-        "type": "function"
-    },
-    {
-        "inputs": [
-            {
-                "components": [
-                    {
-                        "internalType": "uint256",
-                        "name": "rarity",
-                        "type": "uint256"
-                    },
-                    {
-                        "internalType": "uint256",
-                        "name": "meshIndex",
-                        "type": "uint256"
-                    },
-                    {
-                        "internalType": "uint256",
-                        "name": "meshMaterial",
-                        "type": "uint256"
-                    }
-                ],
-                "internalType": "struct CharacterTokenDetails.MintingOrder[]",
-                "name": "_mintingOrders",
-                "type": "tuple[]"
-            },
-            {
-                "internalType": "address",
-                "name": "_to",
-                "type": "address"
-            },
-            {
-                "internalType": "string",
-                "name": "_callbackData",
-                "type": "string"
-            }
-        ],
-        "name": "mintOrderFromDaapCreator",
         "outputs": [],
         "stateMutability": "nonpayable",
         "type": "function"
@@ -1215,6 +1087,19 @@
         "type": "function"
     },
     {
+        "inputs": [
+            {
+                "internalType": "uint256[]",
+                "name": "tokenIds_",
+                "type": "uint256[]"
+            }
+        ],
+        "name": "openBoxes",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
         "inputs": [],
         "name": "owner",
         "outputs": [
@@ -1225,6 +1110,19 @@
             }
         ],
         "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "uint256",
+                "name": "count",
+                "type": "uint256"
+            }
+        ],
+        "name": "ownerMint",
+        "outputs": [],
+        "stateMutability": "nonpayable",
         "type": "function"
     },
     {
@@ -1248,22 +1146,9 @@
     },
     {
         "inputs": [],
-        "name": "pause",
+        "name": "processBoxOpeningRequests",
         "outputs": [],
         "stateMutability": "nonpayable",
-        "type": "function"
-    },
-    {
-        "inputs": [],
-        "name": "paused",
-        "outputs": [
-            {
-                "internalType": "bool",
-                "name": "",
-                "type": "bool"
-            }
-        ],
-        "stateMutability": "view",
         "type": "function"
     },
     {
@@ -1377,6 +1262,24 @@
         "inputs": [
             {
                 "internalType": "address",
+                "name": "to",
+                "type": "address"
+            },
+            {
+                "internalType": "uint256[]",
+                "name": "tokenIds_",
+                "type": "uint256[]"
+            }
+        ],
+        "name": "sendNft",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "address",
                 "name": "operator",
                 "type": "address"
             },
@@ -1394,12 +1297,12 @@
     {
         "inputs": [
             {
-                "internalType": "uint8",
-                "name": "_maxTokensInOneMint",
-                "type": "uint8"
+                "internalType": "uint256",
+                "name": "boxLimit_",
+                "type": "uint256"
             }
         ],
-        "name": "setMaxTokensInOneMint",
+        "name": "setBoxLimit",
         "outputs": [],
         "stateMutability": "nonpayable",
         "type": "function"
@@ -1407,12 +1310,38 @@
     {
         "inputs": [
             {
-                "internalType": "uint8",
-                "name": "_maxTokenInOneUsing",
-                "type": "uint8"
+                "internalType": "bool",
+                "name": "isBuyable",
+                "type": "bool"
             }
         ],
-        "name": "setMaxTokensInOneUsing",
+        "name": "setBuyable",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "uint256",
+                "name": "maxOpen_",
+                "type": "uint256"
+            }
+        ],
+        "name": "setMaxOpenBox",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "uint256",
+                "name": "totalBox_",
+                "type": "uint256"
+            }
+        ],
+        "name": "setTotalBox",
         "outputs": [],
         "stateMutability": "nonpayable",
         "type": "function"
@@ -1421,24 +1350,16 @@
         "inputs": [
             {
                 "internalType": "address",
-                "name": "_newMinter",
+                "name": "addr",
                 "type": "address"
-            }
-        ],
-        "name": "setMinterRole",
-        "outputs": [],
-        "stateMutability": "nonpayable",
-        "type": "function"
-    },
-    {
-        "inputs": [
+            },
             {
-                "internalType": "address",
-                "name": "_to",
-                "type": "address"
+                "internalType": "uint256",
+                "name": "amount",
+                "type": "uint256"
             }
         ],
-        "name": "setWhiteList",
+        "name": "setWhitelist",
         "outputs": [],
         "stateMutability": "nonpayable",
         "type": "function"
@@ -1460,13 +1381,6 @@
             }
         ],
         "stateMutability": "view",
-        "type": "function"
-    },
-    {
-        "inputs": [],
-        "name": "switchFreeTransferMode",
-        "outputs": [],
-        "stateMutability": "nonpayable",
         "type": "function"
     },
     {
@@ -1493,26 +1407,24 @@
         "name": "tokenDetails",
         "outputs": [
             {
-                "components": [
-                    {
-                        "internalType": "uint256",
-                        "name": "rarity",
-                        "type": "uint256"
-                    },
-                    {
-                        "internalType": "uint256",
-                        "name": "meshIndex",
-                        "type": "uint256"
-                    },
-                    {
-                        "internalType": "uint256",
-                        "name": "meshMaterial",
-                        "type": "uint256"
-                    }
-                ],
-                "internalType": "struct CharacterTokenDetails.MintingOrder",
-                "name": "mintingOrder",
-                "type": "tuple"
+                "internalType": "uint256",
+                "name": "id",
+                "type": "uint256"
+            },
+            {
+                "internalType": "uint256",
+                "name": "index",
+                "type": "uint256"
+            },
+            {
+                "internalType": "bool",
+                "name": "is_opened",
+                "type": "bool"
+            },
+            {
+                "internalType": "address",
+                "name": "owner_by",
+                "type": "address"
             },
             {
                 "internalType": "string",
@@ -1580,19 +1492,6 @@
         "type": "function"
     },
     {
-        "inputs": [],
-        "name": "totalSupply",
-        "outputs": [
-            {
-                "internalType": "uint256",
-                "name": "",
-                "type": "uint256"
-            }
-        ],
-        "stateMutability": "view",
-        "type": "function"
-    },
-    {
         "inputs": [
             {
                 "internalType": "address",
@@ -1624,26 +1523,6 @@
             }
         ],
         "name": "transferOwnership",
-        "outputs": [],
-        "stateMutability": "nonpayable",
-        "type": "function"
-    },
-    {
-        "inputs": [],
-        "name": "unpause",
-        "outputs": [],
-        "stateMutability": "nonpayable",
-        "type": "function"
-    },
-    {
-        "inputs": [
-            {
-                "internalType": "bool",
-                "name": "_newState",
-                "type": "bool"
-            }
-        ],
-        "name": "updateDisableMinting",
         "outputs": [],
         "stateMutability": "nonpayable",
         "type": "function"
@@ -1690,12 +1569,58 @@
         "name": "whiteList",
         "outputs": [
             {
-                "internalType": "bool",
+                "internalType": "uint256",
                 "name": "",
-                "type": "bool"
+                "type": "uint256"
             }
         ],
         "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [],
+        "name": "whiteListBought",
+        "outputs": [
+            {
+                "internalType": "uint256",
+                "name": "",
+                "type": "uint256"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [],
+        "name": "whiteListPool",
+        "outputs": [
+            {
+                "internalType": "uint256",
+                "name": "",
+                "type": "uint256"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "uint256",
+                "name": "count",
+                "type": "uint256"
+            }
+        ],
+        "name": "whitelistMint",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [],
+        "name": "withdraw",
+        "outputs": [],
+        "stateMutability": "nonpayable",
         "type": "function"
     }
 ]

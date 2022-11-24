@@ -495,7 +495,7 @@ contract MysteryBoxNFT is
         uint256 nextSeed = seed;
         CharacterTokenDetails.MintingOrder[] memory _mintingOrders = new CharacterTokenDetails.MintingOrder[](count);
         for (uint256 i = 0; i < count; ++i) {
-            uint256 _currId = ICharacterToken(getNftCollection()).lastId();
+            uint256 _currId = ICharacterToken(getNftCollection(address(this))).lastId();
             BoxNFTDetails.DropRatesReturn[] memory _dropRateReturns = IBoxesConfigurations(getBoxConfigurations()).getDropRates(address(this));
             // Get DropRates
             uint256[] memory _dropRates = new uint256[](_dropRateReturns.length);
@@ -516,7 +516,7 @@ contract MysteryBoxNFT is
                 _dropRateReturns[index].attributes.meshMaterialIndex
             );
         }
-        ICharacterToken(getNftCollection()).mintOrderForDev(
+        ICharacterToken(getNftCollection(address(this))).mintOrderForDev(
             _mintingOrders,
             to, 
             "0x01"
@@ -629,8 +629,8 @@ contract MysteryBoxNFT is
      *  @notice Function internal for getting NFT collection address 
      *  @dev Owner is Box Factory
      */
-    function getNftCollection() internal view returns(address) {
-        return IBoxFactory(owner()).NftCollection();
+    function getNftCollection(address _boxAddress) internal view returns(address) {
+        return IBoxFactory(owner()).NftCollection(address(this));
     }
 
     /**

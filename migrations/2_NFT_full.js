@@ -53,15 +53,9 @@ module.exports = async function (deployer, network, accounts) {
     var _creator = await DaapNFTCreator.deployed();
     wf("iCreator", _creator.address);
 
-    /**
-     *      3. Re-config dapp creator for factory
-     */
-    // await _factory.setDappCreatorAddress(
-    //     _creator.address
-    // );
 
     /**
-     *      4. Deploy NftConfigurations
+     *      3. Deploy NftConfigurations
      */
     await deployer.deploy(
         NftConfigurations,
@@ -72,24 +66,24 @@ module.exports = async function (deployer, network, accounts) {
     wf("iNftConfig", _nftConfig.address);
 
     /**
-     *      5. Re-config NftConfigurations to NftFactory
+     *      4. Re-config NftConfigurations to NftFactory
      */
     await _factory.setConfiguration(
         _nftConfig.address
     );
 
     /**
-     *      6. Initialize DappCreator
+     *      5. Initialize DappCreator
      */
     await _creator.initialize(_nftConfig.address);
 
     /**
-     *      7. Initialize NftConfigurations
+     *      6. Initialize NftConfigurations
      */
     await _nftConfig.initialize();
 
     /**
-     *      8. Create new Collection
+     *      7. Create new Collection
      */
     await _factory.createNftCollection(
         "Testing NFT",
@@ -97,17 +91,21 @@ module.exports = async function (deployer, network, accounts) {
     );
 
     /**
-     *      9. Get collection address
+     *      8. Get collection address
      */
     var _collectionAddress = await _factory.getCollectionAddress(0);
     console.log("9. collection[0] : ", _collectionAddress);
 
     /**
-     *      10. Grant role UPGRADER for Factory in Config
+     *      9. Config one for colleciton
      */
-    // await _nftConfig.grantRole(
-    //     "0x189ab7a9244df0848122154315af71fe140f3db0fe014031783b0946b8c9d2e3",
-    //     _factory.address
-    // );
+    await _factory.configOne(
+        _collectionAddress,
+        0,
+        0,
+        20 * 10 ** 18,
+        0,
+        "test"
+    );
 
 }
