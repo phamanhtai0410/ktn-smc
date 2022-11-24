@@ -197,8 +197,9 @@ contract BoxNFTCreator is
     /**
      *  @notice Function return price of a MysteryBox.
      */
-    function getBoxPrice(address _boxCollection) external view returns(uint256 _boxPrice) {
-        ( , , _boxPrice) =  IBoxesConfigurations(boxConfigurations).getBoxInfos(_boxCollection);
+    function getBoxPrice(address _boxCollection) external view returns(uint256) {
+        ( , , uint256 _boxPrice) =  IBoxesConfigurations(boxConfigurations).getBoxInfos(_boxCollection);
+        return _boxPrice;
     }
 
     /**

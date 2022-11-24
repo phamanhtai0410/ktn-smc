@@ -169,7 +169,7 @@ contract MysteryBoxNFT is
         tokenDetails[_tokenId].tokenURI = string(abi.encodePacked("https://", _cid, ".ipfs.w3s.link/"));
     }
 
-    function _getTokenUri() internal view returns(string memory _cid) {
+    function _getTokenUri() internal returns(string memory _cid) {
         _cid = IBoxesConfigurations(getBoxConfigurations()).getCid();
     }
 
@@ -260,6 +260,7 @@ contract MysteryBoxNFT is
         address _to,
         bytes calldata _callbackData
     ) external onlyRole(MINTER_ROLE) {
+        require(buyable == true, "Mint token have not start yet");
         BoxNFTDetails.BoxNFTDetail[] memory _boxDetails = _mintOneOrder(
             _count,
             _to
