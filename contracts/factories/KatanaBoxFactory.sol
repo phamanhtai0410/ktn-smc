@@ -127,14 +127,14 @@ contract KatanaBoxFactory is AccessControl {
     /**
      *  @notice Function that returns the address of the box configurations contract
      */
-    function getBoxesConfigurations() external returns(address) {
+    function getBoxesConfigurations() external view returns(address) {
         return address(boxConfigurations);
     }
 
     /**
      *  @notice Function that returns the address of the Box Creator
      */
-    function getBoxCreator() external returns(address) {
+    function getBoxCreator() external view returns(address) {
         return boxCreatorAddress; 
     }
 
