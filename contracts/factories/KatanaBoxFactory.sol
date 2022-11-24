@@ -54,7 +54,8 @@ contract KatanaBoxFactory is AccessControl {
         boxCreatorAddress = _boxCreatorAddress;
         boxConfigurations = _boxConfig;
         nftFactory = _nftFactory;
-        implementationAddress = address(new MysteryBoxNFT(_boxCreatorAddress, address(_boxConfig)));
+
+        implementationAddress = address(new MysteryBoxNFT());
 
         _setupRole(IMPLEMENTATION_ROLE, msg.sender);
         _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
@@ -78,7 +79,7 @@ contract KatanaBoxFactory is AccessControl {
             _payToken,
             _characterToken
         );
-        
+
         boxList.add(collection);
 
         // grant role MINTER for new box
@@ -121,6 +122,20 @@ contract KatanaBoxFactory is AccessControl {
      */
     function getBoxAddresAt(uint256 _index) external view returns(address) {
         return boxList.at(_index);
+    }
+
+    /**
+     *  @notice Function that returns the address of the box configurations contract
+     */
+    function getBoxesConfigurations() external returns(address) {
+        return address(boxConfigurations);
+    }
+
+    /**
+     *  @notice Function that returns the address of the Box Creator
+     */
+    function getBoxCreator() external returns(address) {
+        return boxCreatorAddress; 
     }
 
     // Setters
@@ -210,26 +225,6 @@ contract KatanaBoxFactory is AccessControl {
         address _characterToken
     ) external onlyRole(IMPLEMENTATION_ROLE) {
         MysteryBoxNFT(_boxCollection).setCharacterToken(_characterToken);
-    }
-
-    /**
-     *  Function allow Factory to change BoxesConfigurations of one contract BoxMystery.
-     */
-    function setBoxConfigurationForBoxCollection(
-        address _boxCollection,
-        address _boxesConfigurations
-    ) external onlyRole(IMPLEMENTATION_ROLE) {
-        MysteryBoxNFT(_boxCollection).setBoxConfiguration(_boxesConfigurations);
-    }
-
-    /**
-     *  Function allow Factory to change BoxNFTCreator of one contract BoxMystery.
-     */
-    function setBoxNFTCreatorForBoxCollection(
-        address _boxCollection,
-        address _boxNFTCreator
-    ) external onlyRole(IMPLEMENTATION_ROLE) {
-        MysteryBoxNFT(_boxCollection).setBoxCreator(_boxNFTCreator);
     }
 
     /**

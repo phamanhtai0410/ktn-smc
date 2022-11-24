@@ -16,6 +16,7 @@ import "./interfaces/INFTToken.sol";
 import "./interfaces/IBoxNFTCreator.sol";
 import "./interfaces/IBoxesConfigurations.sol";
 import "./interfaces/ICharacterToken.sol";
+import "./interfaces/IBoxFactory.sol";
 
 
 contract MysteryBoxNFT is
@@ -62,12 +63,6 @@ contract MysteryBoxNFT is
     uint256 public MAX_OPEN_BOX_UNIT;
     IERC20 public coinToken;
 
-    // DaapCreator contract
-    IBoxNFTCreator public boxNFTCreator;
-
-    // boxesConfigurations
-    IBoxesConfigurations public boxesConfigurations;
-
     ICharacterToken public characterToken;
 
     Counters.Counter public tokenIdCounter;
@@ -105,13 +100,11 @@ contract MysteryBoxNFT is
     }
 
     modifier onlyFromBoxCreator() {
-        require(msg.sender == address(boxNFTCreator), "Not be called from Box NFT Creator");
+        require(msg.sender == getBoxCreator(), "Not be called from Box NFT Creator");
         _;
     }
 
-    constructor (address _boxNFTCreator, address _boxesConfigurations) {
-        boxNFTCreator = IBoxNFTCreator(_boxNFTCreator);
-        boxesConfigurations = IBoxesConfigurations(_boxesConfigurations);         
+    constructor () {
     }
 
     function initialize(
@@ -172,12 +165,12 @@ contract MysteryBoxNFT is
     function _setTokenUri(
         uint256 _tokenId
     ) internal {
-        string memory _cid = boxesConfigurations.getCid();
+        string memory _cid = IBoxesConfigurations(getBoxConfigurations()).getCid();
         tokenDetails[_tokenId].tokenURI = string(abi.encodePacked("https://", _cid, ".ipfs.w3s.link/"));
     }
 
     function _getTokenUri() internal view returns(string memory _cid) {
-        _cid = boxesConfigurations.getCid();
+        _cid = IBoxesConfigurations(getBoxConfigurations()).getCid();
     }
 
     /** Set total box minted. */
@@ -193,11 +186,6 @@ contract MysteryBoxNFT is
     /** Enable common user mint box */
     function setBuyable(bool isBuyable) external onlyRole(DESIGNER_ROLE) {
         buyable = isBuyable;
-    }
-
-    /** Set BoxNFTCreator */
-    function setBoxCreator(address boxCreator_) external onlyRole(UPGRADER_ROLE) {
-        boxNFTCreator = IBoxNFTCreator(boxCreator_);
     }
     
     /**
@@ -223,14 +211,6 @@ contract MysteryBoxNFT is
         onlyRole(DESIGNER_ROLE)
     {
         characterToken = ICharacterToken(_characterToken);
-    }
-
-    /** Set Configuration For Box. */
-    function setBoxConfiguration(address _boxesConfigurations)
-        external
-        onlyRole(UPGRADER_ROLE)
-    {
-        boxesConfigurations = IBoxesConfigurations(_boxesConfigurations);
     }
 
     function getBoxIdsByOwner(address owner)
@@ -272,10 +252,9 @@ contract MysteryBoxNFT is
         return boxs;
     }
 
-
     /** 
      *  Function mint NFTs Box from admin
-    */
+     */
     function mintOrderForDev(
         uint256 _count,
         address _to,
@@ -324,7 +303,7 @@ contract MysteryBoxNFT is
         address to = msg.sender;
         require(whiteList[to] >= count, "User not in whitelist or limit reached");
         require(tokenIdCounter.current() + count <= TOTAL_BOX, "Box sold out");
-        ( , , uint256 _boxPrice) = boxesConfigurations.getBoxInfos(address(this));
+        ( , , uint256 _boxPrice) = IBoxesConfigurations(getBoxConfigurations()).getBoxInfos(address(this));
         address owner = address(this);
         string memory _tokenURI = _getTokenUri();
         // Transfer token
@@ -473,7 +452,7 @@ contract MysteryBoxNFT is
             CreateBoxRequest storage request = requests[i - 1];
 
             // Get Box Configurations of current box
-            (, uint256 _defaultIndex, ) = boxesConfigurations.getBoxInfos(address(this));
+            (, uint256 _defaultIndex, ) = IBoxesConfigurations(getBoxConfigurations()).getBoxInfos(address(this));
 
             // Get data from request
             uint256 targetBlock = request.targetBlock;
@@ -528,7 +507,7 @@ contract MysteryBoxNFT is
         CharacterTokenDetails.MintingOrder[] memory _mintingOrders = new CharacterTokenDetails.MintingOrder[](count);
         for (uint256 i = 0; i < count; ++i) {
             uint256 _currId = characterToken.lastId();
-            BoxNFTDetails.DropRatesReturn[] memory _dropRateReturns = boxesConfigurations.getDropRates(address(this));
+            BoxNFTDetails.DropRatesReturn[] memory _dropRateReturns = IBoxesConfigurations(getBoxConfigurations()).getDropRates(address(this));
             // Get DropRates
             uint256[] memory _dropRates = new uint256[](_dropRateReturns.length);
             for (uint256 j=0; j < _dropRateReturns.length; j++) {
@@ -639,6 +618,22 @@ contract MysteryBoxNFT is
         bytes memory
     ) public virtual override returns (bytes4) {
         return this.onERC721Received.selector;
+    }
+
+    /**
+     *  @notice Function internal for getting current boxConfigurations address
+     *  @dev owner of each box is the box factory
+     */
+    function getBoxConfigurations() internal returns (address) {
+        return IBoxFactory(owner()).getBoxesConfigurations();
+    }
+
+    /**
+     *  @notice Function internal for getting current boxCreator address
+     *  @dev owner of each box is the box factory
+     */
+    function getBoxCreator() internal returns (address) {
+        return IBoxFactory(owner()).getBoxCreator();
     }
 
     /**
