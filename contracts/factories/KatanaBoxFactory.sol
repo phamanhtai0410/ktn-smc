@@ -74,6 +74,9 @@ contract KatanaBoxFactory is AccessControl {
         );
         boxList.add(collection);
 
+        // grant role MINTER for new box
+        
+
          // Add new collection to configuration
         boxConfigurations.InsertNewCollectionAddress(collection);
 

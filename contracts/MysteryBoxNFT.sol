@@ -328,7 +328,7 @@ contract MysteryBoxNFT is
         address owner = address(this);
         string memory _tokenURI = _getTokenUri();
         // Transfer token
-        coinToken.transferFrom(to, owner, _boxPrice * count);
+        // coinToken.transferFrom(to, owner, _boxPrice * count);
         whiteList[to] -= count;
         for (uint256 i = 0; i < count; ++i) {
             uint256 id = tokenIdCounter.current();
