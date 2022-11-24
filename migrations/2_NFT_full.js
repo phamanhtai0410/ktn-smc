@@ -38,7 +38,6 @@ module.exports = async function (deployer, network, accounts) {
     await deployer.deploy(
         KatanaNftFactory,
         "0x0000000000000000000000000000000000000000",
-        "0x0000000000000000000000000000000000000000",
     );
     var _factory = await KatanaNftFactory.deployed();
     wf("iFactory", _factory.address);
@@ -57,9 +56,9 @@ module.exports = async function (deployer, network, accounts) {
     /**
      *      3. Re-config dapp creator for factory
      */
-    await _factory.setDappCreatorAddress(
-        _creator.address
-    );
+    // await _factory.setDappCreatorAddress(
+    //     _creator.address
+    // );
 
     /**
      *      4. Deploy NftConfigurations
@@ -106,9 +105,9 @@ module.exports = async function (deployer, network, accounts) {
     /**
      *      10. Grant role UPGRADER for Factory in Config
      */
-    await _nftConfig.grantRole(
-        "0x189ab7a9244df0848122154315af71fe140f3db0fe014031783b0946b8c9d2e3",
-        _factory.address
-    );
+    // await _nftConfig.grantRole(
+    //     "0x189ab7a9244df0848122154315af71fe140f3db0fe014031783b0946b8c9d2e3",
+    //     _factory.address
+    // );
 
 }

@@ -106,7 +106,7 @@ contract NftConfigurations is
         uint256 _price,
         uint256 _meshMaterial,
         string memory _cid
-    ) external onlyRole(UPGRADER_ROLE) {
+    ) external onlyFromFactory {
         require(
             nftCollectionsList.contains(_nftCollection),
             "Invalid NFT collection address"

@@ -79,7 +79,6 @@ contract KatanaNftFactory is AccessControl {
         // Add new collection to configuration
         nftConfigurations.InsertNewCollectionAddress(collection);
 
-
         nftCollectionsList.add(collection);
 
         emit CreateNftCollection(

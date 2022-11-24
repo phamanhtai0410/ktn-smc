@@ -108,8 +108,7 @@ contract MysteryBoxNFT is
     function initialize(
         string memory _name,
         string memory _symbol,
-        IERC20 _coinToken,
-        address _characterToken
+        IERC20 _coinToken
     ) public initializer {
         __ERC721_init(_name, _symbol);
         __AccessControl_init();

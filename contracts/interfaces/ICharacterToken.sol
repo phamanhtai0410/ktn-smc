@@ -63,5 +63,5 @@ interface ICharacterToken is IERC721Upgradeable {
     /**
      *      @dev Set whitelis
      */
-    function setWhiteList(address _to) external
+    function setWhiteList(address _to) external;
 }

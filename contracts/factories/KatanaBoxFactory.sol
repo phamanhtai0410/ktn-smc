@@ -83,7 +83,7 @@ contract KatanaBoxFactory is AccessControl {
 
         // grant role MINTER for new box
         nftFactory.setNewMinter(
-            NftCollection(),
+            boxConfigurations.getNftCollection(),
             collection
         );
 
@@ -226,16 +226,6 @@ contract KatanaBoxFactory is AccessControl {
             _meshMaterial,
             _proportion
         );
-    }
-
-    /**
-     *  Function allow Factory to change CharacterToken of one contract BoxMystery.
-     */
-    function setNftCollectionForBoxCollection(
-        address _boxCollection,
-        address _characterToken
-    ) external onlyRole(IMPLEMENTATION_ROLE) {
-        MysteryBoxNFT(_boxCollection).setCharacterToken(_characterToken);
     }
 
     /**

@@ -112,9 +112,7 @@ contract CharacterToken is
      */
     function initialize(
         string memory _name,
-        string memory _symbol,
-        address _daapCreator,
-        address _nftConfigurations
+        string memory _symbol
     ) public initializer {
         __ERC721_init(_name, _symbol);
         __AccessControl_init();
