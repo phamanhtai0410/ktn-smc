@@ -100,6 +100,11 @@ module.exports = async function (deployer, network, accounts) {
     );
 
     /**
+     *      7*. Set IMPLEMENTATION ROLE for Box factory in NFT factory
+     */
+    
+
+    /**
      *      8. Create new Box
      */
     await _boxFactory.createBoxMystery(
