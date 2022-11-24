@@ -49,4 +49,19 @@ interface ICharacterToken is IERC721Upgradeable {
         address _to,
         bytes calldata _callbackData
     ) external;
+
+    /**
+     *      @notice Funtion switch mode of minting
+     */
+    function updateDisableMinting(bool _newState) external;
+
+    /**
+     *      @dev Function allow ADMIN to set free transfer flag
+     */
+    function switchFreeTransferMode() external;
+
+    /**
+     *      @dev Set whitelis
+     */
+    function setWhiteList(address _to) external
 }

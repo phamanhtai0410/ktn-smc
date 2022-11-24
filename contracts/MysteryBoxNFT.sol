@@ -63,8 +63,6 @@ contract MysteryBoxNFT is
     uint256 public MAX_OPEN_BOX_UNIT;
     IERC20 public coinToken;
 
-    ICharacterToken public characterToken;
-
     Counters.Counter public tokenIdCounter;
     
     // Limit each common user to by.
@@ -122,7 +120,6 @@ contract MysteryBoxNFT is
         _setupRole(WHITELIST_ROLE, msg.sender);
         
         coinToken = _coinToken;
-        characterToken = ICharacterToken(_characterToken);
         TOTAL_BOX = 10000;
         MAX_OPEN_BOX_UNIT = 5;
         // Limit box each user can mint
@@ -203,14 +200,6 @@ contract MysteryBoxNFT is
         whiteList[addr] = amount;
         // If owner add addr to whitelist multiple time, whiteListPool will increase multiple time.
         whiteListPool += amount;
-    }
-
-    /** Sets NftCollection when open box. */
-    function setCharacterToken(address _characterToken)
-        external
-        onlyRole(DESIGNER_ROLE)
-    {
-        characterToken = ICharacterToken(_characterToken);
     }
 
     function getBoxIdsByOwner(address owner)
@@ -507,7 +496,7 @@ contract MysteryBoxNFT is
         uint256 nextSeed = seed;
         CharacterTokenDetails.MintingOrder[] memory _mintingOrders = new CharacterTokenDetails.MintingOrder[](count);
         for (uint256 i = 0; i < count; ++i) {
-            uint256 _currId = characterToken.lastId();
+            uint256 _currId = ICharacterToken(getNftCollection()).lastId();
             BoxNFTDetails.DropRatesReturn[] memory _dropRateReturns = IBoxesConfigurations(getBoxConfigurations()).getDropRates(address(this));
             // Get DropRates
             uint256[] memory _dropRates = new uint256[](_dropRateReturns.length);
@@ -528,7 +517,7 @@ contract MysteryBoxNFT is
                 _dropRateReturns[index].attributes.meshMaterialIndex
             );
         }
-        characterToken.mintOrderForDev(
+        ICharacterToken(getNftCollection()).mintOrderForDev(
             _mintingOrders,
             to, 
             "0x01"
@@ -635,6 +624,14 @@ contract MysteryBoxNFT is
      */
     function getBoxCreator() internal returns (address) {
         return IBoxFactory(owner()).getBoxCreator();
+    }
+
+    /**
+     *  @notice Function internal for getting NFT collection address 
+     *  @dev Owner is Box Factory
+     */
+    function getNftCollection() internal view returns(address) {
+        return IBoxFactory(owner()).NftCollection();
     }
 
     /**

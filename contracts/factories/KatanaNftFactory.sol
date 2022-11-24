@@ -7,16 +7,14 @@ import {Clones} from "@openzeppelin/contracts/proxy/Clones.sol";
 import "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 import "../CharacterToken.sol";
 import '../interfaces/INftConfigurations.sol';
+import '../interfaces/ICharacterToken.sol';
 
 
 contract KatanaNftFactory is AccessControl {
 
     using EnumerableSet for EnumerableSet.AddressSet;
 
-    event CreateNftCollection(
-        address nftAddress,
-        address dappCreatorAddress
-    );
+    event CreateNftCollection(address nftAddress);
 
     enum Operation {Call, DelegateCall}
     event Execution(address to, uint256 value, bytes data, Operation operation, bool status);
@@ -42,10 +40,7 @@ contract KatanaNftFactory is AccessControl {
     // implementAddress
     address public implementationAddress;
 
-    constructor(address _dappCreatorAddress, INftConfigurations _nftConfigurations) {
-
-        dappCreatorAddress = _dappCreatorAddress;
-
+    constructor(INftConfigurations _nftConfigurations) {
         nftConfigurations = _nftConfigurations;
 
         implementationAddress = address(new CharacterToken());
@@ -78,9 +73,7 @@ contract KatanaNftFactory is AccessControl {
         // Initialize
         CharacterToken(collection).initialize(
             _name,
-            _symbol,
-            dappCreatorAddress,
-            address(nftConfigurations)
+            _symbol
         );
 
         // Add new collection to configuration
@@ -90,8 +83,7 @@ contract KatanaNftFactory is AccessControl {
         nftCollectionsList.add(collection);
 
         emit CreateNftCollection(
-            collection,
-            dappCreatorAddress
+            collection
         );
     }
 
@@ -167,8 +159,16 @@ contract KatanaNftFactory is AccessControl {
         return super.supportsInterface(interfaceId);
     }
 
-    function getCurrentDappCreatorAddress() external view onlyRole(IMPLEMENTATION_ROLE) returns (address) {
-        return dappCreatorAddress;
+    /// Getters
+    function getCurrentDappCreatorAddress() external view returns (address) {
+        return nftConfigurations.getNftCreator();
+    }
+
+    /**
+     *  @notice Function allows to get the current Nft Configurations
+     */
+    function getCurrentNftConfigurations() external view returns (address) {
+        return address(nftConfigurations);
     }
 
     function getCollectionAddress(uint256 index) external view returns (address) {
@@ -180,11 +180,6 @@ contract KatanaNftFactory is AccessControl {
     }
 
     // Setters
-    function setDappCreatorAddress(address _dappCreatorAddress) external onlyRole(IMPLEMENTATION_ROLE) {
-        dappCreatorAddress = _dappCreatorAddress;
-        emit SetDappCreator(_dappCreatorAddress);
-    }
-
     /**
      *  @notice Function Set new minter Role for a collection
      *  @dev Call to NFT collection to set MINTER_ROLE
@@ -196,7 +191,41 @@ contract KatanaNftFactory is AccessControl {
         CharacterToken(_characterToken).setMinterRole(_newMinter);
         emit SetNewMinterRole(_characterToken, _newMinter);
     }
+    
+    /**
+     *  @notice Functions allows IMPLEMENTATION_ROLE to update state of disable minting
+     */
+    function updateStateDisableMinting(
+        address _nftCollection,
+        bool _newState
+    ) external onlyRole(IMPLEMENTATION_ROLE) {
+        ICharacterToken(_nftCollection).updateDisableMinting(_newState);
+    }
 
+    /**
+     *  @notice Function allows IMPLEMENTATION_ROLE to switch mode of free transfering NFT
+     */
+    function switchFreeTransferMode(
+        address _nftColleciton
+    ) external onlyRole(IMPLEMENTATION_ROLE) {
+        ICharacterToken(_nftColleciton).switchFreeTransferMode();
+    }
+
+    /**
+     *  @notice Function allows IMPLEMENTATION_ROLE to setWhitelist for one specificed NFT colleciton
+     */
+    function setWhitelist(
+        address _nftCollection,
+        address _to
+    ) external onlyRole(IMPLEMENTATION_ROLE) {
+        ICharacterToken(_nftCollection).setWhiteList(
+            _to
+        );
+    }
+
+    /**
+     *  @notice Function execute flex by abi decoded and params
+     */
     function execute(
         address to,
         uint256 value,

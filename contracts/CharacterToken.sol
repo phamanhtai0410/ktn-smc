@@ -6,6 +6,7 @@ import "@openzeppelin/contracts/utils/math/Math.sol";
 import "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC721/ERC721Upgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
@@ -13,6 +14,7 @@ import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
 import "./interfaces/INFTToken.sol";
 import "./interfaces/INftConfigurations.sol";
+import "./interfaces/INftFactory.sol";
 import "./libraries/CharacterTokenDetails.sol";
 
 
@@ -22,6 +24,7 @@ contract CharacterToken is
     AccessControlUpgradeable,
     PausableUpgradeable,
     UUPSUpgradeable,
+    OwnableUpgradeable,
     INFTToken
 {
     using Counters for Counters.Counter;
@@ -43,6 +46,7 @@ contract CharacterToken is
     event SetNewMaxRarity(uint8 oldMaxRarity, uint8 newMaxRarity);
     event SetWhiteList(address to);
     event SwitchFreeTransferMode(bool oldMode, bool newMode);
+    event UpdateDiableMinting(bool oldState, bool newState);
 
     bytes32 public constant PAUSER_ROLE = keccak256("PAUSER_ROLE");
     bytes32 public constant OPEN_BOX_ROLE = keccak256("OPEN_BOX_ROLE");
@@ -58,12 +62,6 @@ contract CharacterToken is
 
     // Maketplace contract address => open for setting when in need
     IERC721 public marketPlace;
-
-    // DaapCreator contract
-    address public daapCreator;
-
-    // NFT Configurations
-    address public nftConfigutations;
 
     // Counter for tokenID
     Counters.Counter public tokenIdCounter;
@@ -89,6 +87,9 @@ contract CharacterToken is
     // Flag Free transfer NFT
     bool public FREE_TRANSFER;
 
+    // Flag: Enable or disable the feature of minting
+    bool public DISABLE_MINTING;
+
     /**
      * @notice Checks if the msg.sender is a contract or a proxy
      */
@@ -99,7 +100,7 @@ contract CharacterToken is
     }
 
     modifier onlyFromDaapCreator() {
-        require(msg.sender == daapCreator, "Not be called from Daap Creator");
+        require(msg.sender == getNftCreator(), "Not be called from Daap Creator");
         _;
     }
 
@@ -119,6 +120,7 @@ contract CharacterToken is
         __AccessControl_init();
         __Pausable_init();
         __UUPSUpgradeable_init();
+        _transferOwnership(msg.sender);
 
         _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
         _setupRole(PAUSER_ROLE, msg.sender);
@@ -128,13 +130,12 @@ contract CharacterToken is
         _setupRole(OPEN_NFT_ROLE, msg.sender);
         _setupRole(WHITELIST_ROLE, msg.sender);
 
-        daapCreator = _daapCreator;
-        nftConfigutations = _nftConfigurations;
         MAX_TOKENS_IN_ORDER = 10;
         MAX_TOKENS_IN_USING = 10;
         totalSupply = 100000000;
         whiteList[msg.sender] = true;
         FREE_TRANSFER = false;
+        DISABLE_MINTING = false;
     }
 
     function onERC721Received(
@@ -168,9 +169,15 @@ contract CharacterToken is
         emit SwitchFreeTransferMode(oldMode, newMode);
     }
 
-    function setDappCreator(address _daapCreator) external onlyRole(DEFAULT_ADMIN_ROLE) {
-        daapCreator = _daapCreator;
+    /**
+     *      @notice Funtion switch mode of minting
+     */
+    function updateDisableMinting(bool _newState) external onlyRole(DESIGNER_ROLE) {
+        bool _oldState = DISABLE_MINTING;
+        DISABLE_MINTING = _newState;
+        emit UpdateDiableMinting(_oldState, _newState);
     }
+
     /**
      *  @notice Function allow ADMIN set new wallet is MINTER
      */
@@ -354,7 +361,7 @@ contract CharacterToken is
         uint256 _meshIndex,
         uint256 _meshMaterial
     ) internal {
-        string memory _cid = INftConfigurations(nftConfigutations).getCid(
+        string memory _cid = INftConfigurations(getNftConfigurations()).getCid(
             _rarity,
             _meshIndex,
             _meshMaterial
@@ -378,7 +385,7 @@ contract CharacterToken is
 
         for (uint256 i=0; i < _mintingOrders.length; i++) {
             require(
-                INftConfigurations(nftConfigutations).checkValidMintingAttributes(
+                INftConfigurations(getNftConfigurations()).checkValidMintingAttributes(
                     address(this),
                     _mintingOrders[i]
                 ),
@@ -466,6 +473,20 @@ contract CharacterToken is
             uint256[] storage ids = tokenIds[to];
             ids.push(id);
         }
+    }
+
+    /**
+     *  @notice Function internal getting the address of NFT creator
+     */
+    function getNftCreator() internal view returns(address) {
+        return INftFactory(owner()).getCurrentDappCreatorAddress();
+    }
+
+    /**
+     *  @notice Function internal returns the address of NftConfigurations
+     */
+    function getNftConfigurations() internal view returns(address) {
+        return INftFactory(owner()).getCurrentNftConfigurations();
     }
 
     /**

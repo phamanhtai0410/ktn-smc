@@ -76,4 +76,9 @@ interface INftConfigurations  {
         address _nftCollection,
         CharacterTokenDetails.MintingOrder memory _mintingOrder
     ) external view returns(bool);
+
+    /**
+     *  @notice function allows external to get DaapNFTCreator
+     */
+    function getNftCreator() external view returns (address);
 }

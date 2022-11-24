@@ -193,4 +193,12 @@ contract NftConfigurations is
         }
         return true;
     }
+
+    /// Getters
+    /**
+     *  @notice function allows external to get DaapNFTCreator
+     */
+    function getNftCreator() external view returns (address) {
+        return DAPP_CREATOR;
+    }
 }

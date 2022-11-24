@@ -178,4 +178,11 @@ contract BoxesConfigurations is
     function getCid() external onlyFromValidBoxCollection view returns(string memory) {
         return boxInfos[msg.sender].cid;
     }
+
+    /**
+     *  @notice Function get NFT_COLLECTION
+     */
+    function getNftCollection() external view returns(address) {
+        return address(NFT_COLLECTION);
+    }
 }

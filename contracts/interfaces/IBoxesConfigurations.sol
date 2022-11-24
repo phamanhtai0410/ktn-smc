@@ -47,4 +47,8 @@ interface IBoxesConfigurations {
         uint256 _proportion
     ) external;
 
+    /**
+     *  @notice function returns current nftCollection for the Box Configurations
+     */
+    function getNftCollection() external view returns(address);
 }

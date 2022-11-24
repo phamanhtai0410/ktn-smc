@@ -68,8 +68,7 @@ contract KatanaBoxFactory is AccessControl {
     function createBoxMystery(
         string memory _name,
         string memory _symbol,
-        IERC20 _payToken,
-        address _characterToken
+        IERC20 _payToken
     ) external onlyRole(IMPLEMENTATION_ROLE) {
         address collection = Clones.clone(implementationAddress);
 
@@ -77,15 +76,14 @@ contract KatanaBoxFactory is AccessControl {
         MysteryBoxNFT(collection).initialize(
             _name,
             _symbol,
-            _payToken,
-            _characterToken
+            _payToken
         );
 
         boxList.add(collection);
 
         // grant role MINTER for new box
         nftFactory.setNewMinter(
-            _characterToken,
+            NftCollection(),
             collection
         );
 
@@ -137,6 +135,13 @@ contract KatanaBoxFactory is AccessControl {
      */
     function getBoxCreator() external view returns(address) {
         return boxCreatorAddress; 
+    }
+
+    /**
+     *  @notice Funtion get nftCollection from BoxesCOnfigurations
+     */
+    function NftCollection() external view returns(address) {
+        return boxConfigurations.getNftCollection();
     }
 
     // Setters
@@ -250,4 +255,6 @@ contract KatanaBoxFactory is AccessControl {
     ) external onlyRole(IMPLEMENTATION_ROLE) {
         MysteryBoxNFT(_boxAddress).grantRole(_role, _account);
     }
+
+    /// Internals
 }
