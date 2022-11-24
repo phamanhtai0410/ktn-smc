@@ -127,7 +127,7 @@ module.exports = async function (deployer, network, accounts) {
     await _boxFactory.configOne(
         _boxAddress,
         _cid,
-        _prices,
+        _price,
         0
     );
 
