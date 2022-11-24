@@ -27,6 +27,7 @@ contract KatanaBoxFactory is AccessControl {
     event UpdateNewDropRate(address boxAddress, uint256 rarity, uint256 meshIndex, uint256 meshMaterial, uint256 proportion);
     event UpdateBuyableMint(address boxCollection, bool buyable);
     event SetConfiguration(address newConfiguration);
+    event SetNftFactory(address newNftFactory);
 
     bytes32 public constant IMPLEMENTATION_ROLE = keccak256("IMPLEMENTATION_ROLE");
     
@@ -152,6 +153,11 @@ contract KatanaBoxFactory is AccessControl {
         require(address(_boxConfig) != address(0x0), "Address of configuration must be required.");
         boxConfigurations = _boxConfig;
         emit SetConfiguration(address(_boxConfig));
+    }
+
+    function setNftFactory(INftFactory _nftFactory) external onlyRole(IMPLEMENTATION_ROLE) {
+        nftFactory = _nftFactory;
+        emit SetNftFactory(address(_nftFactory));
     }
 
     /**
