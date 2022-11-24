@@ -630,7 +630,7 @@ contract MysteryBoxNFT is
      *  @dev Owner is Box Factory
      */
     function getNftCollection(address _boxAddress) internal view returns(address) {
-        return IBoxFactory(owner()).NftCollection(address(this));
+        return IBoxFactory(owner()).NftCollection(_boxAddress);
     }
 
     /**

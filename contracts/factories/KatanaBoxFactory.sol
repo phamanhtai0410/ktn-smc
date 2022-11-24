@@ -28,6 +28,7 @@ contract KatanaBoxFactory is AccessControl {
     event UpdateBuyableMint(address boxCollection, bool buyable);
     event SetConfiguration(address newConfiguration);
     event SetNftFactory(address newNftFactory);
+    event UpdateNftForBox(address newBoxCollection, address newNftCollection);
 
     bytes32 public constant IMPLEMENTATION_ROLE = keccak256("IMPLEMENTATION_ROLE");
     
@@ -205,6 +206,20 @@ contract KatanaBoxFactory is AccessControl {
         );
     }
     
+    /**
+     *  Function allow Factory to change BoxNFTCreator of one contract BoxMystery.
+     */
+    function setNftForBox(
+        address _boxCollection,
+        address _nftCollection
+    ) external onlyRole(IMPLEMENTATION_ROLE) {
+        boxConfigurations.setNftForBox(_boxCollection, _nftCollection);
+        emit UpdateNftForBox(
+            _boxCollection,
+            _nftCollection
+        );
+    }
+
     /**
      *  @notice Function allows Factory to config one dropRate of a box
      */

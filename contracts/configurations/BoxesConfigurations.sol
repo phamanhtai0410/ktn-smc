@@ -72,6 +72,13 @@ contract BoxesConfigurations is
     }
 
     /**
+    *  @notice Function allows Factory to update NftCollection to Box.
+    */
+    function setNftForBox(address _boxCollection, address _nftCollection) external onlyFromFactory {
+        NFT_COLLECTION[_boxCollection] = _nftCollection;
+    }
+
+    /**
      *  @notice Funtions that allow to config proportions of each elements in box
      *  @param _boxAddress The address of the triggered box
      *  @param _rarity The rarity

@@ -16,6 +16,11 @@ interface IBoxesConfigurations {
     function InsertNewCollectionAddress(address _nftCollection, address _boxContract) external;
 
     /**
+     *  @notice Function allows Factory to update NftCollection to Box.
+     */
+    function setNftForBox(address _boxCollection, address _nftCollection) external;
+
+    /**
      *  @notice Fuction returns the cid of specificed BOX type
      *  @dev Function return for Nft Colleciton contract
      */
