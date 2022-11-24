@@ -36,7 +36,7 @@ module.exports = async function (deployer, network, accounts) {
 
     var _devWallet = process.env.iDevWallet;
     var _iUSDT = process.env.iUSDT;
-
+    var _iNftFactory = process.env.iNftFactory;
     var _nftCollection = "0xa3bd2dc7514da9b3244cc10487b6b12365c66e49";
 
     /**
@@ -45,7 +45,8 @@ module.exports = async function (deployer, network, accounts) {
     await deployer.deploy(
         KatanaBoxFactory,
         "0x0000000000000000000000000000000000000000",
-        "0x0000000000000000000000000000000000000000"
+        "0x0000000000000000000000000000000000000000",
+        _iNftFactory
     );
     var _boxFactory = await KatanaBoxFactory.deployed();
     wf("iBoxfactory", _boxFactory.address);

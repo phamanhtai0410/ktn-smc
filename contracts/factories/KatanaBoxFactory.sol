@@ -10,6 +10,8 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "../MysteryBoxNFT.sol";
 import "../BoxNFTCreator.sol";
 import "../interfaces/IBoxesConfigurations.sol";
+import "../interfaces/INftFactory.sol";
+
 
 contract KatanaBoxFactory is AccessControl {
 
@@ -41,13 +43,17 @@ contract KatanaBoxFactory is AccessControl {
     // This contract config metadata for all collections
     IBoxesConfigurations public boxConfigurations;
 
+    // This contract stores NFT Factory
+    INftFactory public nftFactory;
 
     constructor(
         address _boxCreatorAddress, 
-        IBoxesConfigurations _boxConfig
+        IBoxesConfigurations _boxConfig,
+        INftFactory _nftFactory
     ) {
         boxCreatorAddress = _boxCreatorAddress;
         boxConfigurations = _boxConfig;
+        nftFactory = _nftFactory;
         implementationAddress = address(new MysteryBoxNFT(_boxCreatorAddress, address(_boxConfig)));
 
         _setupRole(IMPLEMENTATION_ROLE, msg.sender);
@@ -72,10 +78,14 @@ contract KatanaBoxFactory is AccessControl {
             _payToken,
             _characterToken
         );
+        
         boxList.add(collection);
 
         // grant role MINTER for new box
-        
+        nftFactory.setNewMinter(
+            _characterToken,
+            collection
+        );
 
          // Add new collection to configuration
         boxConfigurations.InsertNewCollectionAddress(collection);
