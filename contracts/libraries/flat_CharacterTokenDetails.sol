@@ -1,4 +1,9 @@
-// SPDX-License-Identifier: MIT
+
+/** 
+ *  SourceUnit: /Users/phamanhtai/ATOM/katana-inu/ktn-smc/contracts/libraries/CharacterTokenDetails.sol
+*/
+
+////// SPDX-License-Identifier-FLATTEN-SUPPRESS-WARNING: MIT
 pragma solidity ^0.8.0;
 
 library CharacterTokenDetails {

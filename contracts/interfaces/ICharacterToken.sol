@@ -16,17 +16,52 @@ interface ICharacterToken is IERC721Upgradeable {
     ) external;
 
     /**
-     *      @dev Function allow to get current max of nftType
+     *      @dev Function allow to get current max rarity of current NFT collection
      */
-    function getMaxRarityValue(uint8 _nftType) external view returns (uint8);
-
-    /**
-     *      @dev Function allow to get max rarity of current nftType
-     */
-    function getMaxNftType() external view returns(uint8);
+    function getMaxRarityValue() external view returns (uint8);
 
     /**
      *      @dev Function returns tokenDetails by tokenId
      */
     function getTokenDetailsByID(uint256 _tokenId) external view returns(CharacterTokenDetails.TokenDetail memory);
+
+    /**
+     *      @dev Set new max rarity when need to update NFT collection settings
+     */
+    function setNewMaxOfRarity(uint8 _newMaxRarity) external;
+
+    /**
+     *      @dev Function allows ADMIN to add cids for each new rarities
+     */
+    function addCidsForNewRarities(string[] memory _cids) external;
+
+    /**
+     *      @dev Function allows ADMIN to modify cid for existing rarity
+     */
+    function updateCidOfExistingRarity(uint8 _rarity, string memory _cid) external;
+
+    /** Function returns last tokenId at the moment */
+    function lastId() external view returns (uint256);
+
+    /** Mint token with rarities from dev purpose */
+    function mintOrderForDev(
+        CharacterTokenDetails.MintingOrder[] calldata _mintingOrders,
+        address _to,
+        bytes calldata _callbackData
+    ) external;
+
+    /**
+     *      @notice Funtion switch mode of minting
+     */
+    function updateDisableMinting(bool _newState) external;
+
+    /**
+     *      @dev Function allow ADMIN to set free transfer flag
+     */
+    function switchFreeTransferMode() external;
+
+    /**
+     *      @dev Set whitelis
+     */
+    function setWhiteList(address _to) external;
 }

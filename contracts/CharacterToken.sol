@@ -6,14 +6,15 @@ import "@openzeppelin/contracts/utils/math/Math.sol";
 import "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC721/ERC721Upgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
 import "./interfaces/INFTToken.sol";
-import "./interfaces/ICharacterItem.sol";
-import "./interfaces/IDaapNFTCreator.sol";
+import "./interfaces/INftConfigurations.sol";
+import "./interfaces/INftFactory.sol";
 import "./libraries/CharacterTokenDetails.sol";
 
 
@@ -30,7 +31,7 @@ contract CharacterToken is
     using CharacterTokenDetails for CharacterTokenDetails.TokenDetail;
     using CharacterTokenDetails for CharacterTokenDetails.MintingOrder;
     using CharacterTokenDetails for CharacterTokenDetails.ReturnMintingOrder;
-    
+
     event TokenCreated(address to, uint256 tokenId, CharacterTokenDetails.TokenDetail details);
     event BurnToken(uint256[] ids);
     event SetNewMinter(address newMinter);
@@ -42,11 +43,13 @@ contract CharacterToken is
     event UseNFTs(address to, uint256[] usedTokenIds);
     event SetMaxTokensInOneOrder(uint8 maxTokensInOneOrder);
     event SetMaxTokensInOneUsing(uint8 maxTokenInOneUsing);
+    event SetNewMaxRarity(uint8 oldMaxRarity, uint8 newMaxRarity);
     event SetWhiteList(address to);
     event SwitchFreeTransferMode(bool oldMode, bool newMode);
-    event UpgradeExistingNftType(uint8 nftType, uint8 oldMaxRarityValue, uint8 upgradeMaxRarityValue);
+    event UpdateDiableMinting(bool oldState, bool newState);
 
     bytes32 public constant PAUSER_ROLE = keccak256("PAUSER_ROLE");
+    bytes32 public constant OPEN_BOX_ROLE = keccak256("OPEN_BOX_ROLE");
     bytes32 public constant UPGRADER_ROLE = keccak256("UPGRADER_ROLE");
     bytes32 public constant DESIGNER_ROLE = keccak256("DESIGNER_ROLE");
     bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
@@ -59,12 +62,6 @@ contract CharacterToken is
 
     // Maketplace contract address => open for setting when in need
     IERC721 public marketPlace;
-
-    // Character Item allow to generate game item NFT from this NFTs
-    ICharacterItem public item;
-
-    // DaapCreator contract
-    IDaapNFTCreator public daapCreator;
 
     // Counter for tokenID
     Counters.Counter public tokenIdCounter;
@@ -84,17 +81,14 @@ contract CharacterToken is
     // Total Supply
     uint256 public totalSupply;
 
-    // Max value of NFT TYPE
-    uint8 public MAX_NFT_TYPE_VALUE;
-
-    // Mapping nftType to Max Rariry value
-    mapping(uint8 => uint8) public nftItems;
-
     // Mapping address of user and its ability in whitelist or not
     mapping(address => bool) public whiteList;
 
     // Flag Free transfer NFT
     bool public FREE_TRANSFER;
+
+    // Flag: Enable or disable the feature of minting
+    bool public DISABLE_MINTING;
 
     /**
      * @notice Checks if the msg.sender is a contract or a proxy
@@ -106,29 +100,25 @@ contract CharacterToken is
     }
 
     modifier onlyFromDaapCreator() {
-        require(msg.sender == address(daapCreator), "Not be called from Daap Creator");
+        require(msg.sender == getNftCreator(), "Not be called from Daap Creator");
         _;
     }
 
-    constructor (uint8 _maxRarityValue, address _daapCreator) {
-        daapCreator = IDaapNFTCreator(_daapCreator);
-        MAX_TOKENS_IN_ORDER = 10;
-        MAX_TOKENS_IN_USING = 10;
-        MAX_NFT_TYPE_VALUE = 1;
-        nftItems[uint8(1)] = _maxRarityValue;
-        totalSupply = 100000000;
-        whiteList[msg.sender] = true;
-        FREE_TRANSFER = false;
+    constructor () {
     }
 
     /**
      *   Function: Initialized contract
      */
-    function initialize() public initializer {
-        __ERC721_init("KATANA NFT CHARACTER", "KTNC");
+    function initialize(
+        string memory _name,
+        string memory _symbol
+    ) public initializer {
+        __ERC721_init(_name, _symbol);
         __AccessControl_init();
         __Pausable_init();
         __UUPSUpgradeable_init();
+        _transferOwnership(msg.sender);
 
         _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
         _setupRole(PAUSER_ROLE, msg.sender);
@@ -137,6 +127,13 @@ contract CharacterToken is
         _setupRole(MINTER_ROLE, msg.sender);
         _setupRole(OPEN_NFT_ROLE, msg.sender);
         _setupRole(WHITELIST_ROLE, msg.sender);
+
+        MAX_TOKENS_IN_ORDER = 10;
+        MAX_TOKENS_IN_USING = 10;
+        totalSupply = 100000000;
+        whiteList[msg.sender] = true;
+        FREE_TRANSFER = false;
+        DISABLE_MINTING = false;
     }
 
     function onERC721Received(
@@ -147,7 +144,7 @@ contract CharacterToken is
     ) public virtual override returns (bytes4) {
         return this.onERC721Received.selector;
     }
-    
+
     /**
      *      @dev Function allow ADMIN to set user in whitelist
      */
@@ -171,42 +168,14 @@ contract CharacterToken is
     }
 
     /**
-     *  @notice Function allow DESIGNER add new NFT type
+     *      @notice Funtion switch mode of minting
      */
-    function addNewNftType(uint8 _maxNftValue, uint8[] memory _maxRarityValues) external onlyRole(DESIGNER_ROLE) {
-        require(_maxNftValue > MAX_NFT_TYPE_VALUE, "Invalid new max NFT type");
-        require(
-            _maxRarityValues.length + MAX_NFT_TYPE_VALUE == _maxNftValue,
-            "Invalid length of Max Rarity List"
-        );
-        daapCreator.upgradeNewNftType(
-            _maxRarityValues
-        );
-        for (uint8 i=0; i < _maxRarityValues.length; i++) {
-            nftItems[i + MAX_NFT_TYPE_VALUE + 1] = _maxRarityValues[i];
-        }
-        MAX_NFT_TYPE_VALUE = _maxNftValue;
-        emit AddNewNftType(_maxNftValue, _maxRarityValues);
+    function updateDisableMinting(bool _newState) external onlyRole(DESIGNER_ROLE) {
+        bool _oldState = DISABLE_MINTING;
+        DISABLE_MINTING = _newState;
+        emit UpdateDiableMinting(_oldState, _newState);
     }
 
-    /**
-     *  @notice Function allows to upgrade number of rarity of existing nft type
-     */
-    function upgradeExistingNftType(uint8 _existingNftType, uint8 _upgradeMaxRarity) external onlyRole(DESIGNER_ROLE) {
-        require(_existingNftType <= MAX_NFT_TYPE_VALUE, "Invalid nft type");
-        require(_upgradeMaxRarity > nftItems[_existingNftType], "Invalid upgrade new max rarity value");
-        daapCreator.upgradeExisitingNftType(
-            _existingNftType,
-            _upgradeMaxRarity
-        );
-        uint8 oldMaxRarity = nftItems[_existingNftType];
-        nftItems[_existingNftType] = _upgradeMaxRarity;
-        emit UpgradeExistingNftType(_existingNftType, oldMaxRarity, _upgradeMaxRarity);
-    }
-
-    function setDappCreator(address _daapCreator) external  onlyRole(DEFAULT_ADMIN_ROLE) {
-        daapCreator = IDaapNFTCreator(_daapCreator);
-    }
     /**
      *  @notice Function allow ADMIN set new wallet is MINTER
      */
@@ -231,23 +200,6 @@ contract CharacterToken is
         emit SetMaxTokensInOneUsing(_maxTokenInOneUsing);
     }
 
-    /** 
-     *  @notice Sets the character item contract address.
-     */
-    function setItemContract(address contractAddress)
-        external
-        onlyRole(DESIGNER_ROLE)
-    {
-        item = ICharacterItem(contractAddress);
-        emit SetCharacterItem(contractAddress);
-    }
-
-    /** Set marketplace for integrate */
-    function setMarketPlace(address contractAddress) external onlyRole(DESIGNER_ROLE) {
-        marketPlace = IERC721(contractAddress);
-        emit SetMarketplace(contractAddress);
-    }
-    
     function pause() public onlyRole(PAUSER_ROLE) {
         _pause();
     }
@@ -271,7 +223,7 @@ contract CharacterToken is
         return super.supportsInterface(interfaceId);
     }
 
-    /** 
+    /**
      *  @notice Burns a list of Characters.
      */
     function burn(uint256[] memory ids) override external onlyRole(BURNER_ROLE) {
@@ -281,7 +233,7 @@ contract CharacterToken is
         emit BurnToken(ids);
     }
 
-    /** 
+    /**
      *  @notice Gets token details for the specified owner.
      */
     function getTokenDetailsByOwner(address to)
@@ -297,7 +249,7 @@ contract CharacterToken is
         return result;
     }
 
-    /** 
+    /**
      *  @notice Gets token ids for the specified owner.
      */
     function getTokenIdsByOwner(address to)
@@ -310,7 +262,7 @@ contract CharacterToken is
     }
 
     /**
-     *      @notice Function allow to get token details by token ID 
+     *      @notice Function allow to get token details by token ID
      */
     function getTokenDetailsByID(uint256 _tokenId) external  view returns (CharacterTokenDetails.TokenDetail memory) {
         return tokenDetails[_tokenId];
@@ -324,28 +276,14 @@ contract CharacterToken is
     }
 
     /**
-     *  @notice Function get Max NFT type value
-     */
-    function getMaxNftType() external  view returns(uint8) {
-        return MAX_NFT_TYPE_VALUE;
-    }
-
-    /**
-     *  @notice Function return Max Rarity Value of each nftType
-     */
-    function getMaxRarityValue(uint8 _nftType) external  view returns (uint8) {
-        return nftItems[_nftType];
-    }
-
-    /** 
      *  Function mint NFTs order from admin
      */
     function mintOrderForDev(
-        CharacterTokenDetails.MintingOrder[] calldata _mintingOrders,
+        CharacterTokenDetails.MintingOrder[] memory _mintingOrders,
         address _to,
         bytes calldata _callbackData
     ) external onlyRole(MINTER_ROLE) {
-        
+
         CharacterTokenDetails.ReturnMintingOrder[] memory _returnOrder = _mintOneOrder(
             _mintingOrders,
             _to
@@ -358,15 +296,15 @@ contract CharacterToken is
         );
     }
 
-    /** 
+    /**
      *  Function mint NFTs order from daap creator
      */
     function mintOrderFromDaapCreator(
-        CharacterTokenDetails.MintingOrder[] calldata _mintingOrders,
+        CharacterTokenDetails.MintingOrder[] memory _mintingOrders,
         address _to,
         string calldata _callbackData
     ) external onlyFromDaapCreator {
-        
+
         CharacterTokenDetails.ReturnMintingOrder[] memory _returnOrder = _mintOneOrder(
             _mintingOrders,
             _to
@@ -379,12 +317,12 @@ contract CharacterToken is
         );
     }
 
-    /** 
-     *      Function return tokenURI for specific NFT 
+    /**
+     *      Function return tokenURI for specific NFT
      *      @param _tokenId ID of NFT
      *      @return tokenURI of token with ID = _tokenId
      */
-    function tokenURI(uint256 _tokenId) override public view returns (string memory) { 
+    function tokenURI(uint256 _tokenId) override public view returns (string memory) {
         return(tokenDetails[_tokenId].tokenURI);
     }
 
@@ -396,36 +334,16 @@ contract CharacterToken is
         return tokenIdCounter.current();
     }
 
-    function _setTokenUri(uint256 _tokenId, string calldata _cid) internal {
-        tokenDetails[_tokenId].tokenURI = string(abi.encodePacked("https://", _cid, ".ipfs.w3s.link/"));
-    }
-
-    /** Call from CharacterBoxBasket token to open character. */
-    function useNFTs(uint256[] memory _tokenIdsList) external override {
-        require(_tokenIdsList.length > 0, "No token to mint");
-        require(_tokenIdsList.length < MAX_TOKENS_IN_USING, "User doesn't have enough NFT to call useNFTs");
-        uint256[] memory _usedTokenIds = new uint256[](_tokenIdsList.length);
-        for (uint256 i=0; i < _tokenIdsList.length; i++) {
-            require(ownerOf(_tokenIdsList[i]) == msg.sender, "User not owned this token");
-            item.createNewItem(_tokenIdsList[i]);
-            tokenDetails[_tokenIdsList[i]].isUsed = true;
-            _usedTokenIds[i] = _tokenIdsList[i];
-        }
-        emit UseNFTs(msg.sender, _usedTokenIds);
-    }
-
     /**
      *      @notice Function that override "_transfer" function default of ERC721 upgradeable
      *      @dev Check token using or not
-     *      @dev Can not be transfer after using 
+     *      @dev Can not be transfer after using
      */
     function _transfer(
         address from,
         address to,
         uint256 tokenId
     ) internal override {
-        CharacterTokenDetails.TokenDetail storage _tokenDetail = tokenDetails[tokenId];
-        require(_tokenDetail.isUsed == false, "This token already used");
         if (FREE_TRANSFER == false) {
             require(
                 whiteList[to] == true || whiteList[from],
@@ -435,11 +353,25 @@ contract CharacterToken is
         ERC721Upgradeable._transfer(from, to, tokenId);
     }
 
+    function _setTokenUri(
+        uint256 _tokenId,
+        uint256 _rarity,
+        uint256 _meshIndex,
+        uint256 _meshMaterial
+    ) internal {
+        string memory _cid = INftConfigurations(getNftConfigurations()).getCid(
+            _rarity,
+            _meshIndex,
+            _meshMaterial
+        );
+        tokenDetails[_tokenId].tokenURI = string(abi.encodePacked("https://", _cid, ".ipfs.w3s.link/"));
+    }
+
     /**
      *      @notice Internal function allow to mint an order of minting list of NFTs
      */
     function _mintOneOrder(
-        CharacterTokenDetails.MintingOrder[] calldata _mintingOrders,
+        CharacterTokenDetails.MintingOrder[] memory _mintingOrders,
         address _to
     ) internal returns(CharacterTokenDetails.ReturnMintingOrder[] memory) {
         require(_mintingOrders.length > 0, "No token to mint");
@@ -447,15 +379,14 @@ contract CharacterToken is
         require(
             tokenIdCounter.current() + _mintingOrders.length <= getTotalSupply(),
             "Total supply of NFT reached"
-        );  
+        );
 
         for (uint256 i=0; i < _mintingOrders.length; i++) {
             require(
-                _mintingOrders[i].nftType <= MAX_NFT_TYPE_VALUE,
-                "Invalid NFT type"
-            );
-            require(
-                _mintingOrders[i].rarity > 0 && _mintingOrders[i].rarity <= nftItems[_mintingOrders[i].nftType],
+                INftConfigurations(getNftConfigurations()).checkValidMintingAttributes(
+                    address(this),
+                    _mintingOrders[i]
+                ),
                 "Invalid rarity"
             );
         }
@@ -464,44 +395,41 @@ contract CharacterToken is
         for (uint256 i=0; i < _mintingOrders.length; i++) {
             uint256 _tokenId = createToken(
                 _to,
-                _mintingOrders[i].rarity,
-                _mintingOrders[i].cid,
-                _mintingOrders[i].nftType
+                _mintingOrders[i]
             );
             _returnOrder[i] = CharacterTokenDetails.ReturnMintingOrder(
                 _tokenId,
-                _mintingOrders[i].rarity,
-                _mintingOrders[i].cid,
-                _mintingOrders[i].nftType
+                _mintingOrders[i]
             );
         }
         return _returnOrder;
     }
 
-    /** 
-     *  @notice Creates a token
+    /**
+     *  @notice Creates a token only for normal minting action
      */
     function createToken(
         address _to,
-        uint8 _rarity,
-        string calldata _cid,
-        uint8 _nftType
+        CharacterTokenDetails.MintingOrder memory _mintingOrder
     ) internal returns (uint256){
         // Mint NFT for user "_to"
         tokenIdCounter.increment();
         uint256 _id = tokenIdCounter.current();
-        _setTokenUri(_id, _cid);
+        _setTokenUri(
+            _id,
+            _mintingOrder.rarity,
+            _mintingOrder.meshIndex,
+            _mintingOrder.meshMaterial
+        );
         _mint(_to, _id);
-        
+
         // // Save data for "tokenIds"
         // tokenIds[_to].push(_id);
 
         // Save data for "tokenDetails"
         CharacterTokenDetails.TokenDetail memory _tokenDetail;
-        _tokenDetail.rarity = _rarity;
-        _tokenDetail.nftType = _nftType;
+        _tokenDetail.mintingOrder = _mintingOrder;
         _tokenDetail.tokenURI = tokenURI(_id);
-        _tokenDetail.isUsed = false;
         tokenDetails[_id] = _tokenDetail;
 
         emit TokenCreated(_to, _id, _tokenDetail);
@@ -520,7 +448,7 @@ contract CharacterToken is
             // Mint.
         } else {
             // Transfer or burn.
-            
+
             // Pop tokenID out of list of user #"from": tokenIds
             uint256[] storage ids = tokenIds[from];
             uint256 index;
@@ -531,7 +459,7 @@ contract CharacterToken is
                 }
             }
             ids[index] = ids[ids.length - 1];
-            
+
             ids.pop();
         }
         if (to == address(0)) {
@@ -539,18 +467,26 @@ contract CharacterToken is
             delete tokenDetails[id];
         } else {
             // Transfer or mint.
-
-            // Get infos from tokenDetails
-            CharacterTokenDetails.TokenDetail storage _tokenDetail = tokenDetails[id];
-            // Check valid of in used or not after
-            require(_tokenDetail.isUsed == false, "Token already used");
-
             // Push new tokenID into list of user #"to": tokenIds
             uint256[] storage ids = tokenIds[to];
             ids.push(id);
         }
     }
-    
+
+    /**
+     *  @notice Function internal getting the address of NFT creator
+     */
+    function getNftCreator() internal view returns(address) {
+        return INftFactory(owner()).getCurrentDappCreatorAddress();
+    }
+
+    /**
+     *  @notice Function internal returns the address of NftConfigurations
+     */
+    function getNftConfigurations() internal view returns(address) {
+        return INftFactory(owner()).getCurrentNftConfigurations();
+    }
+
     /**
      * @notice Checks if address is a contract
      * @dev It prevents contract from being targetted
