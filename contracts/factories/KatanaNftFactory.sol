@@ -23,7 +23,7 @@ contract KatanaNftFactory is AccessControl {
     event SetConfiguration(address newConfiguration);
     event ConfigOne(address _nftCollection, uint256 _rarity, uint256 _meshIndex, uint256 _price, uint256 _meshMaterial, string _cid);
     event ConfigMesh(address _nftCollection, uint256 _rarity, uint256 _meshIndex, uint256 _price);
-
+    event UpdateTreasuryAddress(address oldAddress, address newOne);
     event SetNewMinterRole(address nftCollection, address newMinter);
 
     bytes32 public constant IMPLEMENTATION_ROLE = keccak256("IMPLEMENTATION_ROLE");
@@ -40,13 +40,29 @@ contract KatanaNftFactory is AccessControl {
     // implementAddress
     address public implementationAddress;
 
-    constructor(INftConfigurations _nftConfigurations) {
+    // Royalty treasury Wallet Address
+    /**
+     * @notice `treasuryAddress` will be one private wallet of system that used for `RoyaltyControler` - the one can manage the withdraw action from admin
+     */
+    address public treasuryAddress;
+
+
+    constructor(INftConfigurations _nftConfigurations, address _treasuryAddress) {
         nftConfigurations = _nftConfigurations;
 
         implementationAddress = address(new CharacterToken());
 
+        treasuryAddress = _treasuryAddress;
+
         _setupRole(IMPLEMENTATION_ROLE, msg.sender);
         _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
+    }
+
+    function updateTreasuryAddress(address _newTreasuryAddress) external onlyRole(IMPLEMENTATION_ROLE) {
+        require(treasuryAddress != _newTreasuryAddress, "NftFactory - updateTreasuryAddress: the-new-address-must-be-different");
+        address oldOne = treasuryAddress;
+        treasuryAddress = _newTreasuryAddress;
+        emit UpdateTreasuryAddress(oldOne, _newTreasuryAddress);
     }
 
     /*
@@ -65,7 +81,8 @@ contract KatanaNftFactory is AccessControl {
     */
     function createNftCollection(
         string memory _name,
-        string memory _symbol
+        string memory _symbol,
+        uint96 _royaltyRate
     ) external onlyRole(IMPLEMENTATION_ROLE) {
 
         address collection = Clones.clone(implementationAddress);
@@ -75,6 +92,9 @@ contract KatanaNftFactory is AccessControl {
             _name,
             _symbol
         );
+
+        // Call to config the default royalty fee rate
+        CharacterToken(collection).configRoyalty(treasuryAddress, _royaltyRate);
 
         // Add new collection to configuration
         nftConfigurations.InsertNewCollectionAddress(collection);

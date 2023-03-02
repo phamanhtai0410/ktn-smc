@@ -9,6 +9,7 @@ import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
+import "@openzeppelin/contracts-upgradeable/token/ERC721/extensions/ERC721RoyaltyUpgradeable.sol";
 import "./libraries/BoxNFTDetails.sol";
 import "./libraries/CharacterTokenDetails.sol";
 import "./Utils.sol";
@@ -24,7 +25,8 @@ contract MysteryBoxNFT is
     AccessControlUpgradeable,
     UUPSUpgradeable,
     OwnableUpgradeable,
-    IERC721Receiver
+    IERC721Receiver,
+    ERC721RoyaltyUpgradeable
     {
     using BoxNFTDetails for BoxNFTDetails.BoxNFTDetail;
     using Counters for Counters.Counter;
@@ -135,10 +137,22 @@ contract MysteryBoxNFT is
     function supportsInterface(bytes4 interfaceId)
         public
         view
-        override(ERC721Upgradeable, AccessControlUpgradeable)
+        override(
+            ERC721Upgradeable,
+            AccessControlUpgradeable,
+            ERC721RoyaltyUpgradeable
+        )
         returns (bool)
     {
         return super.supportsInterface(interfaceId);
+    }
+
+    function _burn(uint256 tokenId) internal override(
+        ERC721Upgradeable,
+        ERC721RoyaltyUpgradeable
+    ) {
+        super._burn(tokenId);
+        _resetTokenRoyalty(tokenId);
     }
 
     function withdraw() external onlyRole(DEFAULT_ADMIN_ROLE) {
@@ -157,6 +171,12 @@ contract MysteryBoxNFT is
         boxLimit = boxLimit_;
     }
 
+    /**
+     * @dev Function allows ADMIN ROLE to config the default royalty fee
+     */
+    function configRoyalty(address _wallet, uint96 _rate) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        super._setDefaultRoyalty(_wallet, _rate);
+    }
 
     function _setTokenUri(
         uint256 _tokenId
@@ -331,7 +351,6 @@ contract MysteryBoxNFT is
             _safeMint(to, id);
             emit TokenCreated(to, id, boxDetail);
         }
-        
     }
 
     function _mintOneOrder(
@@ -357,7 +376,6 @@ contract MysteryBoxNFT is
                 _to,
                 tokenURI(id)
             );
-            
             emit TokenCreated(_to, id, boxDetail);
         }
         return _returnOrder;
@@ -469,7 +487,6 @@ contract MysteryBoxNFT is
                 }
                 seed = uint256(blockhash(targetBlock));
             }
-
             // Execute minting action to NFT contract
             executeOneBoxOpening(
                 to,
@@ -477,7 +494,6 @@ contract MysteryBoxNFT is
                 index,
                 seed
             );
-
             requests.pop();
         }
         emit ProcessBoxOpeningRequests(to);

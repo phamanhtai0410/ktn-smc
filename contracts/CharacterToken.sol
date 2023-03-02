@@ -9,6 +9,7 @@ import "@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC721/ERC721Upgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/token/ERC721/extensions/ERC721RoyaltyUpgradeable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
@@ -21,6 +22,7 @@ import "./libraries/CharacterTokenDetails.sol";
 contract CharacterToken is
     ERC721Upgradeable,
     IERC721Receiver,
+    ERC721RoyaltyUpgradeable,
     AccessControlUpgradeable,
     PausableUpgradeable,
     UUPSUpgradeable,
@@ -200,6 +202,13 @@ contract CharacterToken is
         emit SetMaxTokensInOneUsing(_maxTokenInOneUsing);
     }
 
+    /**
+     * @dev Function allows ADMIN ROLE to config the default royalty fee
+     */
+    function configRoyalty(address _wallet, uint96 _rate) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        super._setDefaultRoyalty(_wallet, _rate);
+    }
+
     function pause() public onlyRole(PAUSER_ROLE) {
         _pause();
     }
@@ -217,10 +226,22 @@ contract CharacterToken is
     function supportsInterface(bytes4 interfaceId)
         public
         view
-        override(ERC721Upgradeable, AccessControlUpgradeable)
+        override(
+            ERC721Upgradeable,
+            AccessControlUpgradeable,
+            ERC721RoyaltyUpgradeable
+        )
         returns (bool)
     {
         return super.supportsInterface(interfaceId);
+    }
+
+    function _burn(uint256 tokenId) internal override(
+        ERC721Upgradeable,
+        ERC721RoyaltyUpgradeable
+    ) {
+        super._burn(tokenId);
+        _resetTokenRoyalty(tokenId);
     }
 
     /**
@@ -316,6 +337,10 @@ contract CharacterToken is
             _returnOrder
         );
     }
+
+    /**
+     * Function mint NFTs order by
+     */
 
     /**
      *      Function return tokenURI for specific NFT

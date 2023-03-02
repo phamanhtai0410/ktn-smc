@@ -220,6 +220,15 @@ contract DaapNFTCreator is
         emit MakingMintingAction(_mintingInfos, _discount, msg.sender);
     }
 
+    // function whitelistMint(
+    //     ICharacterToken _nftCollection,
+    //     CharacterTokenDetails.MintingOrder[] calldata _mintingInfos,
+    //     uint256 _discount,
+    //     Proof memory _proof,
+    //     string memory _callbackData
+    // ) external {
+    // }
+
     /**
      * @notice Checks if address is a contract
      * @dev It prevents contract from being targetted
