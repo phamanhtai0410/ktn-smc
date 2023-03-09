@@ -30,6 +30,7 @@ contract KatanaBoxFactory is AccessControl {
     event SetNftFactory(address newNftFactory);
     event UpdateNftForBox(address newBoxCollection, address newNftCollection);
     event UpdateTreasuryAddress(address oldAddress, address newOne);
+    event ConfigNewTotalSupply(address _collection, uint256 _newTotal);
 
     bytes32 public constant IMPLEMENTATION_ROLE = keccak256("IMPLEMENTATION_ROLE");
     
@@ -58,8 +59,7 @@ contract KatanaBoxFactory is AccessControl {
     constructor(
         address _boxCreatorAddress, 
         IBoxesConfigurations _boxConfig,
-        INftFactory _nftFactory,
-        address _treasuryAddress
+        INftFactory _nftFactory
     ) {
         boxCreatorAddress = _boxCreatorAddress;
         boxConfigurations = _boxConfig;
@@ -67,17 +67,8 @@ contract KatanaBoxFactory is AccessControl {
 
         implementationAddress = address(new MysteryBoxNFT());
 
-        treasuryAddress = _treasuryAddress;
-
         _setupRole(IMPLEMENTATION_ROLE, msg.sender);
         _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
-    }
-
-    function updateTreasuryAddress(address _newTreasuryAddress) external onlyRole(IMPLEMENTATION_ROLE) {
-        require(treasuryAddress != _newTreasuryAddress, "BoxFactory - updateTreasuryAddress: the-new-address-must-be-different");
-        address oldOne = treasuryAddress;
-        treasuryAddress = _newTreasuryAddress;
-        emit UpdateTreasuryAddress(oldOne, _newTreasuryAddress);
     }
 
     /*
@@ -87,7 +78,9 @@ contract KatanaBoxFactory is AccessControl {
         string memory _name,
         string memory _symbol,
         IERC20 _payToken,
+        uint256 _totalSupply,
         ICharacterToken _characterToken,
+        address _treasuryAddress,
         uint96 _royaltyRate
     ) external onlyRole(IMPLEMENTATION_ROLE) {
         address collection = Clones.clone(implementationAddress);
@@ -96,11 +89,12 @@ contract KatanaBoxFactory is AccessControl {
         MysteryBoxNFT(collection).initialize(
             _name,
             _symbol,
-            _payToken
+            _payToken,
+            _totalSupply
         );
 
         // Call to config the default royalty fee rate
-        MysteryBoxNFT(collection).configRoyalty(treasuryAddress, _royaltyRate);
+        MysteryBoxNFT(collection).configRoyalty(_treasuryAddress, _royaltyRate);
 
         boxList.add(collection);
 
@@ -120,6 +114,16 @@ contract KatanaBoxFactory is AccessControl {
             address(collection),
             boxCreatorAddress
         );
+    }
+
+    /**
+     * Function alows IMPLEMENTATION to config new totalSupply
+     * @param _collection The address of the NFT collection that wants to config
+     * @param _newTotal The new total value
+     */
+    function configNewTotalSupply(address _collection, uint256 _newTotal) external onlyRole(IMPLEMENTATION_ROLE) {
+        MysteryBoxNFT(_collection).setTotalBox(_newTotal);
+        emit ConfigNewTotalSupply(_collection, _newTotal);
     }
 
     function supportsInterface(bytes4 interfaceId) public view override(AccessControl) returns (bool) {

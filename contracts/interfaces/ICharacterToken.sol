@@ -11,6 +11,7 @@ interface ICharacterToken is IERC721Upgradeable {
      */
     function mintOrderFromDaapCreator(
         CharacterTokenDetails.MintingOrder[] calldata _mintingOrders,
+        bool _isWhitelistMint,
         address _to,
         string calldata _callbackData
     ) external;

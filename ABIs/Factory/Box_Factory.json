@@ -26,6 +26,25 @@
             {
                 "indexed": false,
                 "internalType": "address",
+                "name": "_collection",
+                "type": "address"
+            },
+            {
+                "indexed": false,
+                "internalType": "uint256",
+                "name": "_newTotal",
+                "type": "uint256"
+            }
+        ],
+        "name": "ConfigNewTotalSupply",
+        "type": "event"
+    },
+    {
+        "anonymous": false,
+        "inputs": [
+            {
+                "indexed": false,
+                "internalType": "address",
                 "name": "boxAddress",
                 "type": "address"
             },
@@ -260,6 +279,44 @@
         "type": "event"
     },
     {
+        "anonymous": false,
+        "inputs": [
+            {
+                "indexed": false,
+                "internalType": "address",
+                "name": "newBoxCollection",
+                "type": "address"
+            },
+            {
+                "indexed": false,
+                "internalType": "address",
+                "name": "newNftCollection",
+                "type": "address"
+            }
+        ],
+        "name": "UpdateNftForBox",
+        "type": "event"
+    },
+    {
+        "anonymous": false,
+        "inputs": [
+            {
+                "indexed": false,
+                "internalType": "address",
+                "name": "oldAddress",
+                "type": "address"
+            },
+            {
+                "indexed": false,
+                "internalType": "address",
+                "name": "newOne",
+                "type": "address"
+            }
+        ],
+        "name": "UpdateTreasuryAddress",
+        "type": "event"
+    },
+    {
         "inputs": [],
         "name": "DEFAULT_ADMIN_ROLE",
         "outputs": [
@@ -270,7 +327,8 @@
             }
         ],
         "stateMutability": "view",
-        "type": "function"
+        "type": "function",
+        "constant": true
     },
     {
         "inputs": [],
@@ -283,20 +341,8 @@
             }
         ],
         "stateMutability": "view",
-        "type": "function"
-    },
-    {
-        "inputs": [],
-        "name": "NftCollection",
-        "outputs": [
-            {
-                "internalType": "address",
-                "name": "",
-                "type": "address"
-            }
-        ],
-        "stateMutability": "view",
-        "type": "function"
+        "type": "function",
+        "constant": true
     },
     {
         "inputs": [],
@@ -309,7 +355,8 @@
             }
         ],
         "stateMutability": "view",
-        "type": "function"
+        "type": "function",
+        "constant": true
     },
     {
         "inputs": [],
@@ -322,178 +369,8 @@
             }
         ],
         "stateMutability": "view",
-        "type": "function"
-    },
-    {
-        "inputs": [
-            {
-                "internalType": "address",
-                "name": "_boxAddress",
-                "type": "address"
-            },
-            {
-                "internalType": "uint256",
-                "name": "_rarity",
-                "type": "uint256"
-            },
-            {
-                "internalType": "uint256",
-                "name": "_meshIndex",
-                "type": "uint256"
-            },
-            {
-                "internalType": "uint256",
-                "name": "_meshMaterial",
-                "type": "uint256"
-            },
-            {
-                "internalType": "uint256",
-                "name": "_proportion",
-                "type": "uint256"
-            }
-        ],
-        "name": "configDropRate",
-        "outputs": [],
-        "stateMutability": "nonpayable",
-        "type": "function"
-    },
-    {
-        "inputs": [
-            {
-                "internalType": "contract IMysteryBoxNFT",
-                "name": "_boxAddress",
-                "type": "address"
-            },
-            {
-                "internalType": "string",
-                "name": "_cid",
-                "type": "string"
-            },
-            {
-                "internalType": "uint256",
-                "name": "_price",
-                "type": "uint256"
-            },
-            {
-                "internalType": "uint256",
-                "name": "_defaultIndex",
-                "type": "uint256"
-            }
-        ],
-        "name": "configOne",
-        "outputs": [],
-        "stateMutability": "nonpayable",
-        "type": "function"
-    },
-    {
-        "inputs": [
-            {
-                "internalType": "string",
-                "name": "_name",
-                "type": "string"
-            },
-            {
-                "internalType": "string",
-                "name": "_symbol",
-                "type": "string"
-            },
-            {
-                "internalType": "contract IERC20",
-                "name": "_payToken",
-                "type": "address"
-            }
-        ],
-        "name": "createBoxMystery",
-        "outputs": [],
-        "stateMutability": "nonpayable",
-        "type": "function"
-    },
-    {
-        "inputs": [
-            {
-                "internalType": "uint256",
-                "name": "_index",
-                "type": "uint256"
-            }
-        ],
-        "name": "getBoxAddresAt",
-        "outputs": [
-            {
-                "internalType": "address",
-                "name": "",
-                "type": "address"
-            }
-        ],
-        "stateMutability": "view",
-        "type": "function"
-    },
-    {
-        "inputs": [],
-        "name": "getBoxCreator",
-        "outputs": [
-            {
-                "internalType": "address",
-                "name": "",
-                "type": "address"
-            }
-        ],
-        "stateMutability": "view",
-        "type": "function"
-    },
-    {
-        "inputs": [
-            {
-                "internalType": "address",
-                "name": "_boxAddress",
-                "type": "address"
-            }
-        ],
-        "name": "getBoxInfos",
-        "outputs": [
-            {
-                "internalType": "string",
-                "name": "",
-                "type": "string"
-            },
-            {
-                "internalType": "uint256",
-                "name": "",
-                "type": "uint256"
-            },
-            {
-                "internalType": "uint256",
-                "name": "",
-                "type": "uint256"
-            }
-        ],
-        "stateMutability": "view",
-        "type": "function"
-    },
-    {
-        "inputs": [],
-        "name": "getBoxesConfigurations",
-        "outputs": [
-            {
-                "internalType": "address",
-                "name": "",
-                "type": "address"
-            }
-        ],
-        "stateMutability": "view",
-        "type": "function"
-    },
-    {
-        "inputs": [],
-        "name": "getCurrentDappCreatorAddress",
-        "outputs": [
-            {
-                "internalType": "address",
-                "name": "",
-                "type": "address"
-            }
-        ],
-        "stateMutability": "view",
-        "type": "function"
+        "type": "function",
+        "constant": true
     },
     {
         "inputs": [
@@ -512,7 +389,8 @@
             }
         ],
         "stateMutability": "view",
-        "type": "function"
+        "type": "function",
+        "constant": true
     },
     {
         "inputs": [
@@ -554,7 +432,8 @@
             }
         ],
         "stateMutability": "view",
-        "type": "function"
+        "type": "function",
+        "constant": true
     },
     {
         "inputs": [],
@@ -567,26 +446,8 @@
             }
         ],
         "stateMutability": "view",
-        "type": "function"
-    },
-    {
-        "inputs": [
-            {
-                "internalType": "address",
-                "name": "_boxAddress",
-                "type": "address"
-            }
-        ],
-        "name": "isValidBoxAddress",
-        "outputs": [
-            {
-                "internalType": "bool",
-                "name": "",
-                "type": "bool"
-            }
-        ],
-        "stateMutability": "view",
-        "type": "function"
+        "type": "function",
+        "constant": true
     },
     {
         "inputs": [],
@@ -599,7 +460,8 @@
             }
         ],
         "stateMutability": "view",
-        "type": "function"
+        "type": "function",
+        "constant": true
     },
     {
         "inputs": [
@@ -638,6 +500,246 @@
         "type": "function"
     },
     {
+        "inputs": [],
+        "name": "treasuryAddress",
+        "outputs": [
+            {
+                "internalType": "address",
+                "name": "",
+                "type": "address"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function",
+        "constant": true
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "string",
+                "name": "_name",
+                "type": "string"
+            },
+            {
+                "internalType": "string",
+                "name": "_symbol",
+                "type": "string"
+            },
+            {
+                "internalType": "contract IERC20",
+                "name": "_payToken",
+                "type": "address"
+            },
+            {
+                "internalType": "uint256",
+                "name": "_totalSupply",
+                "type": "uint256"
+            },
+            {
+                "internalType": "contract ICharacterToken",
+                "name": "_characterToken",
+                "type": "address"
+            },
+            {
+                "internalType": "address",
+                "name": "_treasuryAddress",
+                "type": "address"
+            },
+            {
+                "internalType": "uint96",
+                "name": "_royaltyRate",
+                "type": "uint96"
+            }
+        ],
+        "name": "createBoxMystery",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "address",
+                "name": "_collection",
+                "type": "address"
+            },
+            {
+                "internalType": "uint256",
+                "name": "_newTotal",
+                "type": "uint256"
+            }
+        ],
+        "name": "configNewTotalSupply",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "bytes4",
+                "name": "interfaceId",
+                "type": "bytes4"
+            }
+        ],
+        "name": "supportsInterface",
+        "outputs": [
+            {
+                "internalType": "bool",
+                "name": "",
+                "type": "bool"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function",
+        "constant": true
+    },
+    {
+        "inputs": [],
+        "name": "getCurrentDappCreatorAddress",
+        "outputs": [
+            {
+                "internalType": "address",
+                "name": "",
+                "type": "address"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function",
+        "constant": true
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "address",
+                "name": "_boxAddress",
+                "type": "address"
+            }
+        ],
+        "name": "isValidBoxAddress",
+        "outputs": [
+            {
+                "internalType": "bool",
+                "name": "",
+                "type": "bool"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function",
+        "constant": true
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "address",
+                "name": "_boxAddress",
+                "type": "address"
+            }
+        ],
+        "name": "getBoxInfos",
+        "outputs": [
+            {
+                "internalType": "string",
+                "name": "",
+                "type": "string"
+            },
+            {
+                "internalType": "uint256",
+                "name": "",
+                "type": "uint256"
+            },
+            {
+                "internalType": "uint256",
+                "name": "",
+                "type": "uint256"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function",
+        "constant": true
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "uint256",
+                "name": "_index",
+                "type": "uint256"
+            }
+        ],
+        "name": "getBoxAddresAt",
+        "outputs": [
+            {
+                "internalType": "address",
+                "name": "",
+                "type": "address"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function",
+        "constant": true
+    },
+    {
+        "inputs": [],
+        "name": "getBoxesConfigurations",
+        "outputs": [
+            {
+                "internalType": "address",
+                "name": "",
+                "type": "address"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function",
+        "constant": true
+    },
+    {
+        "inputs": [],
+        "name": "getBoxCreator",
+        "outputs": [
+            {
+                "internalType": "address",
+                "name": "",
+                "type": "address"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function",
+        "constant": true
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "address",
+                "name": "_boxAddress",
+                "type": "address"
+            }
+        ],
+        "name": "NftCollection",
+        "outputs": [
+            {
+                "internalType": "address",
+                "name": "",
+                "type": "address"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function",
+        "constant": true
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "address",
+                "name": "_boxCreatorAddress",
+                "type": "address"
+            }
+        ],
+        "name": "setDappCreatorAddress",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
         "inputs": [
             {
                 "internalType": "contract IBoxesConfigurations",
@@ -653,12 +755,12 @@
     {
         "inputs": [
             {
-                "internalType": "address",
-                "name": "_boxCreatorAddress",
+                "internalType": "contract INftFactory",
+                "name": "_nftFactory",
                 "type": "address"
             }
         ],
-        "name": "setDappCreatorAddress",
+        "name": "setNftFactory",
         "outputs": [],
         "stateMutability": "nonpayable",
         "type": "function"
@@ -684,12 +786,27 @@
     {
         "inputs": [
             {
-                "internalType": "contract INftFactory",
-                "name": "_nftFactory",
+                "internalType": "contract IMysteryBoxNFT",
+                "name": "_boxAddress",
                 "type": "address"
+            },
+            {
+                "internalType": "string",
+                "name": "_cid",
+                "type": "string"
+            },
+            {
+                "internalType": "uint256",
+                "name": "_price",
+                "type": "uint256"
+            },
+            {
+                "internalType": "uint256",
+                "name": "_defaultIndex",
+                "type": "uint256"
             }
         ],
-        "name": "setNftFactory",
+        "name": "configOne",
         "outputs": [],
         "stateMutability": "nonpayable",
         "type": "function"
@@ -697,20 +814,52 @@
     {
         "inputs": [
             {
-                "internalType": "bytes4",
-                "name": "interfaceId",
-                "type": "bytes4"
-            }
-        ],
-        "name": "supportsInterface",
-        "outputs": [
+                "internalType": "address",
+                "name": "_boxCollection",
+                "type": "address"
+            },
             {
-                "internalType": "bool",
-                "name": "",
-                "type": "bool"
+                "internalType": "address",
+                "name": "_nftCollection",
+                "type": "address"
             }
         ],
-        "stateMutability": "view",
+        "name": "setNftForBox",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "address",
+                "name": "_boxAddress",
+                "type": "address"
+            },
+            {
+                "internalType": "uint256",
+                "name": "_rarity",
+                "type": "uint256"
+            },
+            {
+                "internalType": "uint256",
+                "name": "_meshIndex",
+                "type": "uint256"
+            },
+            {
+                "internalType": "uint256",
+                "name": "_meshMaterial",
+                "type": "uint256"
+            },
+            {
+                "internalType": "uint256",
+                "name": "_proportion",
+                "type": "uint256"
+            }
+        ],
+        "name": "configDropRate",
+        "outputs": [],
+        "stateMutability": "nonpayable",
         "type": "function"
     },
     {

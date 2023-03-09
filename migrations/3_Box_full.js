@@ -21,13 +21,26 @@ var KatanaBoxFactory = artifacts.require("KatanaBoxFactory");
 var NftConfigurations = artifacts.require("NftConfigurations");
 var BoxesConfigurations = artifacts.require("BoxesConfigurations");
 
-var KTN = artifacts.require("KTN");
+var USDT = artifacts.require("USDT");
 
 function wf(name, address) {
     fs.appendFileSync('address.txt', name + "=" + address);
     fs.appendFileSync('address.txt', "\r\n");
 }
 
+const deployments = {
+    factory: false,
+    dapp: false,
+    config: false,
+    reconfig_config_to_factory: false,
+    init_config_to_creator: false,
+    config_creator_to_factory: false,
+    init_config: false,
+    set_implement_role_of_nft_for_box: false,
+    create_new: false,
+    factory_config: true,
+    factory_config_drop_rate: true
+}
 
 module.exports = async function (deployer, network, accounts) {
     let account = deployer.options?.from || accounts[0];
@@ -36,84 +49,123 @@ module.exports = async function (deployer, network, accounts) {
 
     var _devWallet = process.env.iDevWallet;
     var _iUSDT = process.env.iUSDT;
-    var _iNftFactory = process.env.iNftFactory;
-    var _nftCollection = "0xa3bd2dc7514da9b3244cc10487b6b12365c66e49";
+
+    var _iNftFactory = process.env.KatanaNftFactory;
+    var _nftCollection = "0x47bA270646c6D0FDA28f8599D9b95d0be8093C17";
+    var _treasuryAddress = "0xF06d7139cD8708de3e9cB2E732A8A158039ebd44";
 
     /**
      *      1. Deploy Factory
      */
-    await deployer.deploy(
-        KatanaBoxFactory,
-        "0x0000000000000000000000000000000000000000",
-        "0x0000000000000000000000000000000000000000",
-        _iNftFactory
-    );
-    var _boxFactory = await KatanaBoxFactory.deployed();
-    wf("iBoxfactory", _boxFactory.address);
+    if (deployments.factory) {
+        await deployer.deploy(
+            KatanaBoxFactory,
+            "0x0000000000000000000000000000000000000000",
+            "0x0000000000000000000000000000000000000000",
+            _iNftFactory
+        );
+        var _boxFactory = await KatanaBoxFactory.deployed();
+        wf("KatanaBoxFactory", _boxFactory.address);
+    } else {
+        var _boxFactory = await KatanaBoxFactory.at(process.env.KatanaBoxFactory);
+    }
 
+    console.log("Box Factory ", _boxFactory.address);
+    
     /**
      *      2. Deploy Box Creator
      */
-    await deployer.deploy(
-        BoxNFTCreator,
-        _devWallet,
-        _iUSDT
-    );
-    var _boxCreator = await BoxNFTCreator.deployed();
-    wf("iBoxCreator", _boxCreator.address);
+    if (deployments.dapp) {
+        await deployer.deploy(
+            BoxNFTCreator,
+            _devWallet,
+            _iUSDT
+        );
+        var _boxCreator = await BoxNFTCreator.deployed();
+        wf("BoxNFTCreator", _boxCreator.address);
+    } else {
+        var _boxCreator = await BoxNFTCreator.at(process.env.BoxNFTCreator);
+    }
+    
 
     /**
      *      3. Deploy Box Configurations
      */
-    await deployer.deploy(
-        BoxesConfigurations,
-        _boxFactory.address,
-        _nftCollection,
-        _boxCreator.address
-    );
-    var _boxConfig = await BoxesConfigurations.deployed();
-    wf('iBoxConfig', _boxConfig.address);
+    if (deployments.config) {
+        await deployer.deploy(
+            BoxesConfigurations,
+            _boxFactory.address,
+            _boxCreator.address
+        );
+        var _boxConfig = await BoxesConfigurations.deployed();
+        wf('BoxesConfigurations', _boxConfig.address);
+    } else {
+        var _boxConfig = await BoxesConfigurations.at(process.env.BoxesConfigurations);
+    }
+    
+    
 
     /**
      *      4. Initialize BoxConfigurations
      */
-    await _boxConfig.initialize();
-
+    if (deployments.init_config) {
+        await _boxConfig.initialize();
+    }
+    
     /**
      *      5. Re-config box Configutaion for Box Factory
      */
-    await _boxFactory.setConfiguration(
-        _boxConfig.addresss
-    );
+    if (deployments.reconfig_config_to_factory) {
+        console.log("Box Config ", _boxConfig.address);
+        await _boxFactory.setConfiguration(
+            _boxConfig.address
+        );
+    }
     
     /**
      *      6. Initialize Box Creator
      */
-    await _boxCreator.initialize(
-        _boxConfig.address
-    );
+    if (deployments.init_config_to_creator) {
+        await _boxCreator.initialize(
+            _boxConfig.address
+        );    
+    }
 
     /**
      *      7. Re-config boxCreator for Factory
      */
-    await _boxFactory.setDappCreatorAddress(
-        _boxCreator.address
-    );
-
+    if (deployments.config_creator_to_factory) {
+        await _boxFactory.setDappCreatorAddress(
+            _boxCreator.address
+        );
+    }
+        
     /**
      *      7*. Set IMPLEMENTATION ROLE for Box factory in NFT factory
      */
-    
+    if (deployments.set_implement_role_of_nft_for_box) {
+        var iNftFactory = await KatanaNftFactory.at(process.env.KatanaNftFactory);
+        await iNftFactory.grantRole(
+            "0x8f257e937a449d287051f1249e0edc3b5d08b547aa4f08807b9ce2a406bcf60f", // IMPLEMENTATION_ROLE
+            _boxFactory.address
+        );
+    }
 
     /**
      *      8. Create new Box
      */
-    await _boxFactory.createBoxMystery(
-        "Mystery Box",
-        "MB",
-        _iUSDT
-    );
-
+    if (deployments.create_new) {
+        await _boxFactory.createBoxMystery(
+            "Mystery Box",
+            "MB",
+            _iUSDT,
+            10000,
+            _nftCollection,
+            _treasuryAddress, // Katana-treasury-2
+            2000
+        );    
+    }
+    
     /**
      *      9. Get address of box
      */
@@ -123,23 +175,27 @@ module.exports = async function (deployer, network, accounts) {
     /**
      *      10. Config Box Infos
      */
-    var _cid = "bafkreigf2an35kovmnt26xs5w7kyb6hggywkincigtkprnm4ofqezozubm";
-    var _price = 20 * 10 ** 18;
-    await _boxFactory.configOne(
-        _boxAddress,
-        _cid,
-        _price,
-        0
-    );
+    if (deployments.factory_config) {
+        var _cid = "bafkreigf2an35kovmnt26xs5w7kyb6hggywkincigtkprnm4ofqezozubm";
+        var _price = (20 * 10 ** 18).toString();
+        await _boxFactory.configOne(
+            _boxAddress,
+            _cid,
+            _price,
+            0
+        );
+    }
 
     /**
      *      11. Config Droprate
      */
-    await _boxFactory.configDropRate(
-        _boxAddress,
-        0,
-        0,
-        0,
-        20
-    );
+    if (deployments.factory_config_drop_rate) {
+        await _boxFactory.configDropRate(
+            _boxAddress,
+            0,
+            0,
+            0,
+            20
+        );
+    }
 }

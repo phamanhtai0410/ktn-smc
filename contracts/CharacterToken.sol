@@ -49,6 +49,7 @@ contract CharacterToken is
     event SetWhiteList(address to);
     event SwitchFreeTransferMode(bool oldMode, bool newMode);
     event UpdateDiableMinting(bool oldState, bool newState);
+    event NewTotalSupply(uint256 oldTotal, uint256 newTotal);
 
     bytes32 public constant PAUSER_ROLE = keccak256("PAUSER_ROLE");
     bytes32 public constant OPEN_BOX_ROLE = keccak256("OPEN_BOX_ROLE");
@@ -92,6 +93,9 @@ contract CharacterToken is
     // Flag: Enable or disable the feature of minting
     bool public DISABLE_MINTING;
 
+    // Blacklist for Whitelist Minting
+    mapping(address => bool) public blackList;
+
     /**
      * @notice Checks if the msg.sender is a contract or a proxy
      */
@@ -114,7 +118,8 @@ contract CharacterToken is
      */
     function initialize(
         string memory _name,
-        string memory _symbol
+        string memory _symbol,
+        uint256 _totalSupply
     ) public initializer {
         __ERC721_init(_name, _symbol);
         __AccessControl_init();
@@ -132,7 +137,7 @@ contract CharacterToken is
 
         MAX_TOKENS_IN_ORDER = 10;
         MAX_TOKENS_IN_USING = 10;
-        totalSupply = 100000000;
+        totalSupply = _totalSupply;
         whiteList[msg.sender] = true;
         FREE_TRANSFER = false;
         DISABLE_MINTING = false;
@@ -167,6 +172,17 @@ contract CharacterToken is
         }
         bool newMode = FREE_TRANSFER;
         emit SwitchFreeTransferMode(oldMode, newMode);
+    }
+
+    /**
+     * Function allow DESIGNER to re-config the total supply of colleciton
+     * @param _newTotalSupply new value to reconfig
+     */
+    function setTotalSupply(uint256 _newTotalSupply) external onlyRole(DESIGNER_ROLE) {
+        require(_newTotalSupply != totalSupply, "new-supply-muste-be-different");
+        uint256 oldTotal = totalSupply;
+        totalSupply = _newTotalSupply;
+        emit NewTotalSupply(oldTotal, _newTotalSupply);
     }
 
     /**
@@ -322,14 +338,21 @@ contract CharacterToken is
      */
     function mintOrderFromDaapCreator(
         CharacterTokenDetails.MintingOrder[] memory _mintingOrders,
+        bool _isWhitelistMint,
         address _to,
         string calldata _callbackData
     ) external onlyFromDaapCreator {
-
+        if (_isWhitelistMint) {
+            require(!blackList[_to], "Whitelist slot's already used");
+        } 
         CharacterTokenDetails.ReturnMintingOrder[] memory _returnOrder = _mintOneOrder(
             _mintingOrders,
             _to
         );
+
+        if (_isWhitelistMint) {
+            blackList[_to] = true;
+        }
 
         emit MintOrderFromDaapCreator(
             _callbackData,
@@ -357,25 +380,6 @@ contract CharacterToken is
      */
     function lastId() public view returns (uint256) {
         return tokenIdCounter.current();
-    }
-
-    /**
-     *      @notice Function that override "_transfer" function default of ERC721 upgradeable
-     *      @dev Check token using or not
-     *      @dev Can not be transfer after using
-     */
-    function _transfer(
-        address from,
-        address to,
-        uint256 tokenId
-    ) internal override {
-        if (FREE_TRANSFER == false) {
-            require(
-                whiteList[to] == true || whiteList[from],
-                "Not support to transfer directly"
-            );
-        }
-        ERC721Upgradeable._transfer(from, to, tokenId);
     }
 
     function _setTokenUri(
@@ -459,6 +463,25 @@ contract CharacterToken is
 
         emit TokenCreated(_to, _id, _tokenDetail);
         return uint256(_id);
+    }
+
+    /**
+     *      @notice Function that override "_transfer" function default of ERC721 upgradeable
+     *      @dev Check token using or not
+     *      @dev Can not be transfer after using
+     */
+    function _transfer(
+        address from,
+        address to,
+        uint256 tokenId
+    ) internal override {
+        if (FREE_TRANSFER == false) {
+            require(
+                whiteList[to] == true || whiteList[from],
+                "Not support to transfer directly"
+            );
+        }
+        ERC721Upgradeable._transfer(from, to, tokenId);
     }
 
     /**

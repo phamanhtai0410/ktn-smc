@@ -625,6 +625,25 @@
                 "type": "address"
             }
         ],
+        "name": "blackList",
+        "outputs": [
+            {
+                "internalType": "bool",
+                "name": "",
+                "type": "bool"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "address",
+                "name": "",
+                "type": "address"
+            }
+        ],
         "name": "boughtList",
         "outputs": [
             {
@@ -679,19 +698,6 @@
         "type": "function"
     },
     {
-        "inputs": [
-            {
-                "internalType": "uint256[]",
-                "name": "ids",
-                "type": "uint256[]"
-            }
-        ],
-        "name": "burn",
-        "outputs": [],
-        "stateMutability": "nonpayable",
-        "type": "function"
-    },
-    {
         "inputs": [],
         "name": "buyable",
         "outputs": [
@@ -731,155 +737,6 @@
                 "internalType": "address",
                 "name": "",
                 "type": "address"
-            }
-        ],
-        "stateMutability": "view",
-        "type": "function"
-    },
-    {
-        "inputs": [
-            {
-                "internalType": "address",
-                "name": "owner",
-                "type": "address"
-            }
-        ],
-        "name": "getBoxByOwner",
-        "outputs": [
-            {
-                "components": [
-                    {
-                        "internalType": "uint256",
-                        "name": "id",
-                        "type": "uint256"
-                    },
-                    {
-                        "internalType": "uint256",
-                        "name": "index",
-                        "type": "uint256"
-                    },
-                    {
-                        "internalType": "bool",
-                        "name": "is_opened",
-                        "type": "bool"
-                    },
-                    {
-                        "internalType": "address",
-                        "name": "owner_by",
-                        "type": "address"
-                    },
-                    {
-                        "internalType": "string",
-                        "name": "tokenURI",
-                        "type": "string"
-                    }
-                ],
-                "internalType": "struct BoxNFTDetails.BoxNFTDetail[]",
-                "name": "",
-                "type": "tuple[]"
-            }
-        ],
-        "stateMutability": "view",
-        "type": "function"
-    },
-    {
-        "inputs": [
-            {
-                "internalType": "address",
-                "name": "owner",
-                "type": "address"
-            }
-        ],
-        "name": "getBoxIdsByOwner",
-        "outputs": [
-            {
-                "internalType": "uint256[]",
-                "name": "",
-                "type": "uint256[]"
-            }
-        ],
-        "stateMutability": "view",
-        "type": "function"
-    },
-    {
-        "inputs": [
-            {
-                "internalType": "address",
-                "name": "owner",
-                "type": "address"
-            }
-        ],
-        "name": "getOpenableBoxByOwner",
-        "outputs": [
-            {
-                "components": [
-                    {
-                        "internalType": "uint256",
-                        "name": "id",
-                        "type": "uint256"
-                    },
-                    {
-                        "internalType": "uint256",
-                        "name": "index",
-                        "type": "uint256"
-                    },
-                    {
-                        "internalType": "bool",
-                        "name": "is_opened",
-                        "type": "bool"
-                    },
-                    {
-                        "internalType": "address",
-                        "name": "owner_by",
-                        "type": "address"
-                    },
-                    {
-                        "internalType": "string",
-                        "name": "tokenURI",
-                        "type": "string"
-                    }
-                ],
-                "internalType": "struct BoxNFTDetails.BoxNFTDetail[]",
-                "name": "",
-                "type": "tuple[]"
-            }
-        ],
-        "stateMutability": "view",
-        "type": "function"
-    },
-    {
-        "inputs": [
-            {
-                "internalType": "address",
-                "name": "to",
-                "type": "address"
-            }
-        ],
-        "name": "getPendingNfts",
-        "outputs": [
-            {
-                "internalType": "uint256",
-                "name": "",
-                "type": "uint256"
-            }
-        ],
-        "stateMutability": "view",
-        "type": "function"
-    },
-    {
-        "inputs": [
-            {
-                "internalType": "address",
-                "name": "to",
-                "type": "address"
-            }
-        ],
-        "name": "getProcessableTokens",
-        "outputs": [
-            {
-                "internalType": "uint256",
-                "name": "",
-                "type": "uint256"
             }
         ],
         "stateMutability": "view",
@@ -949,29 +806,6 @@
     {
         "inputs": [
             {
-                "internalType": "string",
-                "name": "_name",
-                "type": "string"
-            },
-            {
-                "internalType": "string",
-                "name": "_symbol",
-                "type": "string"
-            },
-            {
-                "internalType": "contract IERC20",
-                "name": "_coinToken",
-                "type": "address"
-            }
-        ],
-        "name": "initialize",
-        "outputs": [],
-        "stateMutability": "nonpayable",
-        "type": "function"
-    },
-    {
-        "inputs": [
-            {
                 "internalType": "address",
                 "name": "owner",
                 "type": "address"
@@ -994,52 +828,6 @@
         "type": "function"
     },
     {
-        "inputs": [
-            {
-                "internalType": "uint256",
-                "name": "_count",
-                "type": "uint256"
-            },
-            {
-                "internalType": "address",
-                "name": "_to",
-                "type": "address"
-            },
-            {
-                "internalType": "string",
-                "name": "_callbackData",
-                "type": "string"
-            }
-        ],
-        "name": "mintBoxFromDaapCreator",
-        "outputs": [],
-        "stateMutability": "nonpayable",
-        "type": "function"
-    },
-    {
-        "inputs": [
-            {
-                "internalType": "uint256",
-                "name": "_count",
-                "type": "uint256"
-            },
-            {
-                "internalType": "address",
-                "name": "_to",
-                "type": "address"
-            },
-            {
-                "internalType": "bytes",
-                "name": "_callbackData",
-                "type": "bytes"
-            }
-        ],
-        "name": "mintOrderForDev",
-        "outputs": [],
-        "stateMutability": "nonpayable",
-        "type": "function"
-    },
-    {
         "inputs": [],
         "name": "name",
         "outputs": [
@@ -1050,53 +838,6 @@
             }
         ],
         "stateMutability": "view",
-        "type": "function"
-    },
-    {
-        "inputs": [
-            {
-                "internalType": "address",
-                "name": "",
-                "type": "address"
-            },
-            {
-                "internalType": "address",
-                "name": "",
-                "type": "address"
-            },
-            {
-                "internalType": "uint256",
-                "name": "",
-                "type": "uint256"
-            },
-            {
-                "internalType": "bytes",
-                "name": "",
-                "type": "bytes"
-            }
-        ],
-        "name": "onERC721Received",
-        "outputs": [
-            {
-                "internalType": "bytes4",
-                "name": "",
-                "type": "bytes4"
-            }
-        ],
-        "stateMutability": "nonpayable",
-        "type": "function"
-    },
-    {
-        "inputs": [
-            {
-                "internalType": "uint256[]",
-                "name": "tokenIds_",
-                "type": "uint256[]"
-            }
-        ],
-        "name": "openBoxes",
-        "outputs": [],
-        "stateMutability": "nonpayable",
         "type": "function"
     },
     {
@@ -1116,19 +857,6 @@
         "inputs": [
             {
                 "internalType": "uint256",
-                "name": "count",
-                "type": "uint256"
-            }
-        ],
-        "name": "ownerMint",
-        "outputs": [],
-        "stateMutability": "nonpayable",
-        "type": "function"
-    },
-    {
-        "inputs": [
-            {
-                "internalType": "uint256",
                 "name": "tokenId",
                 "type": "uint256"
             }
@@ -1142,13 +870,6 @@
             }
         ],
         "stateMutability": "view",
-        "type": "function"
-    },
-    {
-        "inputs": [],
-        "name": "processBoxOpeningRequests",
-        "outputs": [],
-        "stateMutability": "nonpayable",
         "type": "function"
     },
     {
@@ -1210,6 +931,35 @@
     {
         "inputs": [
             {
+                "internalType": "uint256",
+                "name": "_tokenId",
+                "type": "uint256"
+            },
+            {
+                "internalType": "uint256",
+                "name": "_salePrice",
+                "type": "uint256"
+            }
+        ],
+        "name": "royaltyInfo",
+        "outputs": [
+            {
+                "internalType": "address",
+                "name": "",
+                "type": "address"
+            },
+            {
+                "internalType": "uint256",
+                "name": "",
+                "type": "uint256"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
                 "internalType": "address",
                 "name": "from",
                 "type": "address"
@@ -1262,24 +1012,6 @@
         "inputs": [
             {
                 "internalType": "address",
-                "name": "to",
-                "type": "address"
-            },
-            {
-                "internalType": "uint256[]",
-                "name": "tokenIds_",
-                "type": "uint256[]"
-            }
-        ],
-        "name": "sendNft",
-        "outputs": [],
-        "stateMutability": "nonpayable",
-        "type": "function"
-    },
-    {
-        "inputs": [
-            {
-                "internalType": "address",
                 "name": "operator",
                 "type": "address"
             },
@@ -1292,95 +1024,6 @@
         "name": "setApprovalForAll",
         "outputs": [],
         "stateMutability": "nonpayable",
-        "type": "function"
-    },
-    {
-        "inputs": [
-            {
-                "internalType": "uint256",
-                "name": "boxLimit_",
-                "type": "uint256"
-            }
-        ],
-        "name": "setBoxLimit",
-        "outputs": [],
-        "stateMutability": "nonpayable",
-        "type": "function"
-    },
-    {
-        "inputs": [
-            {
-                "internalType": "bool",
-                "name": "isBuyable",
-                "type": "bool"
-            }
-        ],
-        "name": "setBuyable",
-        "outputs": [],
-        "stateMutability": "nonpayable",
-        "type": "function"
-    },
-    {
-        "inputs": [
-            {
-                "internalType": "uint256",
-                "name": "maxOpen_",
-                "type": "uint256"
-            }
-        ],
-        "name": "setMaxOpenBox",
-        "outputs": [],
-        "stateMutability": "nonpayable",
-        "type": "function"
-    },
-    {
-        "inputs": [
-            {
-                "internalType": "uint256",
-                "name": "totalBox_",
-                "type": "uint256"
-            }
-        ],
-        "name": "setTotalBox",
-        "outputs": [],
-        "stateMutability": "nonpayable",
-        "type": "function"
-    },
-    {
-        "inputs": [
-            {
-                "internalType": "address",
-                "name": "addr",
-                "type": "address"
-            },
-            {
-                "internalType": "uint256",
-                "name": "amount",
-                "type": "uint256"
-            }
-        ],
-        "name": "setWhitelist",
-        "outputs": [],
-        "stateMutability": "nonpayable",
-        "type": "function"
-    },
-    {
-        "inputs": [
-            {
-                "internalType": "bytes4",
-                "name": "interfaceId",
-                "type": "bytes4"
-            }
-        ],
-        "name": "supportsInterface",
-        "outputs": [
-            {
-                "internalType": "bool",
-                "name": "",
-                "type": "bool"
-            }
-        ],
-        "stateMutability": "view",
         "type": "function"
     },
     {
@@ -1475,25 +1118,6 @@
     {
         "inputs": [
             {
-                "internalType": "uint256",
-                "name": "_tokenId",
-                "type": "uint256"
-            }
-        ],
-        "name": "tokenURI",
-        "outputs": [
-            {
-                "internalType": "string",
-                "name": "",
-                "type": "string"
-            }
-        ],
-        "stateMutability": "view",
-        "type": "function"
-    },
-    {
-        "inputs": [
-            {
                 "internalType": "address",
                 "name": "from",
                 "type": "address"
@@ -1561,38 +1185,343 @@
     {
         "inputs": [
             {
-                "internalType": "address",
+                "internalType": "string",
+                "name": "_name",
+                "type": "string"
+            },
+            {
+                "internalType": "string",
+                "name": "_symbol",
+                "type": "string"
+            },
+            {
+                "internalType": "contract IERC20",
+                "name": "_coinToken",
+                "type": "address"
+            },
+            {
+                "internalType": "uint256",
+                "name": "_totalSupply",
+                "type": "uint256"
+            }
+        ],
+        "name": "initialize",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "bytes4",
+                "name": "interfaceId",
+                "type": "bytes4"
+            }
+        ],
+        "name": "supportsInterface",
+        "outputs": [
+            {
+                "internalType": "bool",
                 "name": "",
+                "type": "bool"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [],
+        "name": "withdraw",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "uint256[]",
+                "name": "ids",
+                "type": "uint256[]"
+            }
+        ],
+        "name": "burn",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "uint256",
+                "name": "boxLimit_",
+                "type": "uint256"
+            }
+        ],
+        "name": "setBoxLimit",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "address",
+                "name": "_wallet",
+                "type": "address"
+            },
+            {
+                "internalType": "uint96",
+                "name": "_rate",
+                "type": "uint96"
+            }
+        ],
+        "name": "configRoyalty",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "uint256",
+                "name": "totalBox_",
+                "type": "uint256"
+            }
+        ],
+        "name": "setTotalBox",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "uint256",
+                "name": "maxOpen_",
+                "type": "uint256"
+            }
+        ],
+        "name": "setMaxOpenBox",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "bool",
+                "name": "isBuyable",
+                "type": "bool"
+            }
+        ],
+        "name": "setBuyable",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "uint256",
+                "name": "_tokenId",
+                "type": "uint256"
+            }
+        ],
+        "name": "tokenURI",
+        "outputs": [
+            {
+                "internalType": "string",
+                "name": "",
+                "type": "string"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "address",
+                "name": "owner",
                 "type": "address"
             }
         ],
-        "name": "whiteList",
+        "name": "getBoxIdsByOwner",
         "outputs": [
             {
-                "internalType": "uint256",
+                "internalType": "uint256[]",
                 "name": "",
-                "type": "uint256"
+                "type": "uint256[]"
             }
         ],
         "stateMutability": "view",
         "type": "function"
     },
     {
-        "inputs": [],
-        "name": "whiteListBought",
+        "inputs": [
+            {
+                "internalType": "address",
+                "name": "owner",
+                "type": "address"
+            }
+        ],
+        "name": "getBoxByOwner",
         "outputs": [
             {
-                "internalType": "uint256",
+                "components": [
+                    {
+                        "internalType": "uint256",
+                        "name": "id",
+                        "type": "uint256"
+                    },
+                    {
+                        "internalType": "uint256",
+                        "name": "index",
+                        "type": "uint256"
+                    },
+                    {
+                        "internalType": "bool",
+                        "name": "is_opened",
+                        "type": "bool"
+                    },
+                    {
+                        "internalType": "address",
+                        "name": "owner_by",
+                        "type": "address"
+                    },
+                    {
+                        "internalType": "string",
+                        "name": "tokenURI",
+                        "type": "string"
+                    }
+                ],
+                "internalType": "struct BoxNFTDetails.BoxNFTDetail[]",
                 "name": "",
-                "type": "uint256"
+                "type": "tuple[]"
             }
         ],
         "stateMutability": "view",
         "type": "function"
     },
     {
-        "inputs": [],
-        "name": "whiteListPool",
+        "inputs": [
+            {
+                "internalType": "address",
+                "name": "owner",
+                "type": "address"
+            }
+        ],
+        "name": "getOpenableBoxByOwner",
+        "outputs": [
+            {
+                "components": [
+                    {
+                        "internalType": "uint256",
+                        "name": "id",
+                        "type": "uint256"
+                    },
+                    {
+                        "internalType": "uint256",
+                        "name": "index",
+                        "type": "uint256"
+                    },
+                    {
+                        "internalType": "bool",
+                        "name": "is_opened",
+                        "type": "bool"
+                    },
+                    {
+                        "internalType": "address",
+                        "name": "owner_by",
+                        "type": "address"
+                    },
+                    {
+                        "internalType": "string",
+                        "name": "tokenURI",
+                        "type": "string"
+                    }
+                ],
+                "internalType": "struct BoxNFTDetails.BoxNFTDetail[]",
+                "name": "",
+                "type": "tuple[]"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "uint256",
+                "name": "_count",
+                "type": "uint256"
+            },
+            {
+                "internalType": "address",
+                "name": "_to",
+                "type": "address"
+            },
+            {
+                "internalType": "bytes",
+                "name": "_callbackData",
+                "type": "bytes"
+            }
+        ],
+        "name": "mintOrderForDev",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "uint256",
+                "name": "_count",
+                "type": "uint256"
+            },
+            {
+                "internalType": "bool",
+                "name": "_isWhitelistMint",
+                "type": "bool"
+            },
+            {
+                "internalType": "address",
+                "name": "_to",
+                "type": "address"
+            },
+            {
+                "internalType": "string",
+                "name": "_callbackData",
+                "type": "string"
+            }
+        ],
+        "name": "mintBoxFromDaapCreator",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "uint256[]",
+                "name": "tokenIds_",
+                "type": "uint256[]"
+            }
+        ],
+        "name": "openBoxes",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "address",
+                "name": "to",
+                "type": "address"
+            }
+        ],
+        "name": "getPendingNfts",
         "outputs": [
             {
                 "internalType": "uint256",
@@ -1606,20 +1535,78 @@
     {
         "inputs": [
             {
+                "internalType": "address",
+                "name": "to",
+                "type": "address"
+            }
+        ],
+        "name": "getProcessableTokens",
+        "outputs": [
+            {
                 "internalType": "uint256",
-                "name": "count",
+                "name": "",
                 "type": "uint256"
             }
         ],
-        "name": "whitelistMint",
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [],
+        "name": "processBoxOpeningRequests",
         "outputs": [],
         "stateMutability": "nonpayable",
         "type": "function"
     },
     {
-        "inputs": [],
-        "name": "withdraw",
+        "inputs": [
+            {
+                "internalType": "address",
+                "name": "to",
+                "type": "address"
+            },
+            {
+                "internalType": "uint256[]",
+                "name": "tokenIds_",
+                "type": "uint256[]"
+            }
+        ],
+        "name": "sendNft",
         "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "address",
+                "name": "",
+                "type": "address"
+            },
+            {
+                "internalType": "address",
+                "name": "",
+                "type": "address"
+            },
+            {
+                "internalType": "uint256",
+                "name": "",
+                "type": "uint256"
+            },
+            {
+                "internalType": "bytes",
+                "name": "",
+                "type": "bytes"
+            }
+        ],
+        "name": "onERC721Received",
+        "outputs": [
+            {
+                "internalType": "bytes4",
+                "name": "",
+                "type": "bytes4"
+            }
+        ],
         "stateMutability": "nonpayable",
         "type": "function"
     }

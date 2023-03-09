@@ -77,8 +77,8 @@ contract RoyaltyController is AccessControlUpgradeable {
     )
         external onlyRole(EMERGENCY_ROLE)
     {
-        require(IERC20(tokenAddess).balanceOf(address(this)) >= amount, "RoyaltyReceiver: Invalid amount");
-        IERC20(tokenAddess).transferFrom(treasuryAddresses, msg.sender, amount);
+        require(IERC20(tokenAddess).balanceOf(treasuryAddresses[collectionAddress]) >= amount, "RoyaltyReceiver: Invalid amount");
+        IERC20(tokenAddess).transferFrom(treasuryAddresses[collectionAddress], msg.sender, amount);
         emit EmergencyWithdraw(msg.sender, amount);
     }
 
@@ -94,7 +94,7 @@ contract RoyaltyController is AccessControlUpgradeable {
             _sum += proportions[i];
         }
         require(_sum == DENOMINATOR, "RoyaltyReceiver: Invalid proportions for royalties");
-        require(receivers.length == proportions.length, "RoyaltyReceiver: Invalid lenth of reveivers and proprtions");
+        require(receivers.length == proportions.length, "RoyaltyReceiver: Invalid lenth of reveivers and proportions");
         for (uint i=0; i <= receivers.length; i++) {
             s_royalty_configures[collectionAddress][receivers[i]].percent = proportions[i];
         }

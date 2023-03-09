@@ -138,6 +138,7 @@ contract DaapNFTCreator is
         address _signer,
         address _nftCollection,
         uint256 _discount,
+        bool _isWhitelistMint,
         uint256[] memory _rarities,
         uint256[] memory _meshIndexes,
         uint256[] memory _meshMaterials,
@@ -153,6 +154,7 @@ contract DaapNFTCreator is
             address(this),
             address(_nftCollection),
             _discount,
+            _isWhitelistMint,
             _rarities,
             _meshIndexes,
             _meshMaterials,
@@ -171,6 +173,7 @@ contract DaapNFTCreator is
         ICharacterToken _nftCollection,
         CharacterTokenDetails.MintingOrder[] calldata _mintingInfos,
         uint256 _discount,
+        bool _isWhitelistMint,
         Proof memory _proof,
         string memory _callbackData
     ) external payable  notContract {
@@ -195,6 +198,7 @@ contract DaapNFTCreator is
                 signer,
                 address(_nftCollection),
                 _discount,
+                _isWhitelistMint,
                 _rarities,
                 _meshIndexes,
                 _meshMaterials,
@@ -214,6 +218,7 @@ contract DaapNFTCreator is
         payToken.transferFrom(msg.sender, address(this), _amount - _discount);
         _nftCollection.mintOrderFromDaapCreator(
             _mintingInfos,
+            _isWhitelistMint,
             msg.sender,
             _callbackData
         );

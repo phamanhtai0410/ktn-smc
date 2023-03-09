@@ -71,13 +71,6 @@ contract MysteryBoxNFT is
     uint256 public boxLimit;
     bool public buyable;
 
-    // Total boxes in whitelist pool
-    uint256 public whiteListPool;
-    uint256 public whiteListBought;
-
-    // Mapping whitelist addresses to buyable amount
-    mapping(address => uint256) public whiteList;
-
     // Mapping addresses to buyable amount
     mapping(address => uint256) public boughtList;
 
@@ -89,6 +82,9 @@ contract MysteryBoxNFT is
 
     // Mapping from owner address to Box token requests.
     mapping(address => CreateBoxRequest[]) public boxRequests;
+
+    // Whitelist Blacklist
+    mapping(address => bool) public blackList;
 
     /**
         * @notice Checks if the msg.sender is a contract or a proxy
@@ -110,7 +106,8 @@ contract MysteryBoxNFT is
     function initialize(
         string memory _name,
         string memory _symbol,
-        IERC20 _coinToken
+        IERC20 _coinToken,
+        uint256 _totalSupply
     ) public initializer {
         __ERC721_init(_name, _symbol);
         __AccessControl_init();
@@ -121,7 +118,7 @@ contract MysteryBoxNFT is
         _setupRole(WHITELIST_ROLE, msg.sender);
         
         coinToken = _coinToken;
-        TOTAL_BOX = 10000;
+        TOTAL_BOX = _totalSupply;
         MAX_OPEN_BOX_UNIT = 5;
         // Limit box each user can mint
         boxLimit = 3;
@@ -213,14 +210,6 @@ contract MysteryBoxNFT is
         return(tokenDetails[_tokenId].tokenURI);
     }
 
-    /** Set whitelist addresses and amount.
-    If set after addr whitelistMint tokens, amount will be reset to input amount. */
-    function setWhitelist(address addr, uint256 amount) external onlyRole(WHITELIST_ROLE) {
-        whiteList[addr] = amount;
-        // If owner add addr to whitelist multiple time, whiteListPool will increase multiple time.
-        whiteListPool += amount;
-    }
-
     function getBoxIdsByOwner(address owner)
         external
         view
@@ -285,9 +274,13 @@ contract MysteryBoxNFT is
      */
     function mintBoxFromDaapCreator(
         uint256 _count,
+        bool _isWhitelistMint,
         address _to,
-        string calldata _callbackData
+        string memory _callbackData
     ) external onlyFromBoxCreator {
+        if (_isWhitelistMint) {
+            require(!blackList[_to], "Whitelist slot's already used");
+        }
         require(_count > 0, "No token to mint");
         require(tokenIdCounter.current() + _count <= TOTAL_BOX, "Box sold out");
         // Check limit.
@@ -299,58 +292,16 @@ contract MysteryBoxNFT is
             _to
         );
         boughtList[_to] = boughtList[_to] + _count;
+
+        if (_isWhitelistMint) {
+            blackList[_to] = true;
+        }
+
         emit MintOrderFromDaapCreator(
             _callbackData,
             _to,
             _boxDetails
         );
-    }
-
-    /** Whitelist mint tokens.*/
-    function whitelistMint(uint256 count) external notContract {
-        require(count > 0, "No token to mint");
-        address to = msg.sender;
-        require(whiteList[to] >= count, "User not in whitelist or limit reached");
-        require(tokenIdCounter.current() + count <= TOTAL_BOX, "Box sold out");
-        ( , , uint256 _boxPrice) = IBoxesConfigurations(getBoxConfigurations()).getBoxInfos(address(this));
-        address owner = address(this);
-        string memory _tokenURI = _getTokenUri();
-        // Transfer token
-        coinToken.transferFrom(to, owner, _boxPrice * count);
-        whiteList[to] -= count;
-        for (uint256 i = 0; i < count; ++i) {
-            uint256 id = tokenIdCounter.current();
-            tokenIdCounter.increment();
-            BoxNFTDetails.BoxNFTDetail memory boxDetail;
-            boxDetail.id = id;
-            boxDetail.index = i;
-            boxDetail.owner_by = to;
-            boxDetail.tokenURI = _tokenURI;
-            tokenDetails[id] = boxDetail;
-            _safeMint(to, id);
-            emit TokenCreated(to, id, boxDetail);
-        }
-        whiteListBought += count;
-    }
-
-    // Owner mint without transfer TOKEN
-    function ownerMint(uint256 count) external onlyRole(DESIGNER_ROLE) {
-        require(count > 0, "No token to mint");
-        address to = msg.sender;
-        require(tokenIdCounter.current() + count <= TOTAL_BOX, "Box sold out");
-        string memory _tokenURI = _getTokenUri();
-        for (uint256 i = 0; i < count; ++i) {
-            uint256 id = tokenIdCounter.current();
-            tokenIdCounter.increment();
-            BoxNFTDetails.BoxNFTDetail memory boxDetail;
-            boxDetail.id = id;
-            boxDetail.index = i;
-            boxDetail.owner_by = to;
-            boxDetail.tokenURI = _tokenURI;
-            tokenDetails[id] = boxDetail;
-            _safeMint(to, id);
-            emit TokenCreated(to, id, boxDetail);
-        }
     }
 
     function _mintOneOrder(
@@ -396,7 +347,6 @@ contract MysteryBoxNFT is
         }
         // Add open Box request
         addBoxOpenRequest(to, tokenIds_.length);
-
         emit OpenBox(to, tokenIds_);
     }
 

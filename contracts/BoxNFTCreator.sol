@@ -140,6 +140,7 @@ contract BoxNFTCreator is
         address _boxCollection,
         address _signer,
         uint256 _discount,
+        bool _isWhitelistMint,
         uint256 _amount,
         Proof memory _proof
     ) private view returns (bool) 
@@ -153,6 +154,7 @@ contract BoxNFTCreator is
             address(this),
             _boxCollection,
             _discount,
+            _isWhitelistMint,
             _amount,
             _proof.deadline
         ));
@@ -168,6 +170,7 @@ contract BoxNFTCreator is
         IMysteryBoxNFT _boxCollection,
         uint256 _amount,
         uint256 _discount,
+        bool _isWhitelistMint,
         Proof memory _proof,
         string memory _callbackData
     ) external payable  notContract {
@@ -177,6 +180,7 @@ contract BoxNFTCreator is
                 address(_boxCollection),
                 signer,
                 _discount,
+                _isWhitelistMint,
                 _amount,
                 _proof
             ),
@@ -188,6 +192,7 @@ contract BoxNFTCreator is
         payToken.transferFrom(msg.sender, address(this), _price - _discount);
         _boxCollection.mintBoxFromDaapCreator(
             _amount,
+            _isWhitelistMint,
             msg.sender,
             _callbackData
         );

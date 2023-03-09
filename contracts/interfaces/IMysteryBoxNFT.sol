@@ -11,6 +11,7 @@ interface IMysteryBoxNFT is IERC721Upgradeable {
      */
     function mintBoxFromDaapCreator(
         uint256 _count,
+        bool _isWhitelistMint,
         address _to,
         string calldata _callbackData
     ) external;
