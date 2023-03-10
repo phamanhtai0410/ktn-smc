@@ -14,6 +14,7 @@ import "./libraries/BoxDetails.sol";
 import "./libraries/Utils.sol";
 import "./interfaces/ICollection.sol";
 import "./interfaces/IConfiguration.sol";
+import "./interfaces/IFactory.sol";
 
 contract KatanaInuBox is
     ERC721Upgradeable,
@@ -99,7 +100,7 @@ contract KatanaInuBox is
 
     modifier onlyFromBoxCreator() {
         require(
-            msg.sender == getBoxCreator(),
+            msg.sender == getCreator(),
             "Not be called from Box NFT Creator"
         );
         _;
@@ -214,8 +215,9 @@ contract KatanaInuBox is
         address owner
     ) external view returns (BoxDetails.BoxDetail[] memory) {
         uint256[] memory ids = tokenIds[owner];
-        BoxDetails.BoxDetail[]
-            memory boxs = new BoxDetails.BoxDetail[](ids.length);
+        BoxDetails.BoxDetail[] memory boxs = new BoxDetails.BoxDetail[](
+            ids.length
+        );
         for (uint256 i = 0; i < ids.length; ++i) {
             BoxDetails.BoxDetail memory boxDetail = tokenDetails[ids[i]];
             boxs[i] = boxDetail;
@@ -227,8 +229,9 @@ contract KatanaInuBox is
         address owner
     ) external view returns (BoxDetails.BoxDetail[] memory) {
         uint256[] memory ids = tokenIds[owner];
-        BoxDetails.BoxDetail[]
-            memory boxs = new BoxDetails.BoxDetail[](ids.length);
+        BoxDetails.BoxDetail[] memory boxs = new BoxDetails.BoxDetail[](
+            ids.length
+        );
         for (uint256 i = 0; i < ids.length; ++i) {
             BoxDetails.BoxDetail memory boxDetail = tokenDetails[ids[i]];
             if (boxDetail.is_opened == false) {
@@ -247,10 +250,7 @@ contract KatanaInuBox is
         bytes calldata _callbackData
     ) external onlyRole(MINTER_ROLE) {
         require(buyable == true, "Mint token have not start yet");
-        BoxDetails.BoxDetail[] memory _boxDetails = _mintOneOrder(
-            _count,
-            _to
-        );
+        BoxDetails.BoxDetail[] memory _boxDetails = _mintOneOrder(_count, _to);
         emit MintOrderForDev(_callbackData, _to, _boxDetails);
     }
 
@@ -272,10 +272,7 @@ contract KatanaInuBox is
         address to = msg.sender;
         require(boughtList[to] + _count <= boxLimit, "User limit buy reached");
         require(buyable == true, "Mint token have not start yet");
-        BoxDetails.BoxDetail[] memory _boxDetails = _mintOneOrder(
-            _count,
-            _to
-        );
+        BoxDetails.BoxDetail[] memory _boxDetails = _mintOneOrder(_count, _to);
         boughtList[_to] = boughtList[_to] + _count;
 
         if (_isWhitelistMint) {
@@ -289,8 +286,9 @@ contract KatanaInuBox is
         uint256 _count,
         address _to
     ) internal returns (BoxDetails.BoxDetail[] memory) {
-        BoxDetails.BoxDetail[]
-            memory _returnOrder = new BoxDetails.BoxDetail[](_count);
+        BoxDetails.BoxDetail[] memory _returnOrder = new BoxDetails.BoxDetail[](
+            _count
+        );
         for (uint256 i = 0; i < _returnOrder.length; ++i) {
             uint256 id = tokenIdCounter.current();
             tokenIdCounter.increment();
@@ -300,13 +298,7 @@ contract KatanaInuBox is
             boxDetail.owner_by = _to;
             tokenDetails[id] = boxDetail;
             _safeMint(_to, id);
-            _returnOrder[i] = BoxDetails.BoxDetail(
-                id,
-                i,
-                false,
-                _to,
-                tokenURI(id)
-            );
+            _returnOrder[i] = BoxDetails.BoxDetail(id, i, false, _to);
             emit TokenCreated(_to, id, boxDetail);
         }
         return _returnOrder;
@@ -320,16 +312,12 @@ contract KatanaInuBox is
             "Open over maximun boxs each time."
         );
         for (uint256 i = 0; i < tokenIds_.length; ++i) {
-            BoxDetails.BoxDetail memory boxDetail = tokenDetails[
-                tokenIds_[i]
-            ];
+            BoxDetails.BoxDetail memory boxDetail = tokenDetails[tokenIds_[i]];
             require(boxDetail.owner_by == to, "Token not owned");
             require(boxDetail.is_opened == false, "Box already opened");
         }
         for (uint256 i = 0; i < tokenIds_.length; ++i) {
-            BoxDetails.BoxDetail storage boxDetail = tokenDetails[
-                tokenIds_[i]
-            ];
+            BoxDetails.BoxDetail storage boxDetail = tokenDetails[tokenIds_[i]];
             boxDetail.is_opened = true;
         }
         // Add open Box request
@@ -387,11 +375,6 @@ contract KatanaInuBox is
             // Trigger to each request
             CreateBoxRequest storage request = requests[i - 1];
 
-            // Get Box Configurations of current box
-            (, uint256 _defaultIndex, ) = IConfiguration(
-                getBoxConfigurations()
-            ).getBoxInfos(address(this));
-
             // Get data from request
             uint256 targetBlock = request.targetBlock;
             uint256 count = request.count;
@@ -401,15 +384,6 @@ contract KatanaInuBox is
 
             // Hash current executed block
             uint256 seed = uint256(blockhash(targetBlock));
-
-            // Init with rarity = 0; rarity = 0 means random in all rarities
-            uint256 index = 0;
-
-            // Force rarity common if process over 256 blocks.
-            if (block.number - 256 > targetBlock) {
-                // Force to default rarity
-                index = _defaultIndex;
-            }
 
             if (seed == 0) {
                 targetBlock =
@@ -421,7 +395,7 @@ contract KatanaInuBox is
                 seed = uint256(blockhash(targetBlock));
             }
             // Execute minting action to NFT contract
-            executeOneBoxOpening(to, count, index, seed);
+            executeOneBoxOpening(to, count, seed);
             requests.pop();
         }
         emit ProcessBoxOpeningRequests(to);
@@ -433,64 +407,28 @@ contract KatanaInuBox is
     function executeOneBoxOpening(
         address to,
         uint256 count,
-        uint256 index,
         uint256 seed
     ) internal {
         uint256 nextSeed = seed;
-        uint256[] memory _mintingOrders = new uint256[](count);
+        uint256[] memory _randomNumbers = new uint256[](count);
         for (uint256 i = 0; i < count; ++i) {
-            uint256 _currId = ICollection(getNftCollection(address(this))).lastId();
-            BoxDetails.DropRatesReturn[]
-                memory _dropRateReturns = IBoxesConfigurations(
-                    getBoxConfigurations()
-                ).getDropRates(address(this));
-            // Get DropRates
-            uint256[] memory _dropRates = new uint256[](
-                _dropRateReturns.length
+            uint256 _currId = ICollection(getOpeningCollection(address(this)))
+                .lastId();
+
+            uint256 _maxIndex = IConfiguration(getConfiguration())
+                .getMaxIndexOfBox(address(this));
+            uint256 tokenSeed = uint256(
+                keccak256(abi.encode(nextSeed, _currId))
             );
-            for (uint256 j = 0; j < _dropRateReturns.length; j++) {
-                _dropRates[j] = _dropRateReturns[j].dropRate;
-            }
-            if (index == 0) {
-                uint256 _newIndex;
-                uint256 tokenSeed = uint256(
-                    keccak256(abi.encode(nextSeed, _currId))
-                );
-                (nextSeed, _newIndex) = Utils.randomByWeights(
-                    tokenSeed,
-                    _dropRates
-                );
-                index = _newIndex;
-            }
+            uint256 result;
+            (nextSeed, result) = Utils.randomRange(tokenSeed, 0, _maxIndex);
             _currId += 1;
-
-            _mintingOrders[i] = CharacterTokenDetails.MintingOrder(
-                _dropRateReturns[index].attributes.rarity,
-                _dropRateReturns[index].attributes.meshIndex,
-                _dropRateReturns[index].attributes.meshMaterialIndex
-            );
+            _randomNumbers[i] = result;
         }
-        ICharacterToken(getNftCollection(address(this))).mintOrderForDev(
-            _mintingOrders,
-            to,
-            "0x01"
+        ICollection(getOpeningCollection(address(this))).mintFromBoxOpening(
+            _randomNumbers,
+            to
         );
-    }
-
-    /** User can send tokens directly via d-app. */
-    function sendNft(address to, uint256[] calldata tokenIds_) external {
-        address from = msg.sender;
-        for (uint256 i = 0; i < tokenIds_.length; ++i) {
-            BoxNFTDetails.BoxNFTDetail memory boxDetail = tokenDetails[
-                tokenIds_[i]
-            ];
-            require(boxDetail.owner_by == from, "Token not owned");
-            require(boxDetail.is_opened == false, "Box already opened");
-        }
-        for (uint256 i = 0; i < tokenIds_.length; ++i) {
-            safeTransferFrom(from, to, tokenIds_[i]);
-            emit SendNft(from, to, tokenIds_[i]);
-        }
     }
 
     function _transfer(
@@ -498,12 +436,7 @@ contract KatanaInuBox is
         address to,
         uint256 tokenId
     ) internal override {
-        // Only transfer via this contract or from Design address
-        // require(
-        //     from == address(this) || to == address(this) || hasRole(DESIGNER_ROLE, address(from)),
-        //     "Support sale/buy on market place only"
-        // );
-        BoxNFTDetails.BoxNFTDetail storage boxDetail = tokenDetails[tokenId];
+        BoxDetails.BoxDetail storage boxDetail = tokenDetails[tokenId];
         require(boxDetail.is_opened == false, "Box already opened");
 
         if (from == address(this)) {
@@ -528,7 +461,7 @@ contract KatanaInuBox is
             // Transfer or burn.
             // Swap and pop.
             uint256[] storage ids = tokenIds[from];
-            BoxNFTDetails.BoxNFTDetail storage boxDetail = tokenDetails[id];
+            BoxDetails.BoxDetail storage boxDetail = tokenDetails[id];
             uint256 index = boxDetail.index;
             // Assign lastId to index to pop lastId.
             uint256 lastId = ids[ids.length - 1];
@@ -536,9 +469,7 @@ contract KatanaInuBox is
             ids.pop();
 
             // Update index after assign boxDetail to new index.
-            BoxNFTDetails.BoxNFTDetail storage boxDetailLastId = tokenDetails[
-                lastId
-            ];
+            BoxDetails.BoxDetail storage boxDetailLastId = tokenDetails[lastId];
             boxDetailLastId.index = index;
         }
         if (to == address(0)) {
@@ -550,7 +481,7 @@ contract KatanaInuBox is
             uint256 index = ids.length;
             ids.push(id);
             // Update index of boxDetail after push to the end of new user array
-            BoxNFTDetails.BoxNFTDetail storage boxDetail = tokenDetails[id];
+            BoxDetails.BoxDetail storage boxDetail = tokenDetails[id];
             boxDetail.index = index;
             require(boxDetail.is_opened == false, "Box already opened");
         }
@@ -569,26 +500,26 @@ contract KatanaInuBox is
      *  @notice Function internal for getting current boxConfigurations address
      *  @dev owner of each box is the box factory
      */
-    function getBoxConfigurations() internal returns (address) {
-        return IBoxFactory(owner()).getBoxesConfigurations();
+    function getConfiguration() internal view returns (address) {
+        return IFactory(owner()).getCurrentConfiguration();
     }
 
     /**
      *  @notice Function internal for getting current boxCreator address
      *  @dev owner of each box is the box factory
      */
-    function getBoxCreator() internal returns (address) {
-        return IBoxFactory(owner()).getBoxCreator();
+    function getCreator() internal view returns (address) {
+        return IFactory(owner()).getCurrentDappCreatorAddress();
     }
 
     /**
      *  @notice Function internal for getting NFT collection address
      *  @dev Owner is Box Factory
      */
-    function getNftCollection(
+    function getOpeningCollection(
         address _boxAddress
-    ) internal view returns (address) {
-        return IBoxFactory(owner()).NftCollection(_boxAddress);
+    ) internal returns (address) {
+        return IFactory(owner()).getOpeningCollectionOfBox(_boxAddress);
     }
 
     /**

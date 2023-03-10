@@ -115,8 +115,10 @@ contract KatanaInuCollection is
 
     modifier onlyFromBoxInstance() {
         require(
-            msg.sender == IFactory(owner()).
-        )
+            IFactory(owner()).checkIsValidBox(msg.sender),
+            "box-and-collectioon-not-match"
+        );
+        _;
     }
 
     /**
@@ -342,7 +344,7 @@ contract KatanaInuCollection is
     function mintFromBoxOpening(
         uint256[] memory _randomNumbers,
         address _to
-    ) external {
+    ) external onlyFromBoxInstance {
         uint256[] memory _mintedTokenId = new uint256[](_randomNumbers.length);
         for (uint i = 0; i < _randomNumbers.length; i++) {
             tokenIdCounter.increment();
@@ -479,7 +481,7 @@ contract KatanaInuCollection is
      *  @notice Function internal returns the address of NftConfigurations
      */
     function getNftConfigurations() internal view returns (address) {
-        return IFactory(owner()).getCurrentNftConfigurations();
+        return IFactory(owner()).getCurrentConfiguration();
     }
 
     /**

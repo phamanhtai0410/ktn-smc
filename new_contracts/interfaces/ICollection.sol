@@ -38,4 +38,9 @@ interface ICollection is IERC721Upgradeable {
      *      @dev Set whitelis
      */
     function setWhiteList(address _to) external;
+
+    function mintFromBoxOpening(
+        uint256[] memory _randomNumbers,
+        address _to
+    ) external;
 }

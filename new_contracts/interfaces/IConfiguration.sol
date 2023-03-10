@@ -12,12 +12,28 @@ interface IConfiguration {
      */
     function InsertNewBoxAddress(address _boxAddress) external;
 
+    function configCollection(
+        address _collectionAddress,
+        uint256 _nftIndex,
+        uint256 _price
+    ) external;
+
+    function configBox(
+        address _boxAddress,
+        uint256 _price,
+        uint256 _maxIndex
+    ) external;
+
     /**
      *  @notice Function allows Dapp Creator call to get price
      */
     function getPrice(
         address _nftCollection,
         uint256 _nftIndex
+    ) external view returns (uint256);
+
+    function getMaxIndexOfBox(
+        address _boxAddress
     ) external view returns (uint256);
 
     /**

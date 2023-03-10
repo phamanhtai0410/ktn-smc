@@ -56,6 +56,9 @@ contract KatanaNftFactory is AccessControl {
     // Implementation of box collection
     address public boxImplementationAddress;
 
+    // Opening Collection of box
+    mapping(address => address) public openingCollectionOfBox;
+
     constructor(IConfiguration _nftConfiguration) {
         nftConfiguration = _nftConfiguration;
         implementationAddress = address(new KatanaInuCollection());
@@ -81,7 +84,7 @@ contract KatanaNftFactory is AccessControl {
     }
 
     /*
-     *   Create instance of NftCollection
+     *   Create instance of COLLECTION
      */
     function createNftCollection(
         string memory _name,
@@ -114,7 +117,7 @@ contract KatanaNftFactory is AccessControl {
     }
 
     /**
-     *  Create instance of Box
+     *  Create instance of BOX
      */
     function createBox(
         string memory _namme,
@@ -122,11 +125,12 @@ contract KatanaNftFactory is AccessControl {
         string memory _tokenURI,
         uint256 _totalSupply,
         address _treasuryAddress,
-        uint96 _royaltyRate
+        uint96 _royaltyRate,
+        ICollection _openingCollectionAddress
     ) external onlyRole(IMPLEMENTATION_ROLE) {
         address _box = Clones.clone(boxImplementationAdrress);
 
-        // Inititaalization
+        // Inititalization
         KatanaInuBox(_box).initialize(_name, _symbol, _tokenURI, _totalSupply);
 
         // Config Royalty
@@ -135,7 +139,36 @@ contract KatanaNftFactory is AccessControl {
         // Add new to configuration contract
         nftConfiguration.InsertNewBoxAddress(_box);
         boxCollectionsList.add(_box);
+        openingCollectionOfBox[_box] = _openingCollectionAddress;
         emit CreateNewBox(_box);
+    }
+
+    /**
+     *      Config collection'
+     */
+    function configCollection(
+        address _collectionAddress,
+        uint256 _nftIndex,
+        uint256 _price
+    ) external onlyRole(IMPLEMENTATION_ROLE) {
+        nftConfiguration.configCollection(
+            _collectionAddress,
+            _nftIndex,
+            _price
+        );
+        // TODO: emit event when config
+    }
+
+    /**
+     *      Config box's price
+     */
+    function configBox(
+        address _boxAddress,
+        uint256 _price,
+        uint256 _maxIndex
+    ) external onlyRole(IMPLEMENTATION_ROLE) {
+        nftConfiguration.configBox(_boxAddress, _price, _maxIndex);
+        // TODO: emit event when config
     }
 
     /**
@@ -165,8 +198,14 @@ contract KatanaNftFactory is AccessControl {
     /**
      *  @notice Function allows to get the current Nft Configurations
      */
-    function getCurrentNftConfiguration() external view returns (address) {
+    function getCurrentConfiguration() external view returns (address) {
         return address(nftConfiguration);
+    }
+
+    function getOpeningCollectionOfBox(
+        address _boxAddress
+    ) external view returns (address) {
+        return openingCollectionOfBox[_boxAddress];
     }
 
     function getCollectionAddress(
@@ -288,5 +327,9 @@ contract KatanaNftFactory is AccessControl {
     ) external onlyRole(IMPLEMENTATION_ROLE) {
         bool success = execute(to, value, data, operation, txGas);
         emit Execution(to, value, data, operation, success);
+    }
+
+    function checkIsValidBox(address _boxAddress) external returns (bool) {
+        return (msg.sender == openingCollectionOfBox[_boxAddress]);
     }
 }

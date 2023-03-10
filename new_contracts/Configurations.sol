@@ -3,13 +3,11 @@ pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
 import "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
-import "../libraries/CharacterTokenDetails.sol";
 
-contract NftConfigurations is AccessControlUpgradeable {
+contract Configurations is AccessControlUpgradeable {
     // Add the library methods
     using EnumerableSet for EnumerableSet.UintSet;
     using EnumerableSet for EnumerableSet.AddressSet;
-    using CharacterTokenDetails for CharacterTokenDetails.MintingOrder;
 
     // Event
     event AddNewBoxInstant(
@@ -37,6 +35,9 @@ contract NftConfigurations is AccessControlUpgradeable {
 
     // Price of boxes
     mapping(address => uint256) public boxPrices;
+
+    // Max index of box
+    mapping(address => uint256) public boxMaxIndex;
 
     // modifier to check from Factory or not
     modifier onlyFromFactory() {
@@ -92,27 +93,35 @@ contract NftConfigurations is AccessControlUpgradeable {
     }
 
     /**
-     *      Config price for each nftIndex of collection
+     *      Config for each nftIndex of collection
      */
-    function configCollectionPrice(
+    function configCollection(
         address _collectionAddress,
         uint256 _nftIndex,
         uint256 _price
     ) external onlyFromFactory {
         require(
-            nftCollectionsList.contains(_nftCollection),
+            nftCollectionsList.contains(_collectionAddress),
             "Invalid NFT collection address"
         );
         prices[_collectionAddress][_nftIndex] = _price;
     }
 
     /**
-     *      Config box's price
+     *      Config box
      */
-    function configBoxPrice(
+    function configBox(
         address _boxAddress,
-        uint256 _price
-    ) external onlyFromFactory {}
+        uint256 _price,
+        uint256 _maxIndex
+    ) external onlyFromFactory {
+        require(
+            boxCollectionsList.contains(_boxAddress),
+            "Invalid Box Collection Address"
+        );
+        boxPrices[_boxAddress] = _price;
+        boxMaxIndex[_boxAddress] = _maxIndex;
+    }
 
     /**
      *  @notice Function allows Dapp Creator call to get collection's price
@@ -134,18 +143,21 @@ contract NftConfigurations is AccessControlUpgradeable {
     function getBoxPrice(
         address _boxAddress
     ) external view onlyFromDappCreator returns (uint256) {
-        require(
-            boxCollectionsList.constains(_boxAddress) != 0,
-            "Not-existing Box"
-        );
-        return prices[_nftCollection][_nftIndex];
+        require(boxCollectionsList.contains(_boxAddress), "Not-existing Box");
+        return boxPrices[_boxAddress];
+    }
+
+    function getMaxIndexOfBox(
+        address _boxAddress
+    ) external view returns (uint256) {
+        return boxMaxIndex[_boxAddress];
     }
 
     /**
      *  @notice Function check the order attributes is valid or not in the current state of system
      *  @dev Function used for all contract call to for validations
      *  @param _nftCollection The address of the collection contract need to check
-     *  @param _mintingOrder The order need to check
+     *  @param _nftIndex The order need to check
      */
     function checkValidMintingAttributes(
         address _nftCollection,
