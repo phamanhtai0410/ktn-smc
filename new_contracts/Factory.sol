@@ -120,7 +120,7 @@ contract KatanaNftFactory is AccessControl {
      *  Create instance of BOX
      */
     function createBox(
-        string memory _namme,
+        string memory _name,
         string memory _symbol,
         string memory _tokenURI,
         uint256 _totalSupply,
@@ -128,7 +128,7 @@ contract KatanaNftFactory is AccessControl {
         uint96 _royaltyRate,
         ICollection _openingCollectionAddress
     ) external onlyRole(IMPLEMENTATION_ROLE) {
-        address _box = Clones.clone(boxImplementationAdrress);
+        address _box = Clones.clone(boxImplementationAddress);
 
         // Inititalization
         KatanaInuBox(_box).initialize(_name, _symbol, _tokenURI, _totalSupply);
@@ -139,7 +139,7 @@ contract KatanaNftFactory is AccessControl {
         // Add new to configuration contract
         nftConfiguration.InsertNewBoxAddress(_box);
         boxCollectionsList.add(_box);
-        openingCollectionOfBox[_box] = _openingCollectionAddress;
+        openingCollectionOfBox[_box] = address(_openingCollectionAddress);
         emit CreateNewBox(_box);
     }
 
