@@ -1,10 +1,5 @@
 [
     {
-        "inputs": [],
-        "stateMutability": "nonpayable",
-        "type": "constructor"
-    },
-    {
         "anonymous": false,
         "inputs": [
             {
@@ -136,6 +131,31 @@
         "inputs": [
             {
                 "indexed": false,
+                "internalType": "address",
+                "name": "to",
+                "type": "address"
+            },
+            {
+                "indexed": false,
+                "internalType": "uint256[]",
+                "name": "randomNumber",
+                "type": "uint256[]"
+            },
+            {
+                "indexed": false,
+                "internalType": "uint256[]",
+                "name": "mintedTokenId",
+                "type": "uint256[]"
+            }
+        ],
+        "name": "MintFromBoxOpening",
+        "type": "event"
+    },
+    {
+        "anonymous": false,
+        "inputs": [
+            {
+                "indexed": false,
                 "internalType": "bytes",
                 "name": "callbackData",
                 "type": "bytes"
@@ -150,34 +170,17 @@
                 "components": [
                     {
                         "internalType": "uint256",
-                        "name": "tokenId",
+                        "name": "nftIndex",
                         "type": "uint256"
                     },
                     {
-                        "components": [
-                            {
-                                "internalType": "uint256",
-                                "name": "rarity",
-                                "type": "uint256"
-                            },
-                            {
-                                "internalType": "uint256",
-                                "name": "meshIndex",
-                                "type": "uint256"
-                            },
-                            {
-                                "internalType": "uint256",
-                                "name": "meshMaterial",
-                                "type": "uint256"
-                            }
-                        ],
-                        "internalType": "struct CharacterTokenDetails.MintingOrder",
-                        "name": "mintingOrder",
-                        "type": "tuple"
+                        "internalType": "uint256",
+                        "name": "tokenId",
+                        "type": "uint256"
                     }
                 ],
                 "indexed": false,
-                "internalType": "struct CharacterTokenDetails.ReturnMintingOrder[]",
+                "internalType": "struct KatanaInuCollection.ReturnMintingOrder[]",
                 "name": "returnMintingOrder",
                 "type": "tuple[]"
             }
@@ -204,34 +207,17 @@
                 "components": [
                     {
                         "internalType": "uint256",
-                        "name": "tokenId",
+                        "name": "nftIndex",
                         "type": "uint256"
                     },
                     {
-                        "components": [
-                            {
-                                "internalType": "uint256",
-                                "name": "rarity",
-                                "type": "uint256"
-                            },
-                            {
-                                "internalType": "uint256",
-                                "name": "meshIndex",
-                                "type": "uint256"
-                            },
-                            {
-                                "internalType": "uint256",
-                                "name": "meshMaterial",
-                                "type": "uint256"
-                            }
-                        ],
-                        "internalType": "struct CharacterTokenDetails.MintingOrder",
-                        "name": "mintingOrder",
-                        "type": "tuple"
+                        "internalType": "uint256",
+                        "name": "tokenId",
+                        "type": "uint256"
                     }
                 ],
                 "indexed": false,
-                "internalType": "struct CharacterTokenDetails.ReturnMintingOrder[]",
+                "internalType": "struct KatanaInuCollection.ReturnMintingOrder[]",
                 "name": "returnMintingOrder",
                 "type": "tuple[]"
             }
@@ -497,39 +483,10 @@
                 "type": "uint256"
             },
             {
-                "components": [
-                    {
-                        "components": [
-                            {
-                                "internalType": "uint256",
-                                "name": "rarity",
-                                "type": "uint256"
-                            },
-                            {
-                                "internalType": "uint256",
-                                "name": "meshIndex",
-                                "type": "uint256"
-                            },
-                            {
-                                "internalType": "uint256",
-                                "name": "meshMaterial",
-                                "type": "uint256"
-                            }
-                        ],
-                        "internalType": "struct CharacterTokenDetails.MintingOrder",
-                        "name": "mintingOrder",
-                        "type": "tuple"
-                    },
-                    {
-                        "internalType": "string",
-                        "name": "tokenURI",
-                        "type": "string"
-                    }
-                ],
                 "indexed": false,
-                "internalType": "struct CharacterTokenDetails.TokenDetail",
-                "name": "details",
-                "type": "tuple"
+                "internalType": "uint256",
+                "name": "nftIndex",
+                "type": "uint256"
             }
         ],
         "name": "TokenCreated",
@@ -623,19 +580,6 @@
         ],
         "name": "UseNFTs",
         "type": "event"
-    },
-    {
-        "inputs": [],
-        "name": "BURNER_ROLE",
-        "outputs": [
-            {
-                "internalType": "bytes32",
-                "name": "",
-                "type": "bytes32"
-            }
-        ],
-        "stateMutability": "view",
-        "type": "function"
     },
     {
         "inputs": [],
@@ -743,46 +687,7 @@
     },
     {
         "inputs": [],
-        "name": "OPEN_NFT_ROLE",
-        "outputs": [
-            {
-                "internalType": "bytes32",
-                "name": "",
-                "type": "bytes32"
-            }
-        ],
-        "stateMutability": "view",
-        "type": "function"
-    },
-    {
-        "inputs": [],
-        "name": "PAUSER_ROLE",
-        "outputs": [
-            {
-                "internalType": "bytes32",
-                "name": "",
-                "type": "bytes32"
-            }
-        ],
-        "stateMutability": "view",
-        "type": "function"
-    },
-    {
-        "inputs": [],
         "name": "UPGRADER_ROLE",
-        "outputs": [
-            {
-                "internalType": "bytes32",
-                "name": "",
-                "type": "bytes32"
-            }
-        ],
-        "stateMutability": "view",
-        "type": "function"
-    },
-    {
-        "inputs": [],
-        "name": "WHITELIST_ROLE",
         "outputs": [
             {
                 "internalType": "bytes32",
@@ -825,6 +730,19 @@
                 "internalType": "uint256",
                 "name": "",
                 "type": "uint256"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [],
+        "name": "baseMetadataUri",
+        "outputs": [
+            {
+                "internalType": "string",
+                "name": "",
+                "type": "string"
             }
         ],
         "stateMutability": "view",
@@ -1192,47 +1110,6 @@
         "type": "function"
     },
     {
-        "inputs": [
-            {
-                "internalType": "uint256",
-                "name": "",
-                "type": "uint256"
-            }
-        ],
-        "name": "tokenDetails",
-        "outputs": [
-            {
-                "components": [
-                    {
-                        "internalType": "uint256",
-                        "name": "rarity",
-                        "type": "uint256"
-                    },
-                    {
-                        "internalType": "uint256",
-                        "name": "meshIndex",
-                        "type": "uint256"
-                    },
-                    {
-                        "internalType": "uint256",
-                        "name": "meshMaterial",
-                        "type": "uint256"
-                    }
-                ],
-                "internalType": "struct CharacterTokenDetails.MintingOrder",
-                "name": "mintingOrder",
-                "type": "tuple"
-            },
-            {
-                "internalType": "string",
-                "name": "tokenURI",
-                "type": "string"
-            }
-        ],
-        "stateMutability": "view",
-        "type": "function"
-    },
-    {
         "inputs": [],
         "name": "tokenIdCounter",
         "outputs": [
@@ -1352,25 +1229,6 @@
     {
         "inputs": [
             {
-                "internalType": "address",
-                "name": "",
-                "type": "address"
-            }
-        ],
-        "name": "whiteList",
-        "outputs": [
-            {
-                "internalType": "bool",
-                "name": "",
-                "type": "bool"
-            }
-        ],
-        "stateMutability": "view",
-        "type": "function"
-    },
-    {
-        "inputs": [
-            {
                 "internalType": "string",
                 "name": "_name",
                 "type": "string"
@@ -1384,6 +1242,11 @@
                 "internalType": "uint256",
                 "name": "_totalSupply",
                 "type": "uint256"
+            },
+            {
+                "internalType": "string",
+                "name": "_baseMetadataUri",
+                "type": "string"
             }
         ],
         "name": "initialize",
@@ -1422,19 +1285,6 @@
                 "type": "bytes4"
             }
         ],
-        "stateMutability": "nonpayable",
-        "type": "function"
-    },
-    {
-        "inputs": [
-            {
-                "internalType": "address",
-                "name": "_to",
-                "type": "address"
-            }
-        ],
-        "name": "setWhiteList",
-        "outputs": [],
         "stateMutability": "nonpayable",
         "type": "function"
     },
@@ -1582,54 +1432,6 @@
                 "type": "address"
             }
         ],
-        "name": "getTokenDetailsByOwner",
-        "outputs": [
-            {
-                "components": [
-                    {
-                        "components": [
-                            {
-                                "internalType": "uint256",
-                                "name": "rarity",
-                                "type": "uint256"
-                            },
-                            {
-                                "internalType": "uint256",
-                                "name": "meshIndex",
-                                "type": "uint256"
-                            },
-                            {
-                                "internalType": "uint256",
-                                "name": "meshMaterial",
-                                "type": "uint256"
-                            }
-                        ],
-                        "internalType": "struct CharacterTokenDetails.MintingOrder",
-                        "name": "mintingOrder",
-                        "type": "tuple"
-                    },
-                    {
-                        "internalType": "string",
-                        "name": "tokenURI",
-                        "type": "string"
-                    }
-                ],
-                "internalType": "struct CharacterTokenDetails.TokenDetail[]",
-                "name": "",
-                "type": "tuple[]"
-            }
-        ],
-        "stateMutability": "view",
-        "type": "function"
-    },
-    {
-        "inputs": [
-            {
-                "internalType": "address",
-                "name": "to",
-                "type": "address"
-            }
-        ],
         "name": "getTokenIdsByOwner",
         "outputs": [
             {
@@ -1644,74 +1446,9 @@
     {
         "inputs": [
             {
-                "internalType": "uint256",
-                "name": "_tokenId",
-                "type": "uint256"
-            }
-        ],
-        "name": "getTokenDetailsByID",
-        "outputs": [
-            {
-                "components": [
-                    {
-                        "components": [
-                            {
-                                "internalType": "uint256",
-                                "name": "rarity",
-                                "type": "uint256"
-                            },
-                            {
-                                "internalType": "uint256",
-                                "name": "meshIndex",
-                                "type": "uint256"
-                            },
-                            {
-                                "internalType": "uint256",
-                                "name": "meshMaterial",
-                                "type": "uint256"
-                            }
-                        ],
-                        "internalType": "struct CharacterTokenDetails.MintingOrder",
-                        "name": "mintingOrder",
-                        "type": "tuple"
-                    },
-                    {
-                        "internalType": "string",
-                        "name": "tokenURI",
-                        "type": "string"
-                    }
-                ],
-                "internalType": "struct CharacterTokenDetails.TokenDetail",
-                "name": "",
-                "type": "tuple"
-            }
-        ],
-        "stateMutability": "view",
-        "type": "function"
-    },
-    {
-        "inputs": [
-            {
-                "components": [
-                    {
-                        "internalType": "uint256",
-                        "name": "rarity",
-                        "type": "uint256"
-                    },
-                    {
-                        "internalType": "uint256",
-                        "name": "meshIndex",
-                        "type": "uint256"
-                    },
-                    {
-                        "internalType": "uint256",
-                        "name": "meshMaterial",
-                        "type": "uint256"
-                    }
-                ],
-                "internalType": "struct CharacterTokenDetails.MintingOrder[]",
-                "name": "_mintingOrders",
-                "type": "tuple[]"
+                "internalType": "uint256[]",
+                "name": "_nftIndexes",
+                "type": "uint256[]"
             },
             {
                 "internalType": "address",
@@ -1732,26 +1469,9 @@
     {
         "inputs": [
             {
-                "components": [
-                    {
-                        "internalType": "uint256",
-                        "name": "rarity",
-                        "type": "uint256"
-                    },
-                    {
-                        "internalType": "uint256",
-                        "name": "meshIndex",
-                        "type": "uint256"
-                    },
-                    {
-                        "internalType": "uint256",
-                        "name": "meshMaterial",
-                        "type": "uint256"
-                    }
-                ],
-                "internalType": "struct CharacterTokenDetails.MintingOrder[]",
-                "name": "_mintingOrders",
-                "type": "tuple[]"
+                "internalType": "uint256[]",
+                "name": "_nftIndexes",
+                "type": "uint256[]"
             },
             {
                 "internalType": "bool",
@@ -1770,6 +1490,24 @@
             }
         ],
         "name": "mintOrderFromDaapCreator",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "uint256[]",
+                "name": "_randomNumbers",
+                "type": "uint256[]"
+            },
+            {
+                "internalType": "address",
+                "name": "_to",
+                "type": "address"
+            }
+        ],
+        "name": "mintFromBoxOpening",
         "outputs": [],
         "stateMutability": "nonpayable",
         "type": "function"

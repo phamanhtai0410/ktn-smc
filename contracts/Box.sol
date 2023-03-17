@@ -51,6 +51,7 @@ contract KatanaInuBox is
     event SendNft(address from, address to, uint256 tokenId);
     event ProcessBoxOpeningRequests(address to);
     event BoxOpeningRequested(address to, uint256 targetBlock);
+    event SetNewMinter(address newMinter);
 
     bytes32 public constant UPGRADER_ROLE = keccak256("UPGRADER_ROLE");
     bytes32 public constant DESIGNER_ROLE = keccak256("DESIGNER_ROLE");
@@ -72,7 +73,6 @@ contract KatanaInuBox is
 
     // Limit each common user to by.
     uint256 public boxLimit;
-    bool public buyable;
 
     // Mapping addresses to buyable amount
     mapping(address => uint256) public boughtList;
@@ -187,9 +187,14 @@ contract KatanaInuBox is
         MAX_OPEN_BOX_UNIT = maxOpen_;
     }
 
-    /** Enable common user mint box */
-    function setBuyable(bool isBuyable) external onlyRole(DESIGNER_ROLE) {
-        buyable = isBuyable;
+    /**
+     *  @notice Function allow ADMIN set new wallet is MINTER
+     */
+    function setMinterRole(
+        address _newMinter
+    ) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        _setupRole(MINTER_ROLE, _newMinter);
+        emit SetNewMinter(_newMinter);
     }
 
     /**
@@ -249,7 +254,6 @@ contract KatanaInuBox is
         address _to,
         bytes calldata _callbackData
     ) external onlyRole(MINTER_ROLE) {
-        require(buyable == true, "Mint token have not start yet");
         BoxDetails.BoxDetail[] memory _boxDetails = _mintOneOrder(_count, _to);
         emit MintOrderForDev(_callbackData, _to, _boxDetails);
     }
@@ -271,7 +275,6 @@ contract KatanaInuBox is
         // Check limit.
         address to = msg.sender;
         require(boughtList[to] + _count <= boxLimit, "User limit buy reached");
-        require(buyable == true, "Mint token have not start yet");
         BoxDetails.BoxDetail[] memory _boxDetails = _mintOneOrder(_count, _to);
         boughtList[_to] = boughtList[_to] + _count;
 

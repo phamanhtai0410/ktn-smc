@@ -9,13 +9,9 @@ var xlsx = require('node-xlsx');
 // var config_obj = xlsx.parse(fs.readFileSync(__dirname + '/configurations.xlsx')); // parses a buffer
 // console.log(config_obj)
 
-var CharacterToken = artifacts.require("CharacterToken");
-var DaapNFTCreator = artifacts.require("DaapNFTCreator");
 var KatanaNftFactory = artifacts.require("KatanaNftFactory");
-var NftConfigurations = artifacts.require("NftConfigurations");
-var BoxesConfigurations = artifacts.require("BoxesConfigurations");
-var MysteryBoxNFT = artifacts.require('MysteryBoxNFT');
-var BoxNFTCreator = artifacts.require('BoxNFTCreator');
+var Configurations = artifacts.require("Configurations");
+var DaapNFTCreator = artifacts.require("DaapNFTCreator");
 var USDT = artifacts.require("USDT");
 
 function wf(name, address) {
@@ -31,14 +27,15 @@ const deployments = {
     init_config_to_creator: true,
     init_config: true,
     create_new: true,
-    factory_config: true
+    factory_config: true,
+    create_new_box: true,
+    factory_config_box: true
 }
 
 module.exports = async function (deployer, network, accounts) {
     let account = deployer.options?.from || accounts[0];
     console.log("deployer = ", account);
     require('dotenv').config();
-
     var _devWallet = process.env.iDevWallet;
     var _iUSDT = process.env.iUSDT;
     
@@ -63,7 +60,7 @@ module.exports = async function (deployer, network, accounts) {
     if (deployments.dapp) {
         await deployer.deploy(
             DaapNFTCreator,
-            "0xF25AbDb08ff0e0e5561198A53F1325dcfBE92428",
+            _devWallet,
             _iUSDT
         );
         var _creator = await DaapNFTCreator.deployed();
@@ -77,14 +74,14 @@ module.exports = async function (deployer, network, accounts) {
      */
     if (deployments.config) {
         await deployer.deploy(
-            NftConfigurations,
+            Configurations,
             _factory.address,
             _creator.address
         );
-        var _nftConfig = await NftConfigurations.deployed();
-        wf("NftConfigurations", _nftConfig.address);
+        var _nftConfig = await Configurations.deployed();
+        wf("Configurations", _nftConfig.address);
     } else {
-        var _nftConfig = await NftConfigurations.at(process.env.NftConfigurations);
+        var _nftConfig = await Configurations.at(process.env.Configurations);
     }
     
     /**
@@ -117,6 +114,7 @@ module.exports = async function (deployer, network, accounts) {
         await _factory.createNftCollection(
             "Testing NFT",
             "TN",
+            "https://static.katanainu.com/metadata",
             10000,
             "0xde0779f218c65Ad14660b815e3e73F74a5270651", // Katana-Treasury-1
             1000
@@ -128,19 +126,49 @@ module.exports = async function (deployer, network, accounts) {
      */
     var _collectionAddress = await _factory.getCollectionAddress(0);
     console.log("9. collection[0] : ", _collectionAddress);
+    wf("Collection[0]", _collectionAddress);
 
     /**
      *      9. Config one for colleciton
      */
     if (deployments.factory_config) {
-        await _factory.configOne(
+        await _factory.configCollection(
             _collectionAddress,
             0,
-            0,
-            (20 * 10 ** 18).toString(),
-            0,
-            "test"
+            (20 * 10 ** 18).toString()
         );
     }
     
+    /**
+     *      10. Create new Box
+     */
+    if (deployments.create_new_box) {
+        await _factory.createBox(
+            "Testing Box",
+            "TB",
+            "https://bafkreidfudijruu7e4mjgehgr3szr3rexyqlno3wafg3qqgtmbyj6i7d3y.ipfs.w3s.link/",
+            100,
+            "0xF06d7139cD8708de3e9cB2E732A8A158039ebd44", // Katana-Treasury-2
+            2000,
+            _collectionAddress
+        );
+    }
+
+    /**
+     *      11. Get box address
+     */
+    var _boxAddress = await _factory.getBoxAddress(0);
+    console.log("11. box[0] : ", _boxAddress);
+    wf("Box[0]", _boxAddress);
+
+    /**
+     *      12.. Config box
+     */
+    if (deployments.factory_config_box) {
+        await _factory.configBox(
+            _boxAddress,
+            (25 * 10 ** 18).toString(),
+            100
+        );
+    }
 }

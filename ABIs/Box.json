@@ -154,15 +154,10 @@
                         "internalType": "address",
                         "name": "owner_by",
                         "type": "address"
-                    },
-                    {
-                        "internalType": "string",
-                        "name": "tokenURI",
-                        "type": "string"
                     }
                 ],
                 "indexed": false,
-                "internalType": "struct BoxNFTDetails.BoxNFTDetail[]",
+                "internalType": "struct BoxDetails.BoxDetail[]",
                 "name": "returnMintingOrder",
                 "type": "tuple[]"
             }
@@ -206,15 +201,10 @@
                         "internalType": "address",
                         "name": "owner_by",
                         "type": "address"
-                    },
-                    {
-                        "internalType": "string",
-                        "name": "tokenURI",
-                        "type": "string"
                     }
                 ],
                 "indexed": false,
-                "internalType": "struct BoxNFTDetails.BoxNFTDetail[]",
+                "internalType": "struct BoxDetails.BoxDetail[]",
                 "name": "returnMintingOrder",
                 "type": "tuple[]"
             }
@@ -379,6 +369,19 @@
             {
                 "indexed": false,
                 "internalType": "address",
+                "name": "newMinter",
+                "type": "address"
+            }
+        ],
+        "name": "SetNewMinter",
+        "type": "event"
+    },
+    {
+        "anonymous": false,
+        "inputs": [
+            {
+                "indexed": false,
+                "internalType": "address",
                 "name": "to",
                 "type": "address"
             },
@@ -409,15 +412,10 @@
                         "internalType": "address",
                         "name": "owner_by",
                         "type": "address"
-                    },
-                    {
-                        "internalType": "string",
-                        "name": "tokenURI",
-                        "type": "string"
                     }
                 ],
                 "indexed": false,
-                "internalType": "struct BoxNFTDetails.BoxNFTDetail",
+                "internalType": "struct BoxDetails.BoxDetail",
                 "name": "details",
                 "type": "tuple"
             }
@@ -692,32 +690,6 @@
                 "internalType": "uint16",
                 "name": "count",
                 "type": "uint16"
-            }
-        ],
-        "stateMutability": "view",
-        "type": "function"
-    },
-    {
-        "inputs": [],
-        "name": "buyable",
-        "outputs": [
-            {
-                "internalType": "bool",
-                "name": "",
-                "type": "bool"
-            }
-        ],
-        "stateMutability": "view",
-        "type": "function"
-    },
-    {
-        "inputs": [],
-        "name": "coinToken",
-        "outputs": [
-            {
-                "internalType": "contract IERC20",
-                "name": "",
-                "type": "address"
             }
         ],
         "stateMutability": "view",
@@ -1068,11 +1040,6 @@
                 "internalType": "address",
                 "name": "owner_by",
                 "type": "address"
-            },
-            {
-                "internalType": "string",
-                "name": "tokenURI",
-                "type": "string"
             }
         ],
         "stateMutability": "view",
@@ -1110,6 +1077,19 @@
                 "internalType": "uint256",
                 "name": "",
                 "type": "uint256"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [],
+        "name": "tokenUri",
+        "outputs": [
+            {
+                "internalType": "string",
+                "name": "",
+                "type": "string"
             }
         ],
         "stateMutability": "view",
@@ -1195,9 +1175,9 @@
                 "type": "string"
             },
             {
-                "internalType": "contract IERC20",
-                "name": "_coinToken",
-                "type": "address"
+                "internalType": "string",
+                "name": "_tokenURI",
+                "type": "string"
             },
             {
                 "internalType": "uint256",
@@ -1227,13 +1207,6 @@
             }
         ],
         "stateMutability": "view",
-        "type": "function"
-    },
-    {
-        "inputs": [],
-        "name": "withdraw",
-        "outputs": [],
-        "stateMutability": "nonpayable",
         "type": "function"
     },
     {
@@ -1309,12 +1282,12 @@
     {
         "inputs": [
             {
-                "internalType": "bool",
-                "name": "isBuyable",
-                "type": "bool"
+                "internalType": "address",
+                "name": "_newMinter",
+                "type": "address"
             }
         ],
-        "name": "setBuyable",
+        "name": "setMinterRole",
         "outputs": [],
         "stateMutability": "nonpayable",
         "type": "function"
@@ -1388,14 +1361,9 @@
                         "internalType": "address",
                         "name": "owner_by",
                         "type": "address"
-                    },
-                    {
-                        "internalType": "string",
-                        "name": "tokenURI",
-                        "type": "string"
                     }
                 ],
-                "internalType": "struct BoxNFTDetails.BoxNFTDetail[]",
+                "internalType": "struct BoxDetails.BoxDetail[]",
                 "name": "",
                 "type": "tuple[]"
             }
@@ -1434,14 +1402,9 @@
                         "internalType": "address",
                         "name": "owner_by",
                         "type": "address"
-                    },
-                    {
-                        "internalType": "string",
-                        "name": "tokenURI",
-                        "type": "string"
                     }
                 ],
-                "internalType": "struct BoxNFTDetails.BoxNFTDetail[]",
+                "internalType": "struct BoxDetails.BoxDetail[]",
                 "name": "",
                 "type": "tuple[]"
             }
@@ -1554,24 +1517,6 @@
     {
         "inputs": [],
         "name": "processBoxOpeningRequests",
-        "outputs": [],
-        "stateMutability": "nonpayable",
-        "type": "function"
-    },
-    {
-        "inputs": [
-            {
-                "internalType": "address",
-                "name": "to",
-                "type": "address"
-            },
-            {
-                "internalType": "uint256[]",
-                "name": "tokenIds_",
-                "type": "uint256[]"
-            }
-        ],
-        "name": "sendNft",
         "outputs": [],
         "stateMutability": "nonpayable",
         "type": "function"

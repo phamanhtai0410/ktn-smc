@@ -214,6 +214,10 @@ contract KatanaNftFactory is AccessControl {
         return nftCollectionsList.at(index);
     }
 
+    function getBoxAddress(uint256 index) external view returns (address) {
+        return boxCollectionsList.at(index);
+    }
+
     function isValidNftCollection(
         address _nftCollection
     ) external view returns (bool) {
@@ -234,6 +238,18 @@ contract KatanaNftFactory is AccessControl {
     }
 
     /**
+     *  @notice Function Set new minter Role for a box
+     *  @dev Call to box to set MINTER_ROLE
+     */
+    function setNewMinterForBox(
+        address _boxAddress,
+        address _newMinter
+    ) external onlyRole(IMPLEMENTATION_ROLE) {
+        KatanaInuBox(_boxAddress).setMinterRole(_newMinter);
+        emit SetNewMinterRole(_boxAddress, _newMinter);
+    }
+
+    /**
      *  @notice Functions allows IMPLEMENTATION_ROLE to update state of disable minting
      */
     function updateStateDisableMinting(
@@ -250,16 +266,6 @@ contract KatanaNftFactory is AccessControl {
         address _nftColleciton
     ) external onlyRole(IMPLEMENTATION_ROLE) {
         ICollection(_nftColleciton).switchFreeTransferMode();
-    }
-
-    /**
-     *  @notice Function allows IMPLEMENTATION_ROLE to setWhitelist for one specificed NFT colleciton
-     */
-    function setWhitelist(
-        address _nftCollection,
-        address _to
-    ) external onlyRole(IMPLEMENTATION_ROLE) {
-        ICollection(_nftCollection).setWhiteList(_to);
     }
 
     /**
@@ -329,7 +335,7 @@ contract KatanaNftFactory is AccessControl {
         emit Execution(to, value, data, operation, success);
     }
 
-    function checkIsValidBox(address _boxAddress) external returns (bool) {
+    function checkIsValidBox(address _boxAddress) external view returns (bool) {
         return (msg.sender == openingCollectionOfBox[_boxAddress]);
     }
 }

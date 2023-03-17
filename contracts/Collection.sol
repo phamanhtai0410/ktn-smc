@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
+import "@openzeppelin/contracts/utils/Strings.sol";
 import "@openzeppelin/contracts/utils/Counters.sol";
 import "@openzeppelin/contracts/utils/math/Math.sol";
 import "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
@@ -368,9 +369,9 @@ contract KatanaInuCollection is
                 abi.encodePacked(
                     baseMetadataUri,
                     "/",
-                    address(this),
+                    Strings.toHexString(uint256(uint160(address(this))), 20),
                     "/",
-                    _tokenId,
+                    Strings.toString(_tokenId),
                     ".json"
                 )
             );
