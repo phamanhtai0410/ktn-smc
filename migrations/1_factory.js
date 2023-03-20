@@ -114,7 +114,7 @@ module.exports = async function (deployer, network, accounts) {
         await _factory.createNftCollection(
             "Testing NFT",
             "TN",
-            "https://static.katanainu.com/metadata",
+            "https://s3.us-east-1.amazonaws.com/static.katanainu.com/metadata",
             10000,
             "0xde0779f218c65Ad14660b815e3e73F74a5270651", // Katana-Treasury-1
             1000

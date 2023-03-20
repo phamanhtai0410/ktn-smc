@@ -9,7 +9,9 @@ contract Test is ERC721 {
     ) ERC721(_name, _symbol) {}
 
     string public constant s_uri =
-        "https://static.katanainu.com/metadata/0x75a068654a93c33950ebb13c71041b8ed0422b46/5.json";
+        "https://static.katanainu.com/metadata/0x75a068654a93c33950ebb13c71041b8ed0422b46/1003.json";
+
+    // "https://s3.amazonaws.com/static.katanainu.com/metadata/0x75a068654a93c33950ebb13c71041b8ed0422b46/1003.json";
 
     function mint(uint256 _tokenId) external {
         _mint(msg.sender, _tokenId);
