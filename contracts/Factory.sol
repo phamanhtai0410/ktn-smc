@@ -83,6 +83,30 @@ contract KatanaNftFactory is AccessControl {
         emit SetConfiguration(address(_nftConfiguration));
     }
 
+    /**
+     *      Config collection'
+     */
+    function configCollection(
+        address _collectionAddress,
+        uint256 _nftIndex,
+        uint256 _price
+    ) external onlyRole(IMPLEMENTATION_ROLE) {
+        _configOneCollection(_collectionAddress, _nftIndex, _price);
+        // TODO: emit event when config
+    }
+
+    function _configOneCollection(
+        address _collectionAddress,
+        uint256 _nftIndex,
+        uint256 _price
+    ) internal {
+        nftConfiguration.configCollection(
+            _collectionAddress,
+            _nftIndex,
+            _price
+        );
+    }
+
     /*
      *   Create instance of COLLECTION
      */
@@ -92,7 +116,8 @@ contract KatanaNftFactory is AccessControl {
         string memory _baseMetadataUri,
         uint256 _totalSupply,
         address _treasuryAddress,
-        uint96 _royaltyRate
+        uint96 _royaltyRate,
+        uint256[] memory _prices
     ) external onlyRole(IMPLEMENTATION_ROLE) {
         address collection = Clones.clone(implementationAddress);
 
@@ -113,6 +138,12 @@ contract KatanaNftFactory is AccessControl {
         // Add new collection to configuration
         nftConfiguration.InsertNewCollectionAddress(collection);
         nftCollectionsList.add(collection);
+
+        // Config prices
+        for (uint i = 0; i < _prices.length; i++) {
+            _configOneCollection(collection, i, _prices[i]);
+        }
+
         emit CreateNftCollection(collection);
     }
 
@@ -141,22 +172,6 @@ contract KatanaNftFactory is AccessControl {
         boxCollectionsList.add(_box);
         openingCollectionOfBox[_box] = address(_openingCollectionAddress);
         emit CreateNewBox(_box);
-    }
-
-    /**
-     *      Config collection'
-     */
-    function configCollection(
-        address _collectionAddress,
-        uint256 _nftIndex,
-        uint256 _price
-    ) external onlyRole(IMPLEMENTATION_ROLE) {
-        nftConfiguration.configCollection(
-            _collectionAddress,
-            _nftIndex,
-            _price
-        );
-        // TODO: emit event when config
     }
 
     /**

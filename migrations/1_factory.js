@@ -117,7 +117,12 @@ module.exports = async function (deployer, network, accounts) {
             "https://s3.us-east-1.amazonaws.com/static.katanainu.com/metadata",
             10000,
             "0xde0779f218c65Ad14660b815e3e73F74a5270651", // Katana-Treasury-1
-            1000
+            1000,
+            [
+                (10 * 10 ** 18).toString(),
+                (10 * 10 ** 18).toString(),
+                (10 * 10 ** 18).toString()
+            ]
         );
     }
 
@@ -131,13 +136,13 @@ module.exports = async function (deployer, network, accounts) {
     /**
      *      9. Config one for colleciton
      */
-    if (deployments.factory_config) {
-        await _factory.configCollection(
-            _collectionAddress,
-            0,
-            (20 * 10 ** 18).toString()
-        );
-    }
+    // if (deployments.factory_config) {
+    //     await _factory.configCollection(
+    //         _collectionAddress,
+    //         0,
+    //         (20 * 10 ** 18).toString()
+    //     );
+    // }
     
     /**
      *      10. Create new Box
