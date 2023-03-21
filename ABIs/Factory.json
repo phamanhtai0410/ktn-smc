@@ -431,6 +431,29 @@
     {
         "inputs": [
             {
+                "internalType": "address",
+                "name": "_collectionAddress",
+                "type": "address"
+            },
+            {
+                "internalType": "uint256",
+                "name": "_nftIndex",
+                "type": "uint256"
+            },
+            {
+                "internalType": "uint256",
+                "name": "_price",
+                "type": "uint256"
+            }
+        ],
+        "name": "configCollection",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
                 "internalType": "string",
                 "name": "_name",
                 "type": "string"
@@ -459,6 +482,11 @@
                 "internalType": "uint96",
                 "name": "_royaltyRate",
                 "type": "uint96"
+            },
+            {
+                "internalType": "uint256[]",
+                "name": "_prices",
+                "type": "uint256[]"
             }
         ],
         "name": "createNftCollection",
@@ -505,29 +533,6 @@
             }
         ],
         "name": "createBox",
-        "outputs": [],
-        "stateMutability": "nonpayable",
-        "type": "function"
-    },
-    {
-        "inputs": [
-            {
-                "internalType": "address",
-                "name": "_collectionAddress",
-                "type": "address"
-            },
-            {
-                "internalType": "uint256",
-                "name": "_nftIndex",
-                "type": "uint256"
-            },
-            {
-                "internalType": "uint256",
-                "name": "_price",
-                "type": "uint256"
-            }
-        ],
-        "name": "configCollection",
         "outputs": [],
         "stateMutability": "nonpayable",
         "type": "function"

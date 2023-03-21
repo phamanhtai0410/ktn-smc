@@ -78,6 +78,13 @@ module.exports = {
       timeoutBlocks: 200,
       skipDryRun: true
     },
+    bsc_mainnet: {
+      provider: () => new HDWalletProvider(mnemonic, `https://bsc-dataseed4.ninicoin.io`),
+      network_id: 56,
+      confirmations: 1,
+      timeoutBlocks: 200,
+      skipDryRun: true
+    },
     // testnet: {
     //   host: '127.0.0.1', // Localhost (default: none)
     //   port: 8545, // Standard Ethereum port (default: none)

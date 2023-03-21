@@ -112,7 +112,7 @@ module.exports = async function (deployer, network, accounts) {
      */
     if (deployments.create_new) {
         await _factory.createNftCollection(
-            "Testing NFT",
+            "KatanaInu NFT",
             "TN",
             "https://s3.us-east-1.amazonaws.com/static.katanainu.com/metadata",
             10000,
@@ -147,33 +147,33 @@ module.exports = async function (deployer, network, accounts) {
     /**
      *      10. Create new Box
      */
-    if (deployments.create_new_box) {
-        await _factory.createBox(
-            "Testing Box",
-            "TB",
-            "https://bafkreidfudijruu7e4mjgehgr3szr3rexyqlno3wafg3qqgtmbyj6i7d3y.ipfs.w3s.link/",
-            100,
-            "0xF06d7139cD8708de3e9cB2E732A8A158039ebd44", // Katana-Treasury-2
-            2000,
-            _collectionAddress
-        );
-    }
+    // if (deployments.create_new_box) {
+    //     await _factory.createBox(
+    //         "Testing Box",
+    //         "TB",
+    //         "https://bafkreidfudijruu7e4mjgehgr3szr3rexyqlno3wafg3qqgtmbyj6i7d3y.ipfs.w3s.link/",
+    //         100,
+    //         "0xF06d7139cD8708de3e9cB2E732A8A158039ebd44", // Katana-Treasury-2
+    //         2000,
+    //         _collectionAddress
+    //     );
+    // }
 
     /**
      *      11. Get box address
      */
-    var _boxAddress = await _factory.getBoxAddress(0);
-    console.log("11. box[0] : ", _boxAddress);
-    wf("Box[0]", _boxAddress);
+    // var _boxAddress = await _factory.getBoxAddress(0);
+    // console.log("11. box[0] : ", _boxAddress);
+    // wf("Box[0]", _boxAddress);
 
     /**
      *      12.. Config box
      */
-    if (deployments.factory_config_box) {
-        await _factory.configBox(
-            _boxAddress,
-            (25 * 10 ** 18).toString(),
-            100
-        );
-    }
+    // if (deployments.factory_config_box) {
+    //     await _factory.configBox(
+    //         _boxAddress,
+    //         (25 * 10 ** 18).toString(),
+    //         100
+    //     );
+    // }
 }
