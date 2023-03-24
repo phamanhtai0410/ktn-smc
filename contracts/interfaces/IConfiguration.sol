@@ -27,7 +27,7 @@ interface IConfiguration {
     /**
      *  @notice Function allows Dapp Creator call to get price
      */
-    function getPrice(
+    function getCollectionPrice(
         address _nftCollection,
         uint256 _nftIndex
     ) external view returns (uint256);

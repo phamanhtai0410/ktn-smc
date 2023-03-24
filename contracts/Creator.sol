@@ -186,11 +186,10 @@ contract DaapNFTCreator is
         );
         for (uint256 i = 0; i < _nftIndexes.length; i++) {
             require(
-                IConfiguration(nftConfiguration)
-                    .checkValidMintingAttributes(
-                        address(_nftCollection),
-                        _nftIndexes[i]
-                    ),
+                IConfiguration(nftConfiguration).checkValidMintingAttributes(
+                    address(_nftCollection),
+                    _nftIndexes[i]
+                ),
                 "Invalid NFT Index"
             );
         }
@@ -208,7 +207,7 @@ contract DaapNFTCreator is
 
         uint256 _amount = 0;
         for (uint256 i = 0; i < _nftIndexes.length; i++) {
-            _amount += IConfiguration(nftConfiguration).getPrice(
+            _amount += IConfiguration(nftConfiguration).getCollectionPrice(
                 address(_nftCollection),
                 _nftIndexes[i]
             );
