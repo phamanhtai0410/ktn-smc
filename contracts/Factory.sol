@@ -84,27 +84,40 @@ contract KatanaNftFactory is AccessControl {
     }
 
     /**
-     *      Config collection'
+     *      Config collection
      */
     function configCollection(
         address _collectionAddress,
         uint256 _nftIndex,
-        uint256 _price
+        uint256 _price,
+        string memory _baseMetadataUri
     ) external onlyRole(IMPLEMENTATION_ROLE) {
-        _configOneCollection(_collectionAddress, _nftIndex, _price);
+        _configOneCollection(_collectionAddress, _nftIndex, _price, _baseMetadataUri);
         // TODO: emit event when config
     }
 
     function _configOneCollection(
         address _collectionAddress,
         uint256 _nftIndex,
-        uint256 _price
+        uint256 _price,
+        string memory _baseMetadataUri
     ) internal {
         nftConfiguration.configCollection(
             _collectionAddress,
             _nftIndex,
-            _price
+            _price,
+            _baseMetadataUri
         );
+    }
+
+    /**
+     *      Config collection
+     */
+    function configNftCollectionURI(
+        address _collectionAddress,
+        string memory _baseMetadataUri
+    ) external onlyRole(IMPLEMENTATION_ROLE) {
+        nftConfiguration.configCollectionURI(_collectionAddress, _baseMetadataUri);
     }
 
     /*
@@ -125,8 +138,7 @@ contract KatanaNftFactory is AccessControl {
         KatanaInuCollection(collection).initialize(
             _name,
             _symbol,
-            _totalSupply,
-            _baseMetadataUri
+            _totalSupply
         );
 
         // Call to config the default royalty fee rate
@@ -141,7 +153,7 @@ contract KatanaNftFactory is AccessControl {
 
         // Config prices
         for (uint i = 0; i < _prices.length; i++) {
-            _configOneCollection(collection, i, _prices[i]);
+            _configOneCollection(collection, i, _prices[i], _baseMetadataUri);
         }
 
         emit CreateNftCollection(collection);

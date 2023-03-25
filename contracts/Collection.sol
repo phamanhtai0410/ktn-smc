@@ -94,9 +94,6 @@ contract KatanaInuCollection is
     // Blacklist for Whitelist Minting
     mapping(address => bool) public blackList;
 
-    // Base Metadata URI
-    string public baseMetadataUri;
-
     /**
      * @notice Checks if the msg.sender is a contract or a proxy
      */
@@ -128,8 +125,7 @@ contract KatanaInuCollection is
     function initialize(
         string memory _name,
         string memory _symbol,
-        uint256 _totalSupply,
-        string memory _baseMetadataUri
+        uint256 _totalSupply
     ) public initializer {
         __ERC721_init(_name, _symbol);
         __AccessControl_init();
@@ -147,7 +143,6 @@ contract KatanaInuCollection is
         totalSupply = _totalSupply;
         FREE_TRANSFER = false;
         DISABLE_MINTING = false;
-        baseMetadataUri = _baseMetadataUri;
     }
 
     function onERC721Received(
@@ -364,17 +359,7 @@ contract KatanaInuCollection is
     function tokenURI(
         uint256 _tokenId
     ) public view override returns (string memory) {
-        return
-            string(
-                abi.encodePacked(
-                    baseMetadataUri,
-                    "/",
-                    Strings.toHexString(uint256(uint160(address(this))), 20),
-                    "/",
-                    Strings.toString(_tokenId),
-                    ".json"
-                )
-            );
+        return IConfiguration(getNftConfigurations()).getCollectionURI(address(this), _tokenId);
     }
 
     /**

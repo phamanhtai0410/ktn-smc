@@ -12,11 +12,31 @@ interface IConfiguration {
      */
     function InsertNewBoxAddress(address _boxAddress) external;
 
+    /**
+     *  @notice Function config for each Collection
+     */
     function configCollection(
         address _collectionAddress,
         uint256 _nftIndex,
-        uint256 _price
+        uint256 _price,
+        string memory _baseMetadataUri
     ) external;
+
+    /**
+     *  @notice Function config tokenURI() of each Collection
+     */
+    function configCollectionURI(
+        address _collectionAddress,
+        string memory _baseMetadataUri
+    ) external;
+
+    /**
+     *  @notice Function get tokenURI() of Collection
+     */
+    function getCollectionURI(
+        address _nftCollection,
+        uint256 _tokenID
+    ) external view returns (string memory);
 
     function configBox(
         address _boxAddress,

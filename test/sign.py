@@ -6,47 +6,45 @@ _privateKey = "98102796d0dfe116f5af6e9a3c10dc38d316f6c98b3ded8d008b962c7d126460"
 
 _user_address = "0x29E754233F6A50ee5AE3ee6A0217aD907dc3386B"
 
-_contract_address = "0x6328eAE56ef2b7719Ea3187e3b6D66Fc06Da3D02"
+_contract_address = "0x5cEc77CeE391b2104DB264F74cdE3CC4a4b1B9ee"
 
-_nft_collection_address = "0x1170693b03Ec83f9d295D55da39f6e2A549D5e0E"
+_nft_collection_address = "0x3c4dCA37943cbAEe5cE5766a16473dBb09670d01"
 
 _data = {
     "discount": 10 ** 16,
-    "rarities": [
-        0
-    ],
-    "meshIndexes": [
-        0
-    ],
-    "meshMaterialIndexes": [
-        0
-    ],
-    "deadline": 1669148853
+    # "rarities": [
+    #     0
+    # ],
+    # "meshIndexes": [
+    #     0
+    # ],
+    # "meshMaterialIndexes": [
+    #     0
+    # ],
+    "deadline": 1679815126
 }
 
 def generate_signature():
     _w3 = Web3()
     _encode = _w3.codec.encode_abi(
         [
-            'uint256',
-            'address',
-            'address',
-            'address',
-            'uint256',
-            'uint256[]',
-            'uint256[]',
-            'uint256[]',
-            'uint256'
-        ],  # [chain_id, user_address, contract_address, discount, cids, types, rarities, deadline]
+            'uint256', # chain
+            'address', # _user_address
+            'address', # contract creator
+            'address', # nft address
+            'uint256', # discount
+            'bool', # is whitelist
+            'uint256[]', #_nftIndexes
+            'uint256' # deadline
+        ],  # [chain_id, user_address, contract_address, nft_address,discount, cids, types, rarities, deadline]
         [
             97,
             _user_address,
             _contract_address,
             _nft_collection_address,
             get(_data, "discount"),
-            get(_data, "rarities"),
-            get(_data, "meshIndexes"),
-            get(_data, "meshMaterialIndexes"),
+            False,
+            [0],
             get(_data, "deadline")
         ]
     )
@@ -59,3 +57,14 @@ def generate_signature():
     return _signed_message.signature.hex()
 
 print("* Signature = ", generate_signature())
+
+# abi.encode(
+#                 getChainID(),
+#                 msg.sender,
+#                 address(this),
+#                 _nftCollection,
+#                 _discount,
+#                 _isWhitelistMint,
+#                 _nftIndexes,
+#                 _proof.deadline
+#             )

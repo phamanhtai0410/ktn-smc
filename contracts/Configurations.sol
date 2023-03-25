@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
+import "@openzeppelin/contracts/utils/Strings.sol";
 import "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
 import "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 
@@ -21,6 +22,10 @@ contract Configurations is AccessControlUpgradeable {
     // NFT Factory Address
     address public NFT_FACTORY;
 
+    // Config URI NFT 
+    // NFT address => uri
+    mapping(address => string) public uriNFTs;
+    
     // Dapp Creator
     address public DAPP_CREATOR;
 
@@ -98,13 +103,50 @@ contract Configurations is AccessControlUpgradeable {
     function configCollection(
         address _collectionAddress,
         uint256 _nftIndex,
-        uint256 _price
-    ) external onlyFromFactory {
+        uint256 _price,
+        string memory _baseMetadataUri
+
+    ) external  {
         require(
             nftCollectionsList.contains(_collectionAddress),
             "Invalid NFT collection address"
         );
         prices[_collectionAddress][_nftIndex] = _price;
+        uriNFTs[_collectionAddress] = _baseMetadataUri;
+    }
+
+    /**
+     *      Config for each tokenURI() of collection
+     */
+    function configCollectionURI(
+        address _collectionAddress,
+        string memory _baseMetadataUri
+    ) external  {
+        require(
+            nftCollectionsList.contains(_collectionAddress),
+            "Invalid NFT collection address"
+        );
+        uriNFTs[_collectionAddress] = _baseMetadataUri;
+    }
+
+    /**
+     *      get tokenURI() of collection
+     */
+    function getCollectionURI(
+        address _collectionAddress,
+        uint256 _tokenId
+    ) external view returns (string memory) {
+        return
+            string(
+                abi.encodePacked(
+                    uriNFTs[_collectionAddress],
+                    "/",
+                    Strings.toHexString(uint256(uint160(_collectionAddress)), 20),
+                    "/",
+                    Strings.toString(_tokenId),
+                    ".json"
+                )
+            );
     }
 
     /**
