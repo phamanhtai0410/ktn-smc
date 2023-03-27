@@ -8,11 +8,6 @@ interface IConfiguration {
     function InsertNewCollectionAddress(address _nftCollection) external;
 
     /**
-     *  @notice Function allows Factory to add new deployed collection
-     */
-    function InsertNewBoxAddress(address _boxAddress) external;
-
-    /**
      *  @notice Function config for each Collection
      */
     function configCollection(
@@ -38,22 +33,12 @@ interface IConfiguration {
         uint256 _tokenID
     ) external view returns (string memory);
 
-    function configBox(
-        address _boxAddress,
-        uint256 _price,
-        uint256 _maxIndex
-    ) external;
-
     /**
      *  @notice Function allows Dapp Creator call to get price
      */
     function getCollectionPrice(
         address _nftCollection,
         uint256 _nftIndex
-    ) external view returns (uint256);
-
-    function getMaxIndexOfBox(
-        address _boxAddress
     ) external view returns (uint256);
 
     /**

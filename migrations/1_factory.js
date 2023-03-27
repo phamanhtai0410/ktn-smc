@@ -110,6 +110,8 @@ module.exports = async function (deployer, network, accounts) {
     /**
      *      7. Create new Collection
      */
+    // "https://s3.us-east-1.amazonaws.com/static.katanainu.com/metadata",
+    // https://s3.us-east-1.amazonaws.com/static.katanainu.com/metadata/collection
     if (deployments.create_new) {
         await _factory.createNftCollection(
             "KatanaInu NFT",
@@ -177,3 +179,6 @@ module.exports = async function (deployer, network, accounts) {
     //     );
     // }
 }
+
+// https://s3.us-east-1.amazonaws.com/static.katanainu.com/metadata/0xee755fa918239826e13bff64ff0184457dc13506/1.json
+// https://s3.us-east-1.amazonaws.com/static.katanainu.com/metadata/collection/0xee755fa918239826e13bff64ff0184457dc13506/1.json

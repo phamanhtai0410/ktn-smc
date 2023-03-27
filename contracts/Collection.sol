@@ -35,9 +35,6 @@ contract KatanaInuCollection is
     event TokenCreated(address to, uint256 tokenId, uint256 nftIndex);
     event BurnToken(uint256[] ids);
     event SetNewMinter(address newMinter);
-    event SetCharacterItem(address itemAddress);
-    event SetMarketplace(address marketplaceAddress);
-    event AddNewNftType(uint8 maxNftType, uint8[] maxRarityList);
     event MintOrderForDev(
         bytes callbackData,
         address to,
@@ -48,16 +45,8 @@ contract KatanaInuCollection is
         address to,
         ReturnMintingOrder[] returnMintingOrder
     );
-    event MintFromBoxOpening(
-        address to,
-        uint256[] randomNumber,
-        uint256[] mintedTokenId
-    );
-    event UseNFTs(address to, uint256[] usedTokenIds);
     event SetMaxTokensInOneOrder(uint8 maxTokensInOneOrder);
     event SetMaxTokensInOneUsing(uint8 maxTokenInOneUsing);
-    event SetNewMaxRarity(uint8 oldMaxRarity, uint8 newMaxRarity);
-    event SetWhiteList(address to);
     event SwitchFreeTransferMode(bool oldMode, bool newMode);
     event UpdateDiableMinting(bool oldState, bool newState);
     event NewTotalSupply(uint256 oldTotal, uint256 newTotal);
@@ -66,9 +55,6 @@ contract KatanaInuCollection is
     bytes32 public constant UPGRADER_ROLE = keccak256("UPGRADER_ROLE");
     bytes32 public constant DESIGNER_ROLE = keccak256("DESIGNER_ROLE");
     bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
-
-    // Maketplace contract address => open for setting when in need
-    IERC721 public marketPlace;
 
     // Counter for tokenID
     Counters.Counter public tokenIdCounter;
@@ -90,9 +76,6 @@ contract KatanaInuCollection is
 
     // Flag: Enable or disable the feature of minting
     bool public DISABLE_MINTING;
-
-    // Blacklist for Whitelist Minting
-    mapping(address => bool) public blackList;
 
     /**
      * @notice Checks if the msg.sender is a contract or a proxy
@@ -296,10 +279,28 @@ contract KatanaInuCollection is
         return totalSupply;
     }
 
+    
+
+    /**
+     *  Function mint NFTs order from daap creator
+     */
+    function mint(
+        uint256[] memory _nftIndexes,
+        address _to,
+        string calldata _callbackData
+    ) external onlyFromDaapCreator {
+        ReturnMintingOrder[] memory _returnOrder = _mintOneOrder(
+            _nftIndexes,
+            _to
+        );
+        emit MintOrderFromDaapCreator(_callbackData, _to, _returnOrder);
+    }
+
+  
     /**
      *  Function mint NFTs order from admin
      */
-    function mintOrderForDev(
+    function mintOwner(
         uint256[] memory _nftIndexes,
         address _to,
         bytes calldata _callbackData
@@ -311,46 +312,7 @@ contract KatanaInuCollection is
 
         emit MintOrderForDev(_callbackData, _to, _returnOrder);
     }
-
-    /**
-     *  Function mint NFTs order from daap creator
-     */
-    function mintOrderFromDaapCreator(
-        uint256[] memory _nftIndexes,
-        bool _isWhitelistMint,
-        address _to,
-        string calldata _callbackData
-    ) external onlyFromDaapCreator {
-        if (_isWhitelistMint) {
-            require(!blackList[_to], "Whitelist slot's already used");
-        }
-        ReturnMintingOrder[] memory _returnOrder = _mintOneOrder(
-            _nftIndexes,
-            _to
-        );
-        if (_isWhitelistMint) {
-            blackList[_to] = true;
-        }
-        emit MintOrderFromDaapCreator(_callbackData, _to, _returnOrder);
-    }
-
-    /**
-     * Function mint NFTs by opening box
-     */
-    function mintFromBoxOpening(
-        uint256[] memory _randomNumbers,
-        address _to
-    ) external onlyFromBoxInstance {
-        uint256[] memory _mintedTokenId = new uint256[](_randomNumbers.length);
-        for (uint i = 0; i < _randomNumbers.length; i++) {
-            tokenIdCounter.increment();
-            uint256 _id = tokenIdCounter.current();
-            _mint(_to, _id);
-            _mintedTokenId[i] = _id;
-        }
-        emit MintFromBoxOpening(_to, _randomNumbers, _mintedTokenId);
-    }
-
+    
     /**
      *      Function return tokenURI for specific NFT
      *      @param _tokenId ID of NFT

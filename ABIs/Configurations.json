@@ -20,31 +20,6 @@
         "inputs": [
             {
                 "indexed": false,
-                "internalType": "address",
-                "name": "boxContract",
-                "type": "address"
-            },
-            {
-                "indexed": false,
-                "internalType": "uint256[]",
-                "name": "rarityProportions",
-                "type": "uint256[]"
-            },
-            {
-                "indexed": false,
-                "internalType": "uint8",
-                "name": "defaultRarity",
-                "type": "uint8"
-            }
-        ],
-        "name": "AddNewBoxInstant",
-        "type": "event"
-    },
-    {
-        "anonymous": false,
-        "inputs": [
-            {
-                "indexed": false,
                 "internalType": "uint8",
                 "name": "version",
                 "type": "uint8"
@@ -178,46 +153,6 @@
                 "internalType": "bytes32",
                 "name": "",
                 "type": "bytes32"
-            }
-        ],
-        "stateMutability": "view",
-        "type": "function",
-        "constant": true
-    },
-    {
-        "inputs": [
-            {
-                "internalType": "address",
-                "name": "",
-                "type": "address"
-            }
-        ],
-        "name": "boxMaxIndex",
-        "outputs": [
-            {
-                "internalType": "uint256",
-                "name": "",
-                "type": "uint256"
-            }
-        ],
-        "stateMutability": "view",
-        "type": "function",
-        "constant": true
-    },
-    {
-        "inputs": [
-            {
-                "internalType": "address",
-                "name": "",
-                "type": "address"
-            }
-        ],
-        "name": "boxPrices",
-        "outputs": [
-            {
-                "internalType": "uint256",
-                "name": "",
-                "type": "uint256"
             }
         ],
         "stateMutability": "view",
@@ -369,6 +304,26 @@
         "constant": true
     },
     {
+        "inputs": [
+            {
+                "internalType": "address",
+                "name": "",
+                "type": "address"
+            }
+        ],
+        "name": "uriNFTs",
+        "outputs": [
+            {
+                "internalType": "string",
+                "name": "",
+                "type": "string"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function",
+        "constant": true
+    },
+    {
         "inputs": [],
         "name": "initialize",
         "outputs": [],
@@ -392,11 +347,44 @@
         "inputs": [
             {
                 "internalType": "address",
-                "name": "_boxAddress",
+                "name": "_collectionAddress",
                 "type": "address"
+            },
+            {
+                "internalType": "uint256",
+                "name": "_nftIndex",
+                "type": "uint256"
+            },
+            {
+                "internalType": "uint256",
+                "name": "_price",
+                "type": "uint256"
+            },
+            {
+                "internalType": "string",
+                "name": "_baseMetadataUri",
+                "type": "string"
             }
         ],
-        "name": "InsertNewBoxAddress",
+        "name": "configCollection",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "address",
+                "name": "_collectionAddress",
+                "type": "address"
+            },
+            {
+                "internalType": "string",
+                "name": "_baseMetadataUri",
+                "type": "string"
+            }
+        ],
+        "name": "configCollectionURI",
         "outputs": [],
         "stateMutability": "nonpayable",
         "type": "function"
@@ -410,42 +398,21 @@
             },
             {
                 "internalType": "uint256",
-                "name": "_nftIndex",
-                "type": "uint256"
-            },
-            {
-                "internalType": "uint256",
-                "name": "_price",
+                "name": "_tokenId",
                 "type": "uint256"
             }
         ],
-        "name": "configCollection",
-        "outputs": [],
-        "stateMutability": "nonpayable",
-        "type": "function"
-    },
-    {
-        "inputs": [
+        "name": "getCollectionURI",
+        "outputs": [
             {
-                "internalType": "address",
-                "name": "_boxAddress",
-                "type": "address"
-            },
-            {
-                "internalType": "uint256",
-                "name": "_price",
-                "type": "uint256"
-            },
-            {
-                "internalType": "uint256",
-                "name": "_maxIndex",
-                "type": "uint256"
+                "internalType": "string",
+                "name": "",
+                "type": "string"
             }
         ],
-        "name": "configBox",
-        "outputs": [],
-        "stateMutability": "nonpayable",
-        "type": "function"
+        "stateMutability": "view",
+        "type": "function",
+        "constant": true
     },
     {
         "inputs": [
@@ -461,46 +428,6 @@
             }
         ],
         "name": "getCollectionPrice",
-        "outputs": [
-            {
-                "internalType": "uint256",
-                "name": "",
-                "type": "uint256"
-            }
-        ],
-        "stateMutability": "view",
-        "type": "function",
-        "constant": true
-    },
-    {
-        "inputs": [
-            {
-                "internalType": "address",
-                "name": "_boxAddress",
-                "type": "address"
-            }
-        ],
-        "name": "getBoxPrice",
-        "outputs": [
-            {
-                "internalType": "uint256",
-                "name": "",
-                "type": "uint256"
-            }
-        ],
-        "stateMutability": "view",
-        "type": "function",
-        "constant": true
-    },
-    {
-        "inputs": [
-            {
-                "internalType": "address",
-                "name": "_boxAddress",
-                "type": "address"
-            }
-        ],
-        "name": "getMaxIndexOfBox",
         "outputs": [
             {
                 "internalType": "uint256",

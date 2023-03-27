@@ -217,9 +217,8 @@ contract DaapNFTCreator is
             "User needs to hold enough token to buy this token"
         );
         payToken.transferFrom(msg.sender, address(this), _amount - _discount);
-        _nftCollection.mintOrderFromDaapCreator(
+        _nftCollection.mint(
             _nftIndexes,
-            _isWhitelistMint,
             msg.sender,
             _callbackData
         );

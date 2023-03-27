@@ -7,9 +7,8 @@ interface ICollection is IERC721Upgradeable {
     /**
      *      @dev Funtion let MINTER_ROLE can mint token(s) for user
      */
-    function mintOrderFromDaapCreator(
+    function mint(
         uint256[] calldata _mintingOrders,
-        bool _isWhitelistMint,
         address _to,
         string calldata _callbackData
     ) external;
@@ -18,7 +17,7 @@ interface ICollection is IERC721Upgradeable {
     function lastId() external view returns (uint256);
 
     /** Mint token with rarities from dev purpose */
-    function mintOrderForDev(
+    function mintOwner(
         uint256[] calldata _mintingOrders,
         address _to,
         bytes calldata _callbackData
@@ -38,9 +37,4 @@ interface ICollection is IERC721Upgradeable {
      *      @dev Set whitelis
      */
     function setWhiteList(address _to) external;
-
-    function mintFromBoxOpening(
-        uint256[] memory _randomNumbers,
-        address _to
-    ) external;
 }

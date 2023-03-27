@@ -10,12 +10,6 @@ contract Configurations is AccessControlUpgradeable {
     using EnumerableSet for EnumerableSet.UintSet;
     using EnumerableSet for EnumerableSet.AddressSet;
 
-    // Event
-    event AddNewBoxInstant(
-        address boxContract,
-        uint256[] rarityProportions,
-        uint8 defaultRarity
-    );
 
     bytes32 public constant UPGRADER_ROLE = keccak256("UPGRADER_ROLE");
 
@@ -32,17 +26,9 @@ contract Configurations is AccessControlUpgradeable {
     // List of NFT collections
     EnumerableSet.AddressSet private nftCollectionsList;
 
-    // List of NFT collections
-    EnumerableSet.AddressSet private boxCollectionsList;
-
     // Price of one index in each collection
     mapping(address => mapping(uint256 => uint256)) public prices;
 
-    // Price of boxes
-    mapping(address => uint256) public boxPrices;
-
-    // Max index of box
-    mapping(address => uint256) public boxMaxIndex;
 
     // modifier to check from Factory or not
     modifier onlyFromFactory() {
@@ -91,13 +77,6 @@ contract Configurations is AccessControlUpgradeable {
     }
 
     /**
-     *  @notice Function allows Factory to add new deployed box collection
-     */
-    function InsertNewBoxAddress(address _boxAddress) external onlyFromFactory {
-        boxCollectionsList.add(_boxAddress);
-    }
-
-    /**
      *      Config for each nftIndex of collection
      */
     function configCollection(
@@ -106,7 +85,7 @@ contract Configurations is AccessControlUpgradeable {
         uint256 _price,
         string memory _baseMetadataUri
 
-    ) external  {
+    ) external onlyFromFactory {
         require(
             nftCollectionsList.contains(_collectionAddress),
             "Invalid NFT collection address"
@@ -121,7 +100,7 @@ contract Configurations is AccessControlUpgradeable {
     function configCollectionURI(
         address _collectionAddress,
         string memory _baseMetadataUri
-    ) external  {
+    ) external onlyFromFactory  {
         require(
             nftCollectionsList.contains(_collectionAddress),
             "Invalid NFT collection address"
@@ -149,21 +128,6 @@ contract Configurations is AccessControlUpgradeable {
             );
     }
 
-    /**
-     *      Config box
-     */
-    function configBox(
-        address _boxAddress,
-        uint256 _price,
-        uint256 _maxIndex
-    ) external onlyFromFactory {
-        require(
-            boxCollectionsList.contains(_boxAddress),
-            "Invalid Box Collection Address"
-        );
-        boxPrices[_boxAddress] = _price;
-        boxMaxIndex[_boxAddress] = _maxIndex;
-    }
 
     /**
      *  @notice Function allows Dapp Creator call to get collection's price
@@ -177,22 +141,6 @@ contract Configurations is AccessControlUpgradeable {
             "Not-existing NFT index"
         );
         return prices[_nftCollection][_nftIndex];
-    }
-
-    /**
-     *  @notice Function allows Dapp Creator call to get box's price
-     */
-    function getBoxPrice(
-        address _boxAddress
-    ) external view onlyFromDappCreator returns (uint256) {
-        require(boxCollectionsList.contains(_boxAddress), "Not-existing Box");
-        return boxPrices[_boxAddress];
-    }
-
-    function getMaxIndexOfBox(
-        address _boxAddress
-    ) external view returns (uint256) {
-        return boxMaxIndex[_boxAddress];
     }
 
     /**

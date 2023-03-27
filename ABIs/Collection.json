@@ -4,25 +4,6 @@
         "inputs": [
             {
                 "indexed": false,
-                "internalType": "uint8",
-                "name": "maxNftType",
-                "type": "uint8"
-            },
-            {
-                "indexed": false,
-                "internalType": "uint8[]",
-                "name": "maxRarityList",
-                "type": "uint8[]"
-            }
-        ],
-        "name": "AddNewNftType",
-        "type": "event"
-    },
-    {
-        "anonymous": false,
-        "inputs": [
-            {
-                "indexed": false,
                 "internalType": "address",
                 "name": "previousAdmin",
                 "type": "address"
@@ -124,31 +105,6 @@
             }
         ],
         "name": "Initialized",
-        "type": "event"
-    },
-    {
-        "anonymous": false,
-        "inputs": [
-            {
-                "indexed": false,
-                "internalType": "address",
-                "name": "to",
-                "type": "address"
-            },
-            {
-                "indexed": false,
-                "internalType": "uint256[]",
-                "name": "randomNumber",
-                "type": "uint256[]"
-            },
-            {
-                "indexed": false,
-                "internalType": "uint256[]",
-                "name": "mintedTokenId",
-                "type": "uint256[]"
-            }
-        ],
-        "name": "MintFromBoxOpening",
         "type": "event"
     },
     {
@@ -356,32 +312,6 @@
         "inputs": [
             {
                 "indexed": false,
-                "internalType": "address",
-                "name": "itemAddress",
-                "type": "address"
-            }
-        ],
-        "name": "SetCharacterItem",
-        "type": "event"
-    },
-    {
-        "anonymous": false,
-        "inputs": [
-            {
-                "indexed": false,
-                "internalType": "address",
-                "name": "marketplaceAddress",
-                "type": "address"
-            }
-        ],
-        "name": "SetMarketplace",
-        "type": "event"
-    },
-    {
-        "anonymous": false,
-        "inputs": [
-            {
-                "indexed": false,
                 "internalType": "uint8",
                 "name": "maxTokensInOneOrder",
                 "type": "uint8"
@@ -408,44 +338,12 @@
         "inputs": [
             {
                 "indexed": false,
-                "internalType": "uint8",
-                "name": "oldMaxRarity",
-                "type": "uint8"
-            },
-            {
-                "indexed": false,
-                "internalType": "uint8",
-                "name": "newMaxRarity",
-                "type": "uint8"
-            }
-        ],
-        "name": "SetNewMaxRarity",
-        "type": "event"
-    },
-    {
-        "anonymous": false,
-        "inputs": [
-            {
-                "indexed": false,
                 "internalType": "address",
                 "name": "newMinter",
                 "type": "address"
             }
         ],
         "name": "SetNewMinter",
-        "type": "event"
-    },
-    {
-        "anonymous": false,
-        "inputs": [
-            {
-                "indexed": false,
-                "internalType": "address",
-                "name": "to",
-                "type": "address"
-            }
-        ],
-        "name": "SetWhiteList",
         "type": "event"
     },
     {
@@ -560,25 +458,6 @@
             }
         ],
         "name": "Upgraded",
-        "type": "event"
-    },
-    {
-        "anonymous": false,
-        "inputs": [
-            {
-                "indexed": false,
-                "internalType": "address",
-                "name": "to",
-                "type": "address"
-            },
-            {
-                "indexed": false,
-                "internalType": "uint256[]",
-                "name": "usedTokenIds",
-                "type": "uint256[]"
-            }
-        ],
-        "name": "UseNFTs",
         "type": "event"
     },
     {
@@ -736,38 +615,6 @@
         "type": "function"
     },
     {
-        "inputs": [],
-        "name": "baseMetadataUri",
-        "outputs": [
-            {
-                "internalType": "string",
-                "name": "",
-                "type": "string"
-            }
-        ],
-        "stateMutability": "view",
-        "type": "function"
-    },
-    {
-        "inputs": [
-            {
-                "internalType": "address",
-                "name": "",
-                "type": "address"
-            }
-        ],
-        "name": "blackList",
-        "outputs": [
-            {
-                "internalType": "bool",
-                "name": "",
-                "type": "bool"
-            }
-        ],
-        "stateMutability": "view",
-        "type": "function"
-    },
-    {
         "inputs": [
             {
                 "internalType": "uint256",
@@ -866,19 +713,6 @@
                 "internalType": "bool",
                 "name": "",
                 "type": "bool"
-            }
-        ],
-        "stateMutability": "view",
-        "type": "function"
-    },
-    {
-        "inputs": [],
-        "name": "marketPlace",
-        "outputs": [
-            {
-                "internalType": "contract IERC721",
-                "name": "",
-                "type": "address"
             }
         ],
         "stateMutability": "view",
@@ -1242,11 +1076,6 @@
                 "internalType": "uint256",
                 "name": "_totalSupply",
                 "type": "uint256"
-            },
-            {
-                "internalType": "string",
-                "name": "_baseMetadataUri",
-                "type": "string"
             }
         ],
         "name": "initialize",
@@ -1456,12 +1285,12 @@
                 "type": "address"
             },
             {
-                "internalType": "bytes",
+                "internalType": "string",
                 "name": "_callbackData",
-                "type": "bytes"
+                "type": "string"
             }
         ],
-        "name": "mintOrderForDev",
+        "name": "mint",
         "outputs": [],
         "stateMutability": "nonpayable",
         "type": "function"
@@ -1474,40 +1303,17 @@
                 "type": "uint256[]"
             },
             {
-                "internalType": "bool",
-                "name": "_isWhitelistMint",
-                "type": "bool"
-            },
-            {
                 "internalType": "address",
                 "name": "_to",
                 "type": "address"
             },
             {
-                "internalType": "string",
+                "internalType": "bytes",
                 "name": "_callbackData",
-                "type": "string"
+                "type": "bytes"
             }
         ],
-        "name": "mintOrderFromDaapCreator",
-        "outputs": [],
-        "stateMutability": "nonpayable",
-        "type": "function"
-    },
-    {
-        "inputs": [
-            {
-                "internalType": "uint256[]",
-                "name": "_randomNumbers",
-                "type": "uint256[]"
-            },
-            {
-                "internalType": "address",
-                "name": "_to",
-                "type": "address"
-            }
-        ],
-        "name": "mintFromBoxOpening",
+        "name": "mintOwner",
         "outputs": [],
         "stateMutability": "nonpayable",
         "type": "function"

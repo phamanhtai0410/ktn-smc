@@ -9,8 +9,4 @@ interface IFactory {
      */
     function getCurrentConfiguration() external view returns (address);
     function getCurrentDappCreatorAddress() external view returns (address);
-
-    function getOpeningCollectionOfBox(address _boxAddress) external returns(address);
-
-    function checkIsValidBox(address _boxAddress) external returns (bool);
 }

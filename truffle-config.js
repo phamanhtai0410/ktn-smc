@@ -85,6 +85,13 @@ module.exports = {
       timeoutBlocks: 200,
       skipDryRun: true
     },
+    polygon_testnet: {
+      provider: () => new HDWalletProvider(mnemonic, `https://rpc-mumbai.maticvigil.com`),
+      network_id: 80001,
+      confirmations: 2,
+      timeoutBlocks: 200,
+      skipDryRun: true
+    },
     // testnet: {
     //   host: '127.0.0.1', // Localhost (default: none)
     //   port: 8545, // Standard Ethereum port (default: none)
