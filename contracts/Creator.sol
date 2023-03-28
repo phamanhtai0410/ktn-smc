@@ -205,7 +205,7 @@ contract DaapNFTCreator is
             "Invalid Signature"
         );
 
-        uint256 _amount = 0;
+        uint256 _amount;
         for (uint256 i = 0; i < _nftIndexes.length; i++) {
             _amount += IConfiguration(nftConfiguration).getCollectionPrice(
                 address(_nftCollection),
