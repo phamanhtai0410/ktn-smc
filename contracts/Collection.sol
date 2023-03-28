@@ -94,14 +94,6 @@ contract KatanaInuCollection is
         _;
     }
 
-    modifier onlyFromBoxInstance() {
-        require(
-            IFactory(owner()).checkIsValidBox(msg.sender),
-            "box-and-collectioon-not-match"
-        );
-        _;
-    }
-
     /**
      *   Function: Initialized contract
      */
