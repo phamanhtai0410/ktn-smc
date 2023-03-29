@@ -15,6 +15,23 @@ const overrides = {
     gasLimit: 9999999
 }
 
-describe('KatanaNftFactory', async () => {
-    it('')
+describe('KatanaNftFactory', () => {
+    const provider = new MockProvider({
+        hardfork: 'istanbul',
+        mnemonic: 'horn horn horn horn horn horn horn horn horn horn horn horn',
+        gasLimit: 9999999
+    })
+    const [wallet, other] = provider.getWallets()
+    const loadFixture = createFixtureLoader(provider, [wallet, other])
+
+    let factory: Contract
+
+    beforeEach(async () => {
+        const fixture = await loadFixture(factoryFixture)
+        factory = fixture.factory
+    })
+
+    it('create_new_collection', async () => {
+
+    })
 })
