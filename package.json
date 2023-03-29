@@ -14,15 +14,38 @@
   "dependencies": {
     "@openzeppelin/contracts": "^4.6.0",
     "@openzeppelin/contracts-upgradeable": "^4.6.0",
-    "@truffle/hdwallet-provider": "^2.0.17",
+    "@truffle/hdwallet-provider": "^2.1.9",
     "dotenv": "^16.0.1",
     "ethereumjs-util": "^7.1.5",
     "ethers": "^5.7.2",
     "node-xlsx": "^0.21.0",
-    "openzeppelin-solidity": "^3.4.2",
-    "truffle": "^5.5.13",
+    "openzeppelin-solidity": "^4.8.1",
+    "truffle": "^5.1.65",
     "truffle-contract-size": "^2.0.1",
-    "truffle-flatten": "^1.0.8",
-    "web3": "^1.8.0"
+    "truffle-flatten": "^1.0.6",
+    "web3": "^1.9.0"
+  },
+  "devDependencies": {
+    "@types/chai": "^4.2.6",
+    "@types/mocha": "^5.2.7",
+    "chai": "^4.2.0",
+    "ethereum-waffle": "^2.4.1",
+    "ethereumjs-util": "^6.2.0",
+    "mocha": "^6.2.2",
+    "prettier": "^1.19.1",
+    "rimraf": "^3.0.0",
+    "solc": "0.5.16",
+    "ts-node": "^8.5.4",
+    "typescript": "^3.7.3"
+  },
+  "scripts": {
+    "lint": "yarn prettier ./test/*.ts --check",
+    "lint:fix": "yarn prettier ./test/*.ts --write",
+    "clean": "rimraf ./build/",
+    "precompile": "yarn clean",
+    "compile": "waffle .waffle.json",
+    "pretest": "yarn compile",
+    "test": "mocha",
+    "prepublishOnly": "yarn test"
   }
 }

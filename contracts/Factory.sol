@@ -37,7 +37,6 @@ contract KatanaNftFactory is AccessControl {
     // List of NFT collections
     EnumerableSet.AddressSet private nftCollectionsList;
 
-
     // Wrapper Creator address: using for calling from dapp
     address public dappCreatorAddress;
 
@@ -79,7 +78,12 @@ contract KatanaNftFactory is AccessControl {
         uint256 _price,
         string memory _baseMetadataUri
     ) external onlyRole(IMPLEMENTATION_ROLE) {
-        _configOneCollection(_collectionAddress, _nftIndex, _price, _baseMetadataUri);
+        _configOneCollection(
+            _collectionAddress,
+            _nftIndex,
+            _price,
+            _baseMetadataUri
+        );
         // TODO: emit event when config
     }
 
@@ -104,7 +108,10 @@ contract KatanaNftFactory is AccessControl {
         address _collectionAddress,
         string memory _baseMetadataUri
     ) external onlyRole(IMPLEMENTATION_ROLE) {
-        nftConfiguration.configCollectionURI(_collectionAddress, _baseMetadataUri);
+        nftConfiguration.configCollectionURI(
+            _collectionAddress,
+            _baseMetadataUri
+        );
     }
 
     /*
