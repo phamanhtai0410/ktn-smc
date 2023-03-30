@@ -59,3 +59,5 @@ remix-compiler.config.js
 .env
 
 venv
+
+test
