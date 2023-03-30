@@ -1,0 +1,3 @@
+
+var Kata
+var _collection = "0x75A068654A93c33950eBb13c71041B8ED0422B46"

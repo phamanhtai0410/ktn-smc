@@ -6,18 +6,16 @@ import "@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import "./interfaces/ICharacterToken.sol";
-import "./interfaces/INftConfigurations.sol";
-import "./libraries/CharacterTokenDetails.sol";
+import "./interfaces/ICollection.sol";
+import "./interfaces/IConfiguration.sol";
 
-
-contract DaapNFTCreator is 
+contract DaapNFTCreator is
     AccessControlUpgradeable,
     PausableUpgradeable,
     OwnableUpgradeable
-{   
+{
     using SafeERC20 for IERC20;
-    using CharacterTokenDetails for CharacterTokenDetails.MintingOrder;
+    // using CharacterTokenDetails for CharacterTokenDetails.MintingOrder;
 
     /**
      *      @dev Defines using Structs
@@ -39,7 +37,7 @@ contract DaapNFTCreator is
     address public signer;
 
     // Configurations address
-    address public nftConfigurations;
+    address public nftConfiguration;
 
     // Token using to pay for minting NFT
     IERC20 public payToken;
@@ -49,13 +47,17 @@ contract DaapNFTCreator is
      */
     event SetNewSigner(address oldSigner, address newSigner);
     event UpdatePrice(address nftCollection, uint8 rarity, uint256 newPrice);
-    event MakingMintingAction(CharacterTokenDetails.MintingOrder[] mintingInfos, uint256 discount, address to);
+    event MakingMintingAction(
+        uint256[] nftIndexes,
+        uint256 discount,
+        address to
+    );
     event SetNewPayToken(address oldPayToken, address newPayToken);
     event Withdraw(uint256 amount);
     event AddNewCollection(address nftCollection, uint256[] prices);
 
     /**
-     *      @dev Modifiers using in contract 
+     *      @dev Modifiers using in contract
      */
     modifier notContract() {
         require(!_isContract(msg.sender), "Contract not allowed");
@@ -66,7 +68,7 @@ contract DaapNFTCreator is
     /**
      *      @dev Contructor
      */
-    constructor (address _signer, IERC20 _payToken) {
+    constructor(address _signer, IERC20 _payToken) {
         signer = _signer;
         payToken = _payToken;
     }
@@ -74,7 +76,7 @@ contract DaapNFTCreator is
     /**
      *      @dev Initialize function
      */
-    function initialize(address _nftConfigurations) public initializer {
+    function initialize(address _nftConfiguration) public initializer {
         __AccessControl_init();
         __Pausable_init();
 
@@ -82,14 +84,17 @@ contract DaapNFTCreator is
         _setupRole(PAUSER_ROLE, msg.sender);
         _setupRole(UPGRADER_ROLE, msg.sender);
 
-        nftConfigurations = _nftConfigurations;
+        nftConfiguration = _nftConfiguration;
     }
 
     /**
      *      @dev Function allows ADMIN to withdraw token in contract
      */
     function withdraw(uint256 _amount) external onlyRole(DEFAULT_ADMIN_ROLE) {
-        require(payToken.balanceOf(address(this)) >= _amount, "Not enough tokens to withdraw");
+        require(
+            payToken.balanceOf(address(this)) >= _amount,
+            "Not enough tokens to withdraw"
+        );
         payToken.transfer(msg.sender, _amount);
         emit Withdraw(_amount);
     }
@@ -105,7 +110,9 @@ contract DaapNFTCreator is
     /**
      *  @notice Function allows UPGRADER to set new PayToken
      */
-    function setPayToken(address _newPayToken) external onlyRole(UPGRADER_ROLE) {
+    function setPayToken(
+        address _newPayToken
+    ) external onlyRole(UPGRADER_ROLE) {
         address oldPayToken = address(payToken);
         payToken = IERC20(_newPayToken);
         emit SetNewPayToken(oldPayToken, _newPayToken);
@@ -138,86 +145,84 @@ contract DaapNFTCreator is
         address _signer,
         address _nftCollection,
         uint256 _discount,
-        uint256[] memory _rarities,
-        uint256[] memory _meshIndexes,
-        uint256[] memory _meshMaterials,
+        bool _isWhitelistMint,
+        uint256[] memory _nftIndexes,
         Proof memory _proof
-    ) private view returns (bool) 
-    {
+    ) private view returns (bool) {
         if (_signer == address(0x0)) {
             return true;
         }
-        bytes32 digest = keccak256(abi.encode(
-            getChainID(),
-            msg.sender,
-            address(this),
-            address(_nftCollection),
-            _discount,
-            _rarities,
-            _meshIndexes,
-            _meshMaterials,
-            _proof.deadline
-        ));
+        bytes32 digest = keccak256(
+            abi.encode(
+                getChainID(),
+                msg.sender,
+                address(this),
+                _nftCollection,
+                _discount,
+                _isWhitelistMint,
+                _nftIndexes,
+                _proof.deadline
+            )
+        );
         address signatory = ecrecover(digest, _proof.v, _proof.r, _proof.s);
         return signatory == _signer && _proof.deadline >= block.timestamp;
     }
-
 
     /**
      *  @notice Function allow call external from daap to make miting action
      *
      */
     function makeMintingAction(
-        ICharacterToken _nftCollection,
-        CharacterTokenDetails.MintingOrder[] calldata _mintingInfos,
+        ICollection _nftCollection,
+        uint256[] memory _nftIndexes,
         uint256 _discount,
+        bool _isWhitelistMint,
         Proof memory _proof,
         string memory _callbackData
-    ) external payable  notContract {
-        require(_mintingInfos.length > 0, "Amount of minting NFTs must be greater than 0");
-        uint256[] memory _rarities = new uint256[](_mintingInfos.length);
-        uint256[] memory _meshIndexes = new uint256[](_mintingInfos.length);
-        uint256[] memory _meshMaterials = new uint256[](_mintingInfos.length);
-        for (uint256 i=0; i < _mintingInfos.length; i++) {
+    ) external payable notContract {
+        require(
+            _nftIndexes.length > 0,
+            "Amount of minting NFTs must be greater than 0"
+        );
+        for (uint256 i = 0; i < _nftIndexes.length; i++) {
             require(
-                INftConfigurations(nftConfigurations).checkValidMintingAttributes(
+                IConfiguration(nftConfiguration).checkValidMintingAttributes(
                     address(_nftCollection),
-                    _mintingInfos[i]
+                    _nftIndexes[i]
                 ),
-                "Invalid minting infos"
+                "Invalid NFT Index"
             );
-            _rarities[i] = _mintingInfos[i].rarity;
-            _meshIndexes[i] = _mintingInfos[i].meshIndex;
-            _meshMaterials[i] = _mintingInfos[i].meshMaterial;
         }
         require(
             verifySignature(
                 signer,
                 address(_nftCollection),
                 _discount,
-                _rarities,
-                _meshIndexes,
-                _meshMaterials,
+                _isWhitelistMint,
+                _nftIndexes,
                 _proof
             ),
             "Invalid Signature"
         );
+
         uint256 _amount = 0;
-        for (uint256 i=0; i < _mintingInfos.length; i++) {
-            _amount += INftConfigurations(nftConfigurations).getPrice(
+        for (uint256 i = 0; i < _nftIndexes.length; i++) {
+            _amount += IConfiguration(nftConfiguration).getCollectionPrice(
                 address(_nftCollection),
-                _mintingInfos[i].rarity,
-                _mintingInfos[i].meshIndex
+                _nftIndexes[i]
             );
         }
-        require(payToken.balanceOf(msg.sender) > _amount - _discount, "User needs to hold enough token to buy this token");
+        require(
+            payToken.balanceOf(msg.sender) > _amount - _discount,
+            "User needs to hold enough token to buy this token"
+        );
         payToken.transferFrom(msg.sender, address(this), _amount - _discount);
-        _nftCollection.mintOrderFromDaapCreator(
-            _mintingInfos,
+        _nftCollection.mint(
+            _nftIndexes,
             msg.sender,
             _callbackData
         );
-        emit MakingMintingAction(_mintingInfos, _discount, msg.sender);
+        emit MakingMintingAction(_nftIndexes, _discount, msg.sender);
     }
 
     /**
@@ -231,5 +236,4 @@ contract DaapNFTCreator is
         }
         return size > 0;
     }
-    
 }

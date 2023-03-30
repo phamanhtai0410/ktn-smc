@@ -72,9 +72,23 @@ module.exports = {
     // production: true    // Treats this network as if it was a public net. (default: false)
     // }
     testnet: {
-      provider: () => new HDWalletProvider(mnemonic, `https://data-seed-prebsc-1-s1.binance.org:8545`),
+      provider: () => new HDWalletProvider(mnemonic, `https://data-seed-prebsc-2-s2.binance.org:8545`),
       network_id: 97,
-      confirmations: 10,
+      confirmations: 1,
+      timeoutBlocks: 200,
+      skipDryRun: true
+    },
+    bsc_mainnet: {
+      provider: () => new HDWalletProvider(mnemonic, `https://bsc-dataseed4.ninicoin.io`),
+      network_id: 56,
+      confirmations: 1,
+      timeoutBlocks: 200,
+      skipDryRun: true
+    },
+    polygon_testnet: {
+      provider: () => new HDWalletProvider(mnemonic, `https://rpc-mumbai.maticvigil.com`),
+      network_id: 80001,
+      confirmations: 2,
       timeoutBlocks: 200,
       skipDryRun: true
     },
