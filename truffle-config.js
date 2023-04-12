@@ -22,6 +22,8 @@ const HDWalletProvider = require('@truffle/hdwallet-provider');
 
 const fs = require('fs');
 const mnemonic = fs.readFileSync(".secret").toString().trim();
+require('dotenv').config();
+const { INFURA_API_KEY } = process.env;
 
 module.exports = {
   /**
@@ -71,7 +73,7 @@ module.exports = {
     // network_id: 2111,   // This network is yours, in the cloud.
     // production: true    // Treats this network as if it was a public net. (default: false)
     // }
-    testnet: {
+    bsc_testnet: {
       provider: () => new HDWalletProvider(mnemonic, `https://data-seed-prebsc-2-s2.binance.org:8545`),
       network_id: 97,
       confirmations: 1,
@@ -92,15 +94,13 @@ module.exports = {
       timeoutBlocks: 200,
       skipDryRun: true
     },
-    // testnet: {
-    //   host: '127.0.0.1', // Localhost (default: none)
-    //   port: 8545, // Standard Ethereum port (default: none)
-    //   network_id: '*', // Any network (default: none)
-    //   skipDryRun: true,
-    //   production: true,
-    //   gasPrice: 128,
-    //   timeoutBlocks: 200
-    // },
+    eth_testnet: {
+      provider: () => new HDWalletProvider(mnemonic, INFURA_API_KEY),
+      network_id: 5,
+      // confirmations: 2,
+      timeoutBlocks: 200,
+      skipDryRun: true
+    },
     ganache: {
       host: '127.0.0.1', // Localhost (default: none)
       port: 7545, // Standard Ethereum port (default: none)
