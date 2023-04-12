@@ -42,6 +42,9 @@ contract DaapNFTCreator is
     // Token using to pay for minting NFT
     IERC20 public payToken;
 
+    // Mapping variable to check the existing of one signature (make sure one sig can only be used just one time)
+    mapping(bytes => uint8) public isUsedSignatures;
+
     /**
      *      @dev Define events that contract will emit
      */
@@ -180,10 +183,13 @@ contract DaapNFTCreator is
         Proof memory _proof,
         string memory _callbackData
     ) external payable notContract {
+        // Check if the list of indexes order has at least one element
         require(
             _nftIndexes.length > 0,
             "Amount of minting NFTs must be greater than 0"
         );
+
+        // Check that any element in the indexes array is a valid type for the triggered collection
         for (uint256 i = 0; i < _nftIndexes.length; i++) {
             require(
                 IConfiguration(nftConfiguration).checkValidMintingAttributes(
@@ -193,6 +199,8 @@ contract DaapNFTCreator is
                 "Invalid NFT Index"
             );
         }
+
+        // Check if the proof sent to the contract is valid signature
         require(
             verifySignature(
                 signer,
@@ -205,6 +213,19 @@ contract DaapNFTCreator is
             "Invalid Signature"
         );
 
+        // If the signature is valid => Check if this is the first time use this signature
+        require(
+            isUsedSignatures[
+                _convertVRStoSignature(_proof.v, _proof.r, _proof.s)
+            ] == 0,
+            "The signature has already been used"
+        );
+
+        // After check the signature that never has been used before, mark this one as used
+        isUsedSignatures[
+            _convertVRStoSignature(_proof.v, _proof.r, _proof.s)
+        ] = 1;
+
         uint256 _amount = 0;
         for (uint256 i = 0; i < _nftIndexes.length; i++) {
             _amount += IConfiguration(nftConfiguration).getCollectionPrice(
@@ -212,17 +233,25 @@ contract DaapNFTCreator is
                 _nftIndexes[i]
             );
         }
+        _discount = signer == address(0x0) ? 0 : _discount;
         require(
             payToken.balanceOf(msg.sender) > _amount - _discount,
             "User needs to hold enough token to buy this token"
         );
         payToken.transferFrom(msg.sender, address(this), _amount - _discount);
-        _nftCollection.mint(
-            _nftIndexes,
-            msg.sender,
-            _callbackData
-        );
+        _nftCollection.mint(_nftIndexes, msg.sender, _callbackData);
         emit MakingMintingAction(_nftIndexes, _discount, msg.sender);
+    }
+
+    /**
+     *  @dev Function allows to convert the splitted v, r, s to the signature in bytes
+     */
+    function _convertVRStoSignature(
+        uint8 v,
+        bytes32 r,
+        bytes32 s
+    ) internal pure returns (bytes memory) {
+        return abi.encodePacked(r, s, v);
     }
 
     /**
