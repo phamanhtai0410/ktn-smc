@@ -38,10 +38,11 @@ contract RoyaltyController is AccessControlUpgradeable {
     mapping(address => bool) public s_is_collection;
 
     // The total amount of royalty fee in each collection
-    mapping(address => uint256) private s_available;
+    // mapping(address => uint256) private s_available;
 
     // The configuration proportion of each payout wallet address in each collection
-    mapping(address => mapping(address => PayoutState)) private s_royalty_configures;
+    mapping(address => mapping(address => PayoutState))
+        private s_royalty_configures;
 
     // The treasury wallet map with collection address
     mapping(address => address) public treasuryAddresses;
@@ -71,6 +72,7 @@ contract RoyaltyController is AccessControlUpgradeable {
         uint256 amount,
         address collectionAddress
     ) external {
+        require(amount > 0, "Royalty Receiver: Can not withdraw zero");
         require(
             IERC20(tokenAddress).balanceOf(
                 treasuryAddresses[collectionAddress]
@@ -80,13 +82,16 @@ contract RoyaltyController is AccessControlUpgradeable {
                 amount,
             "Royalty Receiver: Invalid withdraw amount"
         );
-        IERC20(tokenAddress).transferFrom(
-            treasuryAddresses[collectionAddress],
-            msg.sender,
-            amount
-        );
         s_royalty_configures[collectionAddress][msg.sender]
             .claimedAmount += amount;
+        require(
+            IERC20(tokenAddress).transferFrom(
+                treasuryAddresses[collectionAddress],
+                msg.sender,
+                amount
+            ),
+            "Royalty Receiver: Transfer failed"
+        );
         emit Withdraw(msg.sender, amount);
     }
 
@@ -114,6 +119,10 @@ contract RoyaltyController is AccessControlUpgradeable {
         address[] memory receivers,
         uint256[] memory proportions
     ) external onlyRole(DESIGNER_ROLE) {
+        require(
+            !s_is_collection[collectionAddress],
+            "RoyaltyReceiver: this collection has been configured"
+        );
         uint256 _sum;
         for (uint i = 0; i < proportions.length; i++) {
             _sum += proportions[i];
@@ -127,7 +136,10 @@ contract RoyaltyController is AccessControlUpgradeable {
             "RoyaltyReceiver: Invalid lenth of reveivers and proportions"
         );
         for (uint256 i = 0; i < receivers.length; i++) {
-            s_royalty_configures[collectionAddress][receivers[i]] = PayoutState(proportions[i], 0);
+            s_royalty_configures[collectionAddress][receivers[i]] = PayoutState(
+                proportions[i],
+                0
+            );
         }
         s_collections.push(collectionAddress);
         s_is_collection[collectionAddress] = true;
@@ -137,22 +149,5 @@ contract RoyaltyController is AccessControlUpgradeable {
             receivers,
             proportions
         );
-    }
-
-    function _calculateTotalRoyalty(
-        address triggeredUser
-    ) internal view returns (uint256 totalRoyalty) {
-        for (uint i = 0; i <= s_collections.length; i++) {
-            if (
-                s_royalty_configures[s_collections[i]][triggeredUser].percent !=
-                0
-            ) {
-                totalRoyalty +=
-                    (s_available[s_collections[i]] *
-                        s_royalty_configures[s_collections[i]][triggeredUser]
-                            .percent) /
-                    DENOMINATOR;
-            }
-        }
     }
 }
