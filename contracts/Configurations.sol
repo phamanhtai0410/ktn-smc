@@ -2,24 +2,21 @@
 pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/utils/Strings.sol";
-import "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
+import "@openzeppelin/contracts/access/AccessControl.sol";
 import "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 
-contract Configurations is AccessControlUpgradeable {
+contract Configurations is AccessControl {
     // Add the library methods
     using EnumerableSet for EnumerableSet.UintSet;
     using EnumerableSet for EnumerableSet.AddressSet;
 
-
-    bytes32 public constant UPGRADER_ROLE = keccak256("UPGRADER_ROLE");
-
     // NFT Factory Address
     address public NFT_FACTORY;
 
-    // Config URI NFT 
+    // Config URI NFT
     // NFT address => uri
     mapping(address => string) public uriNFTs;
-    
+
     // Dapp Creator
     address public DAPP_CREATOR;
 
@@ -28,7 +25,6 @@ contract Configurations is AccessControlUpgradeable {
 
     // Price of one index in each collection
     mapping(address => mapping(uint256 => uint256)) public prices;
-
 
     // modifier to check from Factory or not
     modifier onlyFromFactory() {
@@ -59,12 +55,7 @@ contract Configurations is AccessControlUpgradeable {
     constructor(address _nftFactory, address _dappCreator) {
         NFT_FACTORY = _nftFactory;
         DAPP_CREATOR = _dappCreator;
-    }
-
-    function initialize() public initializer {
-        __AccessControl_init();
         _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
-        _setupRole(UPGRADER_ROLE, msg.sender);
     }
 
     /**
@@ -84,7 +75,6 @@ contract Configurations is AccessControlUpgradeable {
         uint256 _nftIndex,
         uint256 _price,
         string memory _baseMetadataUri
-
     ) external onlyFromFactory {
         require(
             nftCollectionsList.contains(_collectionAddress),
@@ -100,7 +90,7 @@ contract Configurations is AccessControlUpgradeable {
     function configCollectionURI(
         address _collectionAddress,
         string memory _baseMetadataUri
-    ) external onlyFromFactory  {
+    ) external onlyFromFactory {
         require(
             nftCollectionsList.contains(_collectionAddress),
             "Invalid NFT collection address"
@@ -120,14 +110,16 @@ contract Configurations is AccessControlUpgradeable {
                 abi.encodePacked(
                     uriNFTs[_collectionAddress],
                     "/",
-                    Strings.toHexString(uint256(uint160(_collectionAddress)), 20),
+                    Strings.toHexString(
+                        uint256(uint160(_collectionAddress)),
+                        20
+                    ),
                     "/",
                     Strings.toString(_tokenId),
                     ".json"
                 )
             );
     }
-
 
     /**
      *  @notice Function allows Dapp Creator call to get collection's price

@@ -41,7 +41,8 @@ contract RoyaltyController is AccessControlUpgradeable {
     mapping(address => uint256) private s_available;
 
     // The configuration proportion of each payout wallet address in each collection
-    mapping(address => mapping(address => PayoutState)) private s_royalty_configures;
+    mapping(address => mapping(address => PayoutState))
+        private s_royalty_configures;
 
     // The treasury wallet map with collection address
     mapping(address => address) public treasuryAddresses;
@@ -72,9 +73,10 @@ contract RoyaltyController is AccessControlUpgradeable {
         address collectionAddress
     ) external {
         require(
-            IERC20(tokenAddress).balanceOf(
+            (IERC20(tokenAddress).balanceOf(
                 treasuryAddresses[collectionAddress]
-            ) -
+            ) * s_royalty_configures[collectionAddress][msg.sender].percent) /
+                DENOMINATOR -
                 s_royalty_configures[collectionAddress][msg.sender]
                     .claimedAmount >=
                 amount,
@@ -127,7 +129,10 @@ contract RoyaltyController is AccessControlUpgradeable {
             "RoyaltyReceiver: Invalid lenth of reveivers and proportions"
         );
         for (uint256 i = 0; i < receivers.length; i++) {
-            s_royalty_configures[collectionAddress][receivers[i]] = PayoutState(proportions[i], 0);
+            s_royalty_configures[collectionAddress][receivers[i]] = PayoutState(
+                proportions[i],
+                0
+            );
         }
         s_collections.push(collectionAddress);
         s_is_collection[collectionAddress] = true;
