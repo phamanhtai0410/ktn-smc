@@ -2,15 +2,13 @@
 pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/utils/Strings.sol";
-import "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
+import "@openzeppelin/contracts/access/AccessControl.sol";
 import "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 
-contract Configurations is AccessControlUpgradeable {
+contract Configurations is AccessControl {
     // Add the library methods
     using EnumerableSet for EnumerableSet.UintSet;
     using EnumerableSet for EnumerableSet.AddressSet;
-
-    bytes32 public constant UPGRADER_ROLE = keccak256("UPGRADER_ROLE");
 
     // NFT Factory Address
     address public NFT_FACTORY;
@@ -58,11 +56,6 @@ contract Configurations is AccessControlUpgradeable {
         NFT_FACTORY = _nftFactory;
         DAPP_CREATOR = _dappCreator;
         _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
-    }
-
-    function initialize() public initializer {
-        __AccessControl_init();
-        _setupRole(UPGRADER_ROLE, msg.sender);
     }
 
     /**
