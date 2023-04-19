@@ -12,12 +12,12 @@ function wf(name, address) {
 }
 
 const deployments = {
-    factory: false,
-    dapp: false,
-    config: false,
-    reconfig_config_to_factory: false,
-    init_config_to_creator: false,
-    init_config: false,
+    factory: true,
+    dapp: true,
+    config: true,
+    reconfig_config_to_factory: true,
+    init_config_to_creator: true,
+    init_config: true,
     create_new: true,
     factory_config: true,
     create_new_box: true,
@@ -95,9 +95,9 @@ module.exports = async function (deployer, network, accounts) {
     /**
      *      6. Initialize NftConfigurations
      */
-    if (deployments.init_config) {
-        await _nftConfig.initialize();
-    }
+    // if (deployments.init_config) {
+    //     await _nftConfig.initialize();
+    // }
 
     /**
      *      7. Create new Collection
