@@ -43,7 +43,7 @@ contract DaapNFTCreator is
     IERC20 public payToken;
 
     // Mapping variable to check the existing of one signature (make sure one sig can only be used just one time)
-    mapping(bytes => uint8) public isUsedSignatures;
+    mapping(bytes32 => uint8) public isUsedSignatures;
 
     /**
      *      @dev Define events that contract will emit
@@ -178,7 +178,8 @@ contract DaapNFTCreator is
                 _discount,
                 _isWhitelistMint,
                 _nftIndexes,
-                _nonce
+                _nonce,
+                _proof.deadline
             );
             require(
                 isUsedSignatures[txHash] == 0,
@@ -215,7 +216,8 @@ contract DaapNFTCreator is
         uint256 _discount,
         bool _isWhitelistMint,
         uint256[] memory _nftIndexes,
-        uint256 _nonce
+        uint256 _nonce,
+        uint256 _deadline
     ) internal view returns (bytes32) {
         return
             keccak256(
@@ -227,8 +229,8 @@ contract DaapNFTCreator is
                     _discount,
                     _isWhitelistMint,
                     _nftIndexes,
-                    nonce,
-                    _proof.deadline
+                    _nonce,
+                    _deadline
                 )
             );
     }
