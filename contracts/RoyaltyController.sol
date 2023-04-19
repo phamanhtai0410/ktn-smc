@@ -74,9 +74,10 @@ contract RoyaltyController is AccessControlUpgradeable {
     ) external {
         require(amount > 0, "Royalty Receiver: Can not withdraw zero");
         require(
-            IERC20(tokenAddress).balanceOf(
+            (IERC20(tokenAddress).balanceOf(
                 treasuryAddresses[collectionAddress]
-            ) -
+            ) * s_royalty_configures[collectionAddress][msg.sender].percent) /
+                DENOMINATOR -
                 s_royalty_configures[collectionAddress][msg.sender]
                     .claimedAmount >=
                 amount,

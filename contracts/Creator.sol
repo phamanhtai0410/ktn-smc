@@ -43,7 +43,7 @@ contract DaapNFTCreator is
     IERC20 public payToken;
 
     // Mapping variable to check the existing of one signature (make sure one sig can only be used just one time)
-    mapping(bytes => uint8) public isUsedSignatures;
+    mapping(bytes32 => uint8) public isUsedSignatures;
 
     /**
      *      @dev Define events that contract will emit
@@ -142,36 +142,6 @@ contract DaapNFTCreator is
     }
 
     /**
-     *      @notice Function verify signature from daap sent out
-     */
-    function verifySignature(
-        address _signer,
-        address _nftCollection,
-        uint256 _discount,
-        bool _isWhitelistMint,
-        uint256[] memory _nftIndexes,
-        Proof memory _proof
-    ) private view returns (bool) {
-        if (_signer == address(0x0)) {
-            return true;
-        }
-        bytes32 digest = keccak256(
-            abi.encode(
-                getChainID(),
-                msg.sender,
-                address(this),
-                _nftCollection,
-                _discount,
-                _isWhitelistMint,
-                _nftIndexes,
-                _proof.deadline
-            )
-        );
-        address signatory = ecrecover(digest, _proof.v, _proof.r, _proof.s);
-        return signatory == _signer && _proof.deadline >= block.timestamp;
-    }
-
-    /**
      *  @notice Function allow call external from daap to make miting action
      *
      */
@@ -180,6 +150,7 @@ contract DaapNFTCreator is
         uint256[] memory _nftIndexes,
         uint256 _discount,
         bool _isWhitelistMint,
+        uint256 _nonce,
         Proof memory _proof,
         string memory _callbackData
     ) external payable notContract {
@@ -201,30 +172,22 @@ contract DaapNFTCreator is
         }
 
         // Check if the proof sent to the contract is valid signature
-        require(
-            verifySignature(
-                signer,
+        if (signer != address(0x0)) {
+            bytes32 txHash = getTxHash(
                 address(_nftCollection),
                 _discount,
                 _isWhitelistMint,
                 _nftIndexes,
-                _proof
-            ),
-            "Invalid Signature"
-        );
-
-        // If the signature is valid => Check if this is the first time use this signature
-        require(
-            isUsedSignatures[
-                _convertVRStoSignature(_proof.v, _proof.r, _proof.s)
-            ] == 0,
-            "The signature has already been used"
-        );
-
-        // After check the signature that never has been used before, mark this one as used
-        isUsedSignatures[
-            _convertVRStoSignature(_proof.v, _proof.r, _proof.s)
-        ] = 1;
+                _nonce,
+                _proof.deadline
+            );
+            require(
+                isUsedSignatures[txHash] == 0,
+                "The signature has already been used"
+            );
+            isUsedSignatures[txHash] == 1;
+            require(verifySignature(txHash, _proof), "Invalid Signature");
+        }
 
         uint256 _amount = 0;
         for (uint256 i = 0; i < _nftIndexes.length; i++) {
@@ -233,7 +196,9 @@ contract DaapNFTCreator is
                 _nftIndexes[i]
             );
         }
+
         _discount = signer == address(0x0) ? 0 : _discount;
+
         require(
             payToken.balanceOf(msg.sender) > _amount - _discount,
             "User needs to hold enough token to buy this token"
@@ -244,14 +209,43 @@ contract DaapNFTCreator is
     }
 
     /**
-     *  @dev Function allows to convert the splitted v, r, s to the signature in bytes
+     *  @dev Function allow to hash Transaction's data
      */
-    function _convertVRStoSignature(
-        uint8 v,
-        bytes32 r,
-        bytes32 s
-    ) internal pure returns (bytes memory) {
-        return abi.encodePacked(r, s, v);
+    function getTxHash(
+        address _nftCollection,
+        uint256 _discount,
+        bool _isWhitelistMint,
+        uint256[] memory _nftIndexes,
+        uint256 _nonce,
+        uint256 _deadline
+    ) internal view returns (bytes32) {
+        return
+            keccak256(
+                abi.encode(
+                    getChainID(),
+                    msg.sender,
+                    address(this),
+                    _nftCollection,
+                    _discount,
+                    _isWhitelistMint,
+                    _nftIndexes,
+                    _nonce,
+                    _deadline
+                )
+            );
+    }
+
+    /**
+     *      @notice Function verify signature from daap sent out
+     */
+
+    function verifySignature(
+        bytes32 txHash,
+        Proof memory _proof
+    ) private view returns (bool) {
+        require(signer != address(0x0), "Invalid signer");
+        address signatory = ecrecover(txHash, _proof.v, _proof.r, _proof.s);
+        return signatory == signer && _proof.deadline >= block.timestamp;
     }
 
     /**
