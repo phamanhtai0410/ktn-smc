@@ -12,12 +12,12 @@ function wf(name, address) {
 }
 
 const deployments = {
-    factory: true,
-    dapp: true,
-    config: true,
-    reconfig_config_to_factory: true,
-    init_config_to_creator: true,
-    init_config: true,
+    factory: false,
+    dapp: false,
+    config: false,
+    reconfig_config_to_factory: false,
+    init_config_to_creator: false,
+    init_config: false,
     create_new: true,
     factory_config: true,
     create_new_box: true,
