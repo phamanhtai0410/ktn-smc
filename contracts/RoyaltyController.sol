@@ -10,6 +10,11 @@ contract RoyaltyController is AccessControlUpgradeable {
         uint256 claimedAmount;
     }
 
+    struct TreasuryInfo {
+        address treasuryAddress;
+        uint256 totalAlreadyWithdraw;
+    }
+
     event Withdraw(address receipient, uint256 amount);
     event EmergencyWithdraw(address receipient, uint256 amount);
     event ConfigureTotalRoyaltyRate(
@@ -45,7 +50,9 @@ contract RoyaltyController is AccessControlUpgradeable {
         private s_royalty_configures;
 
     // The treasury wallet map with collection address
-    mapping(address => address) public treasuryAddresses;
+    mapping(address => TreasuryInfo) public s_treasury_info;
+
+    // mapping(address => address) public treasuryAddresses;
 
     constructor() {
         _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
@@ -59,11 +66,18 @@ contract RoyaltyController is AccessControlUpgradeable {
         address _collectionAddress
     ) external onlyRole(DEFAULT_ADMIN_ROLE) {
         require(
-            _newTreasuryAddress != treasuryAddresses[_collectionAddress],
+            s_is_collection[_collectionAddress],
+            "RoyaltyReceiver: Invalid collection address"
+        );
+        require(
+            _newTreasuryAddress !=
+                s_treasury_info[_collectionAddress].treasuryAddress,
             "RoyaltyReceiver: new-address-must-be-different"
         );
-        address oldAddress = treasuryAddresses[_collectionAddress];
-        treasuryAddresses[_collectionAddress] = _newTreasuryAddress;
+        address oldAddress = s_treasury_info[_collectionAddress]
+            .treasuryAddress;
+        s_treasury_info[_collectionAddress]
+            .treasuryAddress = _newTreasuryAddress;
         emit ChangeTreasuryAddress(oldAddress, _newTreasuryAddress);
     }
 
@@ -74,9 +88,12 @@ contract RoyaltyController is AccessControlUpgradeable {
     ) external {
         require(amount > 0, "Royalty Receiver: Can not withdraw zero");
         require(
-            (IERC20(tokenAddress).balanceOf(
-                treasuryAddresses[collectionAddress]
-            ) * s_royalty_configures[collectionAddress][msg.sender].percent) /
+            s_is_collection[collectionAddress],
+            "RoyaltyReceiver: Invalid collection address"
+        );
+        require(
+            (_calculateCurrentTotalRoyalty(collectionAddress, tokenAddress) *
+                s_royalty_configures[collectionAddress][msg.sender].percent) /
                 DENOMINATOR -
                 s_royalty_configures[collectionAddress][msg.sender]
                     .claimedAmount >=
@@ -85,9 +102,10 @@ contract RoyaltyController is AccessControlUpgradeable {
         );
         s_royalty_configures[collectionAddress][msg.sender]
             .claimedAmount += amount;
+        s_treasury_info[collectionAddress].totalAlreadyWithdraw += amount;
         require(
             IERC20(tokenAddress).transferFrom(
-                treasuryAddresses[collectionAddress],
+                s_treasury_info[collectionAddress].treasuryAddress,
                 msg.sender,
                 amount
             ),
@@ -102,13 +120,17 @@ contract RoyaltyController is AccessControlUpgradeable {
         uint256 amount
     ) external onlyRole(EMERGENCY_ROLE) {
         require(
+            s_is_collection[collectionAddress],
+            "RoyaltyReceiver: Invalid collection address"
+        );
+        require(
             IERC20(tokenAddess).balanceOf(
-                treasuryAddresses[collectionAddress]
+                s_treasury_info[collectionAddress].treasuryAddress
             ) >= amount,
             "RoyaltyReceiver: Invalid amount"
         );
         IERC20(tokenAddess).transferFrom(
-            treasuryAddresses[collectionAddress],
+            s_treasury_info[collectionAddress].treasuryAddress,
             msg.sender,
             amount
         );
@@ -150,5 +172,15 @@ contract RoyaltyController is AccessControlUpgradeable {
             receivers,
             proportions
         );
+    }
+
+    function _calculateCurrentTotalRoyalty(
+        address _collectionAddress,
+        address _tokenAddress
+    ) internal view returns (uint256) {
+        return
+            IERC20(_tokenAddress).balanceOf(
+                s_treasury_info[_collectionAddress].treasuryAddress
+            ) + s_treasury_info[_collectionAddress].totalAlreadyWithdraw;
     }
 }
