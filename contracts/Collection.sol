@@ -7,7 +7,6 @@ import "@openzeppelin/contracts/utils/math/Math.sol";
 import "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
-// import "@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC721/ERC721Upgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC721/extensions/ERC721RoyaltyUpgradeable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
@@ -22,7 +21,6 @@ contract KatanaInuCollection is
     OwnableUpgradeable,
     ERC721RoyaltyUpgradeable,
     AccessControlUpgradeable,
-    // PausableUpgradeable,
     UUPSUpgradeable
 {
     using Counters for Counters.Counter;
