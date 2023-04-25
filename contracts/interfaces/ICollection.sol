@@ -37,4 +37,9 @@ interface ICollection is IERC721Upgradeable {
      *      @dev Set whitelis
      */
     function setWhiteList(address _to) external;
+
+    /**
+     *      @dev Burn Token
+     */
+    function burn(uint256[] memory ids) external;
 }
