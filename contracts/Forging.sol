@@ -32,7 +32,7 @@ contract KtnForging is
         address collection;
         uint256[] tokenIds;
     }
-    
+
     /**
      *      @dev Define variables in contract
      */
@@ -56,10 +56,7 @@ contract KtnForging is
      */
     event SetNewSigner(address oldSigner, address newSigner);
     event UpdatePrice(address nftCollection, uint8 rarity, uint256 newPrice);
-    event MakingMintingForging(
-        uint256[] nftIndexes,
-        address to
-    );
+    event MakingMintingForging(uint256[] nftIndexes, address to);
     event SetNewPayToken(address oldPayToken, address newPayToken);
     event Withdraw(uint256 amount);
     event AddNewCollection(address nftCollection, uint256[] prices);
@@ -74,7 +71,7 @@ contract KtnForging is
     }
 
     /**
-     *      @dev Contructor
+     *      @dev Constructor
      */
     constructor(address _signer, IERC20 _payToken) {
         signer = _signer;
@@ -158,14 +155,14 @@ contract KtnForging is
         uint256 _nonce,
         Proof memory _proof,
         string memory _callbackData
-    ) external payable notContract {
+    ) external payable notContract whenNotPaused {
         // Check if the list of indexes order has at least one element
         require(
             _nftIndexes.length > 0,
             "Amount of minting NFTs must be greater than 0"
         );
         require(
-            _collectionsChoosen.length == _tokenIdsChoosen.length, 
+            _collectionsChoosen.length == _tokenIdsChoosen.length,
             "length _collectionsChoosen & _tokenIdsChoosen must be equal"
         );
         ICollection _iCollection = ICollection(_nftCollection);
@@ -207,17 +204,17 @@ contract KtnForging is
         }
 
         require(
-            payToken.balanceOf(msg.sender) > _amount ,
+            payToken.balanceOf(msg.sender) > _amount,
             "User needs to hold enough token to buy this token"
         );
-        payToken.transferFrom(msg.sender, address(this), _amount );
+        payToken.transferFrom(msg.sender, address(this), _amount);
         _iCollection.mintOwner(_nftIndexes, msg.sender, bytes(_callbackData));
         // burn TokenIds
         for (uint256 i = 0; i < _collectionsChoosen.length; i++) {
             uint256[] memory _tokenIds = new uint256[](1);
             _tokenIds[0] = _tokenIdsChoosen[i];
             ICollection(_collectionsChoosen[i]).burn(_tokenIds);
-        }   
+        }
         emit MakingMintingForging(_nftIndexes, msg.sender);
     }
 
