@@ -7,7 +7,6 @@ import "@openzeppelin/contracts/utils/math/Math.sol";
 import "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC721/ERC721Upgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC721/extensions/ERC721RoyaltyUpgradeable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
@@ -22,7 +21,6 @@ contract KatanaInuCollection is
     OwnableUpgradeable,
     ERC721RoyaltyUpgradeable,
     AccessControlUpgradeable,
-    PausableUpgradeable,
     UUPSUpgradeable
 {
     using Counters for Counters.Counter;
@@ -65,17 +63,8 @@ contract KatanaInuCollection is
     // Max tokens can mint in one order
     uint8 public MAX_TOKENS_IN_ORDER;
 
-    // Max tokens can use in one call
-    uint8 public MAX_TOKENS_IN_USING;
-
     // Total Supply
     uint256 public totalSupply;
-
-    // Flag Free transfer NFT
-    bool public FREE_TRANSFER;
-
-    // Flag: Enable or disable the feature of minting
-    bool public DISABLE_MINTING;
 
     /**
      * @notice Checks if the msg.sender is a contract or a proxy
@@ -104,7 +93,6 @@ contract KatanaInuCollection is
     ) public initializer {
         __ERC721_init(_name, _symbol);
         __AccessControl_init();
-        __Pausable_init();
         __UUPSUpgradeable_init();
         __Ownable_init();
 
@@ -114,10 +102,7 @@ contract KatanaInuCollection is
         _setupRole(MINTER_ROLE, msg.sender);
 
         MAX_TOKENS_IN_ORDER = 10;
-        MAX_TOKENS_IN_USING = 10;
         totalSupply = _totalSupply;
-        FREE_TRANSFER = false;
-        DISABLE_MINTING = false;
     }
 
     function onERC721Received(
@@ -127,20 +112,6 @@ contract KatanaInuCollection is
         bytes memory
     ) public virtual override returns (bytes4) {
         return this.onERC721Received.selector;
-    }
-
-    /**
-     *      @dev Function allow ADMIN to set free transfer flag
-     */
-    function switchFreeTransferMode() external onlyRole(DESIGNER_ROLE) {
-        bool oldMode = FREE_TRANSFER;
-        if (FREE_TRANSFER) {
-            FREE_TRANSFER = false;
-        } else {
-            FREE_TRANSFER = true;
-        }
-        bool newMode = FREE_TRANSFER;
-        emit SwitchFreeTransferMode(oldMode, newMode);
     }
 
     /**
@@ -157,17 +128,6 @@ contract KatanaInuCollection is
         uint256 oldTotal = totalSupply;
         totalSupply = _newTotalSupply;
         emit NewTotalSupply(oldTotal, _newTotalSupply);
-    }
-
-    /**
-     *      @notice Funtion switch mode of minting
-     */
-    function updateDisableMinting(
-        bool _newState
-    ) external onlyRole(DESIGNER_ROLE) {
-        bool _oldState = DISABLE_MINTING;
-        DISABLE_MINTING = _newState;
-        emit UpdateDiableMinting(_oldState, _newState);
     }
 
     /**
@@ -191,16 +151,6 @@ contract KatanaInuCollection is
     }
 
     /**
-     *  @notice Function allow ADMIN set max tokens per one use
-     */
-    function setMaxTokensInOneUsing(
-        uint8 _maxTokenInOneUsing
-    ) external onlyRole(DEFAULT_ADMIN_ROLE) {
-        MAX_TOKENS_IN_USING = _maxTokenInOneUsing;
-        emit SetMaxTokensInOneUsing(_maxTokenInOneUsing);
-    }
-
-    /**
      * @dev Function allows ADMIN ROLE to config the default royalty fee
      */
     function configRoyalty(
@@ -208,14 +158,6 @@ contract KatanaInuCollection is
         uint96 _rate
     ) external onlyRole(DEFAULT_ADMIN_ROLE) {
         super._setDefaultRoyalty(_wallet, _rate);
-    }
-
-    function pause() public onlyRole(DEFAULT_ADMIN_ROLE) {
-        _pause();
-    }
-
-    function unpause() public onlyRole(DEFAULT_ADMIN_ROLE) {
-        _unpause();
     }
 
     function _authorizeUpgrade(
@@ -271,8 +213,6 @@ contract KatanaInuCollection is
         return totalSupply;
     }
 
-    
-
     /**
      *  Function mint NFTs order from daap creator
      */
@@ -288,7 +228,6 @@ contract KatanaInuCollection is
         emit MintOrderFromDaapCreator(_callbackData, _to, _returnOrder);
     }
 
-  
     /**
      *  Function mint NFTs order from admin
      */
@@ -304,7 +243,7 @@ contract KatanaInuCollection is
 
         emit MintOrderForDev(_callbackData, _to, _returnOrder);
     }
-    
+
     /**
      *      Function return tokenURI for specific NFT
      *      @param _tokenId ID of NFT
@@ -313,7 +252,11 @@ contract KatanaInuCollection is
     function tokenURI(
         uint256 _tokenId
     ) public view override returns (string memory) {
-        return IConfiguration(getNftConfigurations()).getCollectionURI(address(this), _tokenId);
+        return
+            IConfiguration(getNftConfigurations()).getCollectionURI(
+                address(this),
+                _tokenId
+            );
     }
 
     /**
