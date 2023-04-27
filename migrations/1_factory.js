@@ -18,7 +18,8 @@ const deployments = {
     reconfig_config_to_factory: true,
     init_config_to_creator: true,
     init_config: true,
-    create_new: true,
+    create_new: false,
+    get_new: false,
     factory_config: true,
     create_new_box: true,
     factory_config_box: true
@@ -123,9 +124,12 @@ module.exports = async function (deployer, network, accounts) {
     /**
      *      8. Get collection address
      */
-    var _collectionAddress = await _factory.getCollectionAddress(0);
-    console.log("9. collection[0] : ", _collectionAddress);
-    wf("Collection[0]", _collectionAddress);
+    if(deployments.get_new) {
+        var _collectionAddress = await _factory.getCollectionAddress(0);
+        console.log("9. collection[0] : ", _collectionAddress);
+        wf("Collection[0]", _collectionAddress);
+    }
+    
 
     /**
      *      9. Config one for colleciton
