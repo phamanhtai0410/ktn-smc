@@ -121,6 +121,14 @@ module.exports = {
       gasPrice: 128,
       timeoutBlocks: 200,
       from: '0x2E05ca6a384f9D42222bBc02c247d68481Ff9e4f'
+    },
+    avax_testnet: {
+      provider: () => new HDWalletProvider(mnemonic, `https://api.avax-test.network/ext/bc/C/rpc`),
+      network_id: '*'
+    },
+    boba_bnb_testnet: {
+      provider: () => new HDWalletProvider(mnemonic, `https://testnet.bnb.boba.network`),
+      network_id: '*'
     }
   },
 
