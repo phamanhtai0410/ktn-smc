@@ -39,8 +39,8 @@ contract DaapNFTCreator is
     // Configurations address
     address public nftConfiguration;
 
-    // Token using to pay for minting NFT
-    IERC20 public payToken;
+    // GatewayNFT
+    address public gatewayNFT;
 
     // Mapping variable to check the existing of one signature (make sure one sig can only be used just one time)
     mapping(bytes32 => uint8) public isUsedSignatures;
@@ -58,6 +58,7 @@ contract DaapNFTCreator is
     event SetNewPayToken(address oldPayToken, address newPayToken);
     event Withdraw(uint256 amount);
     event AddNewCollection(address nftCollection, uint256[] prices);
+    event SetNewGateway(address oldGatewayNFT, address gatewayNFT);
 
     /**
      *      @dev Modifiers using in contract
@@ -69,17 +70,26 @@ contract DaapNFTCreator is
     }
 
     /**
+     *      @dev Modifiers veryfy wallet call is contract GatewayNFT
+     */
+    modifier notGatewayNFT() {
+        require(msg.sender == gatewayNFT, "Proxy contract not allowed");
+        _;
+    }
+
+    /**
      *      @dev Contructor
      */
-    constructor(address _signer, IERC20 _payToken) {
+    constructor(address _signer) {
         signer = _signer;
-        payToken = _payToken;
     }
 
     /**
      *      @dev Initialize function
      */
-    function initialize(address _nftConfiguration) public initializer {
+    function initialize(
+        address _nftConfiguration
+    ) public initializer {
         __AccessControl_init();
         __Pausable_init();
 
@@ -93,12 +103,26 @@ contract DaapNFTCreator is
     /**
      *      @dev Function allows ADMIN to withdraw token in contract
      */
-    function withdraw(uint256 _amount) external onlyRole(DEFAULT_ADMIN_ROLE) {
+    function withdraw(
+        uint256 _amount,
+        address _payToken
+    ) external onlyRole(DEFAULT_ADMIN_ROLE) {
         require(
-            payToken.balanceOf(address(this)) >= _amount,
+            IERC20(_payToken).balanceOf(address(this)) >= _amount,
             "Not enough tokens to withdraw"
         );
-        payToken.transfer(msg.sender, _amount);
+        IERC20(_payToken).transfer(msg.sender, _amount);
+        emit Withdraw(_amount);
+    }
+
+    /**
+     *      @dev Function allows ADMIN to withdraw ETH in contract
+     */
+    function withdrawETH(
+        uint256 _amount
+    ) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        require(_amount <= address(this).balance, "Insufficient balance");
+        payable(msg.sender).transfer(_amount);
         emit Withdraw(_amount);
     }
 
@@ -114,11 +138,12 @@ contract DaapNFTCreator is
      *  @notice Function allows UPGRADER to set new PayToken
      */
     function setPayToken(
-        address _newPayToken
+        address _newPayToken,
+        address _collectionAddress
     ) external onlyRole(UPGRADER_ROLE) {
-        address oldPayToken = address(payToken);
-        payToken = IERC20(_newPayToken);
-        emit SetNewPayToken(oldPayToken, _newPayToken);
+        address _oldPayToken = IConfiguration(nftConfiguration).getCollectionPayToken(_collectionAddress);
+        IConfiguration(nftConfiguration).updatePayTokenCollection(_collectionAddress, _newPayToken);
+        emit SetNewPayToken(_oldPayToken, _newPayToken);
     }
 
     /**
@@ -128,6 +153,15 @@ contract DaapNFTCreator is
         address oldSigner = signer;
         signer = _newSigner;
         emit SetNewSigner(oldSigner, _newSigner);
+    }
+
+    /**
+     *  @notice Set new GatwayNFT
+     */
+    function setNewGateway(address _gateway) external onlyRole(UPGRADER_ROLE) {
+        address oldGatewayNFT = gatewayNFT;
+        gatewayNFT = _gateway;
+        emit SetNewGateway(oldGatewayNFT, gatewayNFT);
     }
 
     /**
@@ -154,6 +188,65 @@ contract DaapNFTCreator is
         Proof memory _proof,
         string memory _callbackData
     ) external payable notContract {
+        (address _payToken, uint256 _lastAmount) = verifyMinting(
+            _nftCollection,
+            _nftIndexes,
+            _discount,
+            _isWhitelistMint,
+            _nonce,
+            _proof
+            
+        );
+        require(
+            IERC20(_payToken).balanceOf(msg.sender) > _lastAmount,
+            "User needs to hold enough token to buy this token"
+        );
+        IERC20(_payToken).transferFrom(msg.sender, address(this), _lastAmount);
+        _nftCollection.mint(_nftIndexes, msg.sender, _callbackData);
+        emit MakingMintingAction(_nftIndexes, _discount, msg.sender);
+    }
+
+    /**
+     *  @notice Function allow call external from GatewayNFT to make miting action
+     *
+     */
+    function mintingETH(
+        ICollection _nftCollection,
+        uint256[] memory _nftIndexes,
+        uint256 _discount,
+        bool _isWhitelistMint,
+        uint256 _nonce,
+        Proof memory _proof,
+        string memory _callbackData,
+        address _to
+    ) external payable {
+        (, uint256 _lastAmount) = verifyMinting(
+            _nftCollection,
+            _nftIndexes,
+            _discount,
+            _isWhitelistMint,
+            _nonce,
+            _proof
+        );
+        require(
+            msg.value >= _lastAmount, 
+            "User needs to hold enough token to buy this token"
+        );
+        _nftCollection.mint(_nftIndexes, _to, _callbackData);
+        emit MakingMintingAction(_nftIndexes, _discount, _to);
+    }
+
+    /**
+     *  @notice Verify signature and minting
+     */
+    function verifyMinting(
+        ICollection _nftCollection,
+        uint256[] memory _nftIndexes,
+        uint256 _discount,
+        bool _isWhitelistMint,
+        uint256 _nonce,
+        Proof memory _proof
+    ) internal view returns (address, uint256){
         // Check if the list of indexes order has at least one element
         require(
             _nftIndexes.length > 0,
@@ -198,14 +291,8 @@ contract DaapNFTCreator is
         }
 
         _discount = signer == address(0x0) ? 0 : _discount;
-
-        require(
-            payToken.balanceOf(msg.sender) > _amount - _discount,
-            "User needs to hold enough token to buy this token"
-        );
-        payToken.transferFrom(msg.sender, address(this), _amount - _discount);
-        _nftCollection.mint(_nftIndexes, msg.sender, _callbackData);
-        emit MakingMintingAction(_nftIndexes, _discount, msg.sender);
+        address _payToken = IConfiguration(nftConfiguration).getCollectionPayToken(address(_nftCollection));
+        return (_payToken, _amount - _discount);
     }
 
     /**
@@ -223,7 +310,7 @@ contract DaapNFTCreator is
             keccak256(
                 abi.encode(
                     getChainID(),
-                    msg.sender,
+                    tx.origin,
                     address(this),
                     _nftCollection,
                     _discount,
@@ -233,6 +320,10 @@ contract DaapNFTCreator is
                     _deadline
                 )
             );
+    }
+
+    function getBalancePayToken(address _payToken) external view onlyRole(DEFAULT_ADMIN_ROLE) returns(uint256) {
+        return IERC20(_payToken).balanceOf(address(this));
     }
 
     /**

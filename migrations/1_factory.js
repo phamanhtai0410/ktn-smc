@@ -4,7 +4,7 @@ const fs = require("fs");
 var KatanaNftFactory = artifacts.require("KatanaNftFactory");
 var Configurations = artifacts.require("Configurations");
 var DaapNFTCreator = artifacts.require("DaapNFTCreator");
-var USDT = artifacts.require("USDT");
+// var USDT = artifacts.require("USDT");
 
 function wf(name, address) {
     fs.appendFileSync('address.txt', name + "=" + address);
@@ -12,16 +12,16 @@ function wf(name, address) {
 }
 
 const deployments = {
-    factory: true,
-    dapp: true,
-    config: true,
-    reconfig_config_to_factory: true,
-    init_config_to_creator: true,
-    init_config: true,
-    create_new: true,
-    factory_config: true,
-    create_new_box: true,
-    factory_config_box: true
+    factory: false,
+    dapp: false,
+    config: false,
+    reconfig_config_to_factory: false,
+    init_config_to_creator: false,
+    init_config: false,
+    create_new: false,
+    factory_config: false,
+    create_new_box: false,
+    factory_config_box: false
 }
 
 module.exports = async function (deployer, network, accounts) {
@@ -52,8 +52,7 @@ module.exports = async function (deployer, network, accounts) {
     if (deployments.dapp) {
         await deployer.deploy(
             DaapNFTCreator,
-            _devWallet,
-            _iUSDT
+            _devWallet
         );
         var _creator = await DaapNFTCreator.deployed();
         wf("DaapNFTCreator", _creator.address);
@@ -83,6 +82,7 @@ module.exports = async function (deployer, network, accounts) {
         await _factory.setConfiguration(
             _nftConfig.address
         );
+        console.log("reconfig_config_to_factory success");
     }
 
     /**
@@ -90,13 +90,15 @@ module.exports = async function (deployer, network, accounts) {
      */
     if (deployments.init_config_to_creator) {
         await _creator.initialize(_nftConfig.address);
+        console.log("init_config_to_creator success");
     }
 
     /**
      *      6. Initialize NftConfigurations
      */
     if (deployments.init_config) {
-        await _nftConfig.initialize();
+        // await _nftConfig.initialize();
+        console.log("_nftConfig success");
     }
 
     /**
@@ -113,10 +115,11 @@ module.exports = async function (deployer, network, accounts) {
             "0xde0779f218c65Ad14660b815e3e73F74a5270651", // Katana-Treasury-1
             1000,
             [
-                (10 * 10 ** 18).toString(),
-                (10 * 10 ** 18).toString(),
-                (10 * 10 ** 18).toString()
-            ]
+                (1 * 10 ** 15).toString(),
+                (1 * 10 ** 15).toString(),
+                (1 * 10 ** 15).toString()
+            ],
+            process.env.WETH
         );
     }
 

@@ -20,6 +20,9 @@ contract Configurations is AccessControl {
     // Dapp Creator
     address public DAPP_CREATOR;
 
+    // NFT Collection  => ERC20 Token
+    mapping(address => address) public payTokenCollection;
+
     // List of NFT collections
     EnumerableSet.AddressSet private nftCollectionsList;
 
@@ -74,7 +77,8 @@ contract Configurations is AccessControl {
         address _collectionAddress,
         uint256 _nftIndex,
         uint256 _price,
-        string memory _baseMetadataUri
+        string memory _baseMetadataUri,
+        address _payToken
     ) external onlyFromFactory {
         require(
             nftCollectionsList.contains(_collectionAddress),
@@ -82,6 +86,21 @@ contract Configurations is AccessControl {
         );
         prices[_collectionAddress][_nftIndex] = _price;
         uriNFTs[_collectionAddress] = _baseMetadataUri;
+        payTokenCollection[_collectionAddress] = _payToken;
+    }
+
+    /**
+     *      Update PayToken for one Collection
+     */
+    function updatePayTokenCollection(
+        address _collectionAddress,
+        address _payToken
+    ) external onlyFromDappCreator {
+        require(
+            nftCollectionsList.contains(_collectionAddress),
+            "Invalid NFT collection address"
+        );
+        payTokenCollection[_collectionAddress] = _payToken;
     }
 
     /**
@@ -132,7 +151,16 @@ contract Configurations is AccessControl {
             prices[_nftCollection][_nftIndex] != 0,
             "Not-existing NFT index"
         );
-        return prices[_nftCollection][_nftIndex];
+        return (prices[_nftCollection][_nftIndex]);
+    }
+
+    /**
+     *  @notice Function allows Dapp Creator call to get PayToken of Collection
+     */
+    function getCollectionPayToken(
+        address _collectionAddress
+    ) external view onlyFromDappCreator returns(address) {
+        return payTokenCollection[_collectionAddress];
     }
 
     /**

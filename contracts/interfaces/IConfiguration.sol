@@ -14,7 +14,8 @@ interface IConfiguration {
         address _collectionAddress,
         uint256 _nftIndex,
         uint256 _price,
-        string memory _baseMetadataUri
+        string memory _baseMetadataUri,
+        address _payToken
     ) external;
 
     /**
@@ -24,6 +25,21 @@ interface IConfiguration {
         address _collectionAddress,
         string memory _baseMetadataUri
     ) external;
+
+    /**
+     *  @notice Function update new payToken for one Collection
+     */
+    function updatePayTokenCollection(
+        address _collectionAddress,
+        address _payToken
+    ) external;
+
+    /**
+     *  @notice Function get PayToken of Collection
+     */
+    function getCollectionPayToken(
+        address _collectionAddress
+    ) external view returns(address);
 
     /**
      *  @notice Function get tokenURI() of Collection

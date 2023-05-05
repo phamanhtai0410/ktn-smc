@@ -76,13 +76,15 @@ contract KatanaNftFactory is AccessControl {
         address _collectionAddress,
         uint256 _nftIndex,
         uint256 _price,
-        string memory _baseMetadataUri
+        string memory _baseMetadataUri,
+        address _payToken
     ) external onlyRole(IMPLEMENTATION_ROLE) {
         _configOneCollection(
             _collectionAddress,
             _nftIndex,
             _price,
-            _baseMetadataUri
+            _baseMetadataUri,
+            _payToken
         );
         // TODO: emit event when config
     }
@@ -91,13 +93,15 @@ contract KatanaNftFactory is AccessControl {
         address _collectionAddress,
         uint256 _nftIndex,
         uint256 _price,
-        string memory _baseMetadataUri
+        string memory _baseMetadataUri,
+        address _payToken
     ) internal {
         nftConfiguration.configCollection(
             _collectionAddress,
             _nftIndex,
             _price,
-            _baseMetadataUri
+            _baseMetadataUri,
+            _payToken
         );
     }
 
@@ -124,7 +128,8 @@ contract KatanaNftFactory is AccessControl {
         uint256 _totalSupply,
         address _treasuryAddress,
         uint96 _royaltyRate,
-        uint256[] memory _prices
+        uint256[] memory _prices,
+        address _payToken
     ) external onlyRole(IMPLEMENTATION_ROLE) {
         address collection = Clones.clone(implementationAddress);
 
@@ -147,7 +152,7 @@ contract KatanaNftFactory is AccessControl {
 
         // Config prices
         for (uint i = 0; i < _prices.length; i++) {
-            _configOneCollection(collection, i, _prices[i], _baseMetadataUri);
+            _configOneCollection(collection, i, _prices[i], _baseMetadataUri, _payToken);
         }
 
         emit CreateNftCollection(collection);
