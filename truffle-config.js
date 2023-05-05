@@ -95,7 +95,7 @@ module.exports = {
       skipDryRun: true
     },
     eth_testnet: {
-      provider: () => new HDWalletProvider(mnemonic, INFURA_API_KEY),
+      provider: () => new HDWalletProvider(mnemonic, "https://goerli.infura.io/v3/87cd043b3ab54e61b62c73382f9b21a1"),
       network_id: 5,
       // confirmations: 2,
       timeoutBlocks: 200,
