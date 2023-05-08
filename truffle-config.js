@@ -99,7 +99,8 @@ module.exports = {
       network_id: 5,
       // confirmations: 2,
       timeoutBlocks: 200,
-      skipDryRun: true
+      skipDryRun: true,
+      gas: 3000000
     },
     ganache: {
       host: '127.0.0.1', // Localhost (default: none)

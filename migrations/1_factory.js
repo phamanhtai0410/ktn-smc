@@ -12,7 +12,7 @@ function wf(name, address) {
 }
 
 const deployments = {
-    factory: false,
+    factory: true,
     dapp: false,
     config: false,
     reconfig_config_to_factory: false,
