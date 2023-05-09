@@ -215,6 +215,16 @@ contract KatanaNftFactory is AccessControl {
     }
 
     /**
+     *  @notice Function allow ADMIN set max tokens per mint
+     */
+    function setMaxTokensInOneMint(
+        uint8 _maxTokensInOneMint,
+        address _collectionAddress
+    ) external onlyRole(IMPLEMENTATION_ROLE) {
+        KatanaInuCollection(_collectionAddress).setMaxTokensInOneMint(_maxTokensInOneMint);
+    }
+
+    /**
      *  @notice Functions allows IMPLEMENTATION_ROLE to update state of disable minting
      */
     function updateStateDisableMinting(

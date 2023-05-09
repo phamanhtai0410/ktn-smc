@@ -61,3 +61,4 @@ remix-compiler.config.js
 venv
 
 test
+.private_key_prod

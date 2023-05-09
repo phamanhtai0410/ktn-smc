@@ -13,12 +13,12 @@ function wf(name, address) {
 
 const deployments = {
     factory: true,
-    dapp: false,
-    config: false,
-    reconfig_config_to_factory: false,
-    init_config_to_creator: false,
-    init_config: false,
-    create_new: false,
+    dapp: true,
+    config: true,
+    reconfig_config_to_factory: true,
+    init_config_to_creator: true,
+    init_config: true,
+    create_new: true,
     factory_config: false,
     create_new_box: false,
     factory_config_box: false
@@ -119,7 +119,7 @@ module.exports = async function (deployer, network, accounts) {
                 (1 * 10 ** 15).toString(),
                 (1 * 10 ** 15).toString()
             ],
-            process.env.WETH
+            process.env.wETH
         );
     }
 
