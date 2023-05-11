@@ -19,9 +19,7 @@ const deployments = {
     init_config_to_creator: true,
     init_config: true,
     create_new: true,
-    factory_config: false,
-    create_new_box: false,
-    factory_config_box: false
+    set_limitation: true
 }
 
 module.exports = async function (deployer, network, accounts) {
@@ -111,7 +109,7 @@ module.exports = async function (deployer, network, accounts) {
             "KatanaInu NFT",
             "TN",
             "https://s3.us-east-1.amazonaws.com/static.katanainu.com/metadata",
-            10000,
+            5555,
             "0xde0779f218c65Ad14660b815e3e73F74a5270651", // Katana-Treasury-1
             1000,
             [
@@ -131,48 +129,14 @@ module.exports = async function (deployer, network, accounts) {
     wf("Collection[0]", _collectionAddress);
 
     /**
-     *      9. Config one for colleciton
+     *      9. Set the limittation of collection
      */
-    // if (deployments.factory_config) {
-    //     await _factory.configCollection(
-    //         _collectionAddress,
-    //         0,
-    //         (20 * 10 ** 18).toString()
-    //     );
-    // }
-    
-    /**
-     *      10. Create new Box
-     */
-    // if (deployments.create_new_box) {
-    //     await _factory.createBox(
-    //         "Testing Box",
-    //         "TB",
-    //         "https://bafkreidfudijruu7e4mjgehgr3szr3rexyqlno3wafg3qqgtmbyj6i7d3y.ipfs.w3s.link/",
-    //         100,
-    //         "0xF06d7139cD8708de3e9cB2E732A8A158039ebd44", // Katana-Treasury-2
-    //         2000,
-    //         _collectionAddress
-    //     );
-    // }
-
-    /**
-     *      11. Get box address
-     */
-    // var _boxAddress = await _factory.getBoxAddress(0);
-    // console.log("11. box[0] : ", _boxAddress);
-    // wf("Box[0]", _boxAddress);
-
-    /**
-     *      12.. Config box
-     */
-    // if (deployments.factory_config_box) {
-    //     await _factory.configBox(
-    //         _boxAddress,
-    //         (25 * 10 ** 18).toString(),
-    //         100
-    //     );
-    // }
+    if (deployments.set_limitation) {
+        await _factory.configTheLimitation(
+            _collectionAddress,
+            4555
+        )
+    }
 }
 
 // https://s3.us-east-1.amazonaws.com/static.katanainu.com/metadata/0xee755fa918239826e13bff64ff0184457dc13506/1.json

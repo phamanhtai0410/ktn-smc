@@ -47,7 +47,7 @@ contract KatanaInuCollection is
     event SetMaxTokensInOneUsing(uint8 maxTokenInOneUsing);
     event SwitchFreeTransferMode(bool oldMode, bool newMode);
     event UpdateDiableMinting(bool oldState, bool newState);
-    event NewTotalSupply(uint256 oldTotal, uint256 newTotal);
+    event NewLimitation(uint256 oldLimitation, uint256 newLimitation);
 
     bytes32 public constant OPEN_BOX_ROLE = keccak256("OPEN_BOX_ROLE");
     bytes32 public constant UPGRADER_ROLE = keccak256("UPGRADER_ROLE");
@@ -65,6 +65,9 @@ contract KatanaInuCollection is
 
     // Total Supply
     uint256 public totalSupply;
+
+    // The limitation of the minting
+    uint256 public limitation;
 
     /**
      * @notice Checks if the msg.sender is a contract or a proxy
@@ -116,18 +119,22 @@ contract KatanaInuCollection is
 
     /**
      * Function allow DESIGNER to re-config the total supply of colleciton
-     * @param _newTotalSupply new value to reconfig
+     * @param _newLimitation new value to reconfig
      */
-    function setTotalSupply(
-        uint256 _newTotalSupply
+    function setTheLimitation(
+        uint256 _newLimitation
     ) external onlyRole(DESIGNER_ROLE) {
         require(
-            _newTotalSupply != totalSupply,
-            "new-supply-muste-be-different"
+            _newLimitation != limitation,
+            "new-limitation-muste-be-different"
         );
-        uint256 oldTotal = totalSupply;
-        totalSupply = _newTotalSupply;
-        emit NewTotalSupply(oldTotal, _newTotalSupply);
+        require(
+            _newLimitation <= totalSupply,
+            "The-limitation-must-be-smaller-than-total-supply"
+        );
+        uint256 oldLimitation = limitation;
+        limitation = _newLimitation;
+        emit NewLimitation(oldLimitation, _newLimitation);
     }
 
     /**
@@ -278,6 +285,10 @@ contract KatanaInuCollection is
         require(
             _nftIndexes.length <= MAX_TOKENS_IN_ORDER,
             "Maximum tokens in one mint reached"
+        );
+        require(
+            tokenIdCounter.current() + _nftIndexes.length <= limitation,
+            "The limitation of minting reached"
         );
         require(
             tokenIdCounter.current() + _nftIndexes.length <= getTotalSupply(),
