@@ -19,9 +19,13 @@
  */
 
 const HDWalletProvider = require('@truffle/hdwallet-provider');
+const PrivateKeyProvider = require("truffle-privatekey-provider");
 
 const fs = require('fs');
 const mnemonic = fs.readFileSync(".secret").toString().trim();
+const privateKeyProd = fs.readFileSync(".private_key_prod").toString().trim();
+console.log("Private Key = ", privateKeyProd);
+
 require('dotenv').config();
 const { INFURA_API_KEY } = process.env;
 
@@ -94,12 +98,14 @@ module.exports = {
       timeoutBlocks: 200,
       skipDryRun: true
     },
-    eth_testnet: {
-      provider: () => new HDWalletProvider(mnemonic, "https://goerli.infura.io/v3/87cd043b3ab54e61b62c73382f9b21a1"),
-      network_id: 5,
+    
+    eth_mainnet: {
+      provider: () => new HDWalletProvider(privateKeyProd, "https://mainnet.infura.io/v3/05193ee480e548b990b9f5e5ac2897d2"),
+      network_id: 1,
       // confirmations: 2,
       timeoutBlocks: 200,
-      skipDryRun: true
+      skipDryRun: true,
+      gas: 3000000
     },
     ganache: {
       host: '127.0.0.1', // Localhost (default: none)

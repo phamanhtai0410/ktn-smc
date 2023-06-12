@@ -87,9 +87,7 @@ contract DaapNFTCreator is
     /**
      *      @dev Initialize function
      */
-    function initialize(
-        address _nftConfiguration
-    ) public initializer {
+    function initialize(address _nftConfiguration) public initializer {
         __AccessControl_init();
         __Pausable_init();
 
@@ -141,8 +139,12 @@ contract DaapNFTCreator is
         address _newPayToken,
         address _collectionAddress
     ) external onlyRole(UPGRADER_ROLE) {
-        address _oldPayToken = IConfiguration(nftConfiguration).getCollectionPayToken(_collectionAddress);
-        IConfiguration(nftConfiguration).updatePayTokenCollection(_collectionAddress, _newPayToken);
+        address _oldPayToken = IConfiguration(nftConfiguration)
+            .getCollectionPayToken(_collectionAddress);
+        IConfiguration(nftConfiguration).updatePayTokenCollection(
+            _collectionAddress,
+            _newPayToken
+        );
         emit SetNewPayToken(_oldPayToken, _newPayToken);
     }
 
@@ -195,7 +197,6 @@ contract DaapNFTCreator is
             _isWhitelistMint,
             _nonce,
             _proof
-            
         );
         require(
             IERC20(_payToken).balanceOf(msg.sender) > _lastAmount,
@@ -229,7 +230,7 @@ contract DaapNFTCreator is
             _proof
         );
         require(
-            msg.value >= _lastAmount, 
+            msg.value >= _lastAmount,
             "User needs to hold enough token to buy this token"
         );
         _nftCollection.mint(_nftIndexes, _to, _callbackData);
@@ -246,7 +247,7 @@ contract DaapNFTCreator is
         bool _isWhitelistMint,
         uint256 _nonce,
         Proof memory _proof
-    ) internal view returns (address, uint256){
+    ) internal returns (address, uint256) {
         // Check if the list of indexes order has at least one element
         require(
             _nftIndexes.length > 0,
@@ -278,7 +279,7 @@ contract DaapNFTCreator is
                 isUsedSignatures[txHash] == 0,
                 "The signature has already been used"
             );
-            isUsedSignatures[txHash] == 1;
+            isUsedSignatures[txHash] = 1;
             require(verifySignature(txHash, _proof), "Invalid Signature");
         }
 
@@ -291,7 +292,8 @@ contract DaapNFTCreator is
         }
 
         _discount = signer == address(0x0) ? 0 : _discount;
-        address _payToken = IConfiguration(nftConfiguration).getCollectionPayToken(address(_nftCollection));
+        address _payToken = IConfiguration(nftConfiguration)
+            .getCollectionPayToken(address(_nftCollection));
         return (_payToken, _amount - _discount);
     }
 
@@ -322,7 +324,9 @@ contract DaapNFTCreator is
             );
     }
 
-    function getBalancePayToken(address _payToken) external view onlyRole(DEFAULT_ADMIN_ROLE) returns(uint256) {
+    function getBalancePayToken(
+        address _payToken
+    ) external view onlyRole(DEFAULT_ADMIN_ROLE) returns (uint256) {
         return IERC20(_payToken).balanceOf(address(this));
     }
 

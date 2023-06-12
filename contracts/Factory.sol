@@ -152,23 +152,29 @@ contract KatanaNftFactory is AccessControl {
 
         // Config prices
         for (uint i = 0; i < _prices.length; i++) {
-            _configOneCollection(collection, i, _prices[i], _baseMetadataUri, _payToken);
+            _configOneCollection(
+                collection,
+                i,
+                _prices[i],
+                _baseMetadataUri,
+                _payToken
+            );
         }
 
         emit CreateNftCollection(collection);
     }
 
     /**
-     * Function alows IMPLEMENTATION to config new totalSupply
+     * Function alows IMPLEMENTATION to config the limitation number of the minting at the current
      * @param _collection The address of the NFT collection that wants to config
-     * @param _newTotal The new total value
+     * @param _limit The limit value
      */
-    function configNewTotalSupply(
+    function configTheLimitation(
         address _collection,
-        uint256 _newTotal
+        uint256 _limit
     ) external onlyRole(IMPLEMENTATION_ROLE) {
-        KatanaInuCollection(_collection).setTotalSupply(_newTotal);
-        emit ConfigNewTotalSupply(_collection, _newTotal);
+        KatanaInuCollection(_collection).setTheLimitation(_limit);
+        emit ConfigNewTotalSupply(_collection, _limit);
     }
 
     function supportsInterface(
@@ -212,6 +218,18 @@ contract KatanaNftFactory is AccessControl {
     ) external onlyRole(IMPLEMENTATION_ROLE) {
         KatanaInuCollection(_characterToken).setMinterRole(_newMinter);
         emit SetNewMinterRole(_characterToken, _newMinter);
+    }
+
+    /**
+     *  @notice Function allow ADMIN set max tokens per mint
+     */
+    function setMaxTokensInOneMint(
+        uint8 _maxTokensInOneMint,
+        address _collectionAddress
+    ) external onlyRole(IMPLEMENTATION_ROLE) {
+        KatanaInuCollection(_collectionAddress).setMaxTokensInOneMint(
+            _maxTokensInOneMint
+        );
     }
 
     /**
